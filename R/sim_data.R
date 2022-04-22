@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-sim_data <- function(nyears, sample_size_dist, norm_mean, norm_sd, unif_min, unif_max){ ##ADD THE REST OF THIS STUFF IN HERE
+sim_data <- function(nyears = 5, sample_size_dist = "normal", norm_mean = 100, norm_sd = 10, unif_min, unif_max){ ##ADD THE REST OF THIS STUFF IN HERE
   if(sample_size_dist == "normal"){
     tibble(year = rep(0:(nyears - 1), abs(round(rnorm(nyears, norm_mean, norm_sd))))) %>%
       rowwise() %>%

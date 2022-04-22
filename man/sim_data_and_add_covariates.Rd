@@ -5,10 +5,10 @@
 \title{Title}
 \usage{
 sim_data_and_add_covariates(
-  nyears,
-  sample_size_dist,
-  norm_mean,
-  norm_sd,
+  nyears = 5,
+  sample_size_dist = "normal",
+  norm_mean = 100,
+  norm_sd = 10,
   unif_min,
   unif_max,
   covariate_list

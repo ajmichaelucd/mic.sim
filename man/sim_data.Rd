@@ -4,7 +4,14 @@
 \alias{sim_data}
 \title{sim_data}
 \usage{
-sim_data(nyears, sample_size_dist, norm_mean, norm_sd, unif_min, unif_max)
+sim_data(
+  nyears = 5,
+  sample_size_dist = "normal",
+  norm_mean = 100,
+  norm_sd = 10,
+  unif_min,
+  unif_max
+)
 }
 \arguments{
 \item{unif_max}{}
