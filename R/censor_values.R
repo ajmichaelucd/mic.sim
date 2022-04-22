@@ -13,7 +13,7 @@
 #' @importFrom magrittr %>%
 #'
 #' @examples
-censor_values <- function(df, MIC_breakpoint){
+censor_values <- function(df, MIC_breakpoint, low_log_con = -4, high_log_con = 4){
   df %>%
     mutate(right_bound_1 = ceiling(df$observed_value),
            left_bound_1 = ceiling(df$observed_value) - 1) %>%

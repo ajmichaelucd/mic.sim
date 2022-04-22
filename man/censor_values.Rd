@@ -4,7 +4,7 @@
 \alias{censor_values}
 \title{censor_values}
 \usage{
-censor_values(df, MIC_breakpoint)
+censor_values(df, MIC_breakpoint, low_log_con = -4, high_log_con = 4)
 }
 \arguments{
 \item{df}{must contain a column named "observed value" which contains the uncensored simulated values}
