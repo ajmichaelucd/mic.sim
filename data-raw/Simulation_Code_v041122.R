@@ -153,7 +153,7 @@ presets <- tibble(
 
 
 ##Application of drawing a dataset----------------------------------------------------------------------------------------------------
-simulated_data <- sim_data_and_add_covariates(nyears, "uniform", unif_min = unif_min, unif_max = unif_max, covariate_list = covariate_list)
+simulated_data <- sim_data_and_add_covariates(covariate_list = covariate_list)
 
 
 #####NEED A FUNCTION HERE TO ADD COVARIATE EFFECTS#######
@@ -242,8 +242,10 @@ fit_aft <- function(df1, type){
 }
 
 
+fit_aft(simulated_data$observed_value, simulated_data, "weibull", 4)
+
 ##Actually run the aft_fit on dataset---------------------------------------
-purrr::map(type_list, ~fit_aft(simulated_data, .x))
+purrr::map(type_list, ~fit_aft(simulated_data$observed_value, simulated_data, .x, 4))
 
 
 
