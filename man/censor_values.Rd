@@ -6,7 +6,6 @@
 \usage{
 censor_values(
   observed_value,
-  MIC_breakpoint,
   low_con = 2^-4,
   high_con = 2^4,
   tested_concentrations = log2(low_con):log2(high_con),
@@ -14,8 +13,6 @@ censor_values(
 )
 }
 \arguments{
-\item{MIC_breakpoint}{is the highest MIC that is still S (the MIC where susceptible is defined as ≥ MIC), this value is on the MIC scale (we take log2 of MIC_breakpoint before applying it to the continuous values that are simulated on the log2 scale)}
-
 \item{tested_concentrations}{}
 }
 \value{

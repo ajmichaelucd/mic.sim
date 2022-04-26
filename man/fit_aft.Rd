@@ -8,7 +8,6 @@ fit_aft(
   observed_values,
   covariate_data_frame,
   type,
-  MIC_breakpoint,
   low_con = 2^-4,
   high_con = 2^4,
   tested_concentrations = log2(low_con):log2(high_con)

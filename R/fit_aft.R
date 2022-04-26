@@ -18,7 +18,6 @@
 fit_aft <- function(observed_values,
                     covariate_data_frame,
                     type,
-                    MIC_breakpoint,
                     low_con = 2^-4,
                     high_con = 2^4,
                     tested_concentrations = log2(low_con):log2(high_con)){
@@ -31,7 +30,7 @@ fit_aft <- function(observed_values,
       paste(outcome,
             paste(variables, collapse = " + "),
             sep = " ~ "))
-    df <- censor_values(observed_values, MIC_breakpoint,
+    df <- censor_values(observed_values,
                         low_con,
                         high_con,
                         tested_concentrations,
@@ -55,7 +54,7 @@ merge(., covariate_data_frame) %>%
             paste(variables, collapse = " + "),
             sep = " ~ "))
 
-    df <- censor_values(observed_values, MIC_breakpoint,
+    df <- censor_values(observed_values,
                         low_con,
                         high_con,
                         tested_concentrations,

@@ -1,13 +1,26 @@
+
 #' draw_observations
 #'
 #' draws a single observation from a two-component gaussian mixture model
 #'
 #' @param year
-#'
-#' @importFrom mixtools rnormmix
+#' @param initial_lower_mean
+#' @param initial_upper_mean
+#' @param initial_lower_std_dev
+#' @param initial_upper_std_dev
+#' @param initial_lower_slp
+#' @param initial_upper_slp
+#' @param initial_lower_slp_qd
+#' @param initial_upper_slp_qd
+#' @param initial_lower_lambda
+#' @param initial_upper_lambda
+#' @param initial_lower_slp_lambda
+#' @param initial_upper_slp_lambda
 #'
 #' @return
 #' @export
+#'
+#' @importFrom mixtools rnormmix
 #'
 #' @examples
 draw_observations <- function(year = 0, initial_lower_mean = -1, initial_upper_mean = 1, initial_lower_std_dev = 1, initial_upper_std_dev = 1, initial_lower_slp = 0, initial_upper_slp = 0, initial_lower_slp_qd = 0, initial_upper_slp_qd = 0,

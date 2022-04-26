@@ -21,7 +21,7 @@ draw_observations(
 )
 }
 \arguments{
-\item{year}{}
+\item{initial_upper_slp_lambda}{}
 }
 \value{
 

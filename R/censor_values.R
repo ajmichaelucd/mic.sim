@@ -4,7 +4,6 @@
 #'
 #' adds new columns with left and right censoring indicators, setting up the creation of a Surv object with interval2 format
 #'
-#' @param MIC_breakpoint is the highest MIC that is still S (the MIC where susceptible is defined as ≥ MIC), this value is on the MIC scale (we take log2 of MIC_breakpoint before applying it to the continuous values that are simulated on the log2 scale)
 #' @param observed_value
 #' @param low_log_con
 #' @param high_log_con
@@ -20,7 +19,7 @@
 censor_values <-
   function(
     observed_value,
-    MIC_breakpoint,
+#    MIC_breakpoint,
     low_con = 2^-4,
     high_con = 2^4,
     tested_concentrations = log2(low_con):log2(high_con),
@@ -37,9 +36,9 @@ censor_values <-
           is.finite(right_bound) & is.infinite(left_bound) ~ 2,
           is.infinite(right_bound) & is.finite(left_bound) ~ 0
         )
-      ) %>%
-      mutate(
-        dichot = ifelse(observed_value > log2(MIC_breakpoint), "R", "S"))
+      ) #%>%
+#      mutate(
+#        dichot = ifelse(observed_value > log2(MIC_breakpoint), "R", "S"))
 
     if(output_scale == "concentration")
     {

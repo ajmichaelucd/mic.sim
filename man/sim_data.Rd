@@ -10,11 +10,23 @@ sim_data(
   norm_mean = 100,
   norm_sd = 10,
   unif_min,
-  unif_max
+  unif_max,
+  initial_lower_mean = -1,
+  initial_upper_mean = 1,
+  initial_lower_std_dev = 1,
+  initial_upper_std_dev = 1,
+  initial_lower_slp = 0,
+  initial_upper_slp = 0,
+  initial_lower_slp_qd = 0,
+  initial_upper_slp_qd = 0,
+  initial_lower_lambda = 0.5,
+  initial_upper_lambda = 0.5,
+  initial_lower_slp_lambda = 0,
+  initial_upper_slp_lambda = 0
 )
 }
 \arguments{
-\item{unif_max}{}
+\item{initial_upper_slp_lambda}{}
 }
 \value{
 
