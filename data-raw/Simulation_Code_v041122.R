@@ -30,7 +30,7 @@ sample_size_dist <- "normal" #whether you're doing a normal or uniform dist of s
 nyears <- 5 #number of years per simulation (numbering will go 0 to n-1 instead of 1 to n)
 n_simulations <- 1000 #number of iterations of the simulation to run
 
-#Abx-specific breakpoint (talk to Sharif about whether this is S/I or I/R, looks like we might do I/R)
+#Abx-specific breakpoint (per Sharif, we want S/I)
 MIC_breakpoint <- 4 #this value is on the original MIC scale, later in the code i'll take the log2 of it and apply that to dichotomize values
 
 #Distribution of MICs at start of simulation (gaussian mixture, 2 components)
@@ -251,8 +251,8 @@ purrr::map(type_list, ~fit_aft(simulated_data$observed_value, simulated_data, .x
 
 #To Add:
 #Interval Regression
-#Semi Parametric AFT
-#Logistic Regression
+#Semi Parametric AFT check
+#Logistic Regression check
 
 ##Way to collect the output of all these models and store that output in a file
 #Should I be storing the actual data sets as well? Are these needed for any error metrics we may be interested in?
