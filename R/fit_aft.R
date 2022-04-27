@@ -11,6 +11,7 @@
 #' @importFrom dplyr mutate
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv survreg
+#' @importFrom broom tidy
 #'
 #' @return
 #' @export
@@ -47,6 +48,9 @@ merge(., covariate_data_frame) %>%
 if(summary == TRUE){
     summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
 }
+    else if(summary == "tidy"){
+      tidy(survreg(print(f), data = df, dist = type))
+    }
     else{
       survreg(print(f), data = df, dist = type)
     }
@@ -74,6 +78,9 @@ if(summary == TRUE){
 
     if(summary == TRUE){
       summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
+    }
+    else if(summary == "tidy"){
+      tidy(survreg(print(f), data = df, dist = type))
     }
     else{
       survreg(print(f), data = df, dist = type)

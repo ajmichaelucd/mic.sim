@@ -16,6 +16,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv
 #' @importFrom smoothSurv smoothSurvReg
+#' @importFrom broom tidy
 #'
 #' @examples
 fit_spaft <- function(observed_values,
@@ -46,6 +47,9 @@ fit_spaft <- function(observed_values,
 if(summary == TRUE){
   summary(smoothSurvReg(print(f), data = df)) #THIS NEEDS TO VARY FOR COVARIATES
 }
+  else if(summary == "tidy"){
+    tidy(smoothSurvReg(print(f), data = df))
+  }
   else{
     smoothSurvReg(print(f), data = df)
   }

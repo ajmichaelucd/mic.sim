@@ -9,6 +9,7 @@
 #'
 #' @importFrom dplyr mutate
 #' @importFrom magrittr %>%
+#' @importFrom broom tidy
 #'
 #' @examples
 fit_lr <- function(df, MIC_breakpoint, summary = FALSE){
@@ -25,6 +26,9 @@ fit_lr <- function(df, MIC_breakpoint, summary = FALSE){
 
   if(summary == TRUE){
   summary(glm(print(f), data = df2, family = "binomial"))
+  }
+  else if(summary == "tidy"){
+    tidy(glm(print(f), data = df2, family = "binomial"))
   }
 else{
   glm(print(f), data = df2, family = "binomial")

@@ -12,10 +12,11 @@ covariate_list <- list(
 simulated_data <- sim_data_and_add_covariates(covariate_list = covariate_list)
 
 
-purrr::map(type_list, ~fit_aft(simulated_data$observed_value, simulated_data, .x, summary = TRUE))
+purrr::map(type_list, ~fit_aft(simulated_data$observed_value, simulated_data, .x, summary = "tidy"))
 
 
 
 fit_lr(simulated_data, 4)
 
 fit_spaft(simulated_data$observed_value, simulated_data)
+
