@@ -10,11 +10,12 @@ fit_aft(
   type,
   low_con = 2^-4,
   high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con)
+  tested_concentrations = log2(low_con):log2(high_con),
+  summary = FALSE
 )
 }
 \arguments{
-\item{tested_concentrations}{}
+\item{summary}{}
 }
 \value{
 

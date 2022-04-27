@@ -7,6 +7,7 @@
 #' @param low_con
 #' @param high_con
 #' @param tested_concentrations
+#' @param summary
 #'
 #' @return
 #' @export
@@ -21,7 +22,8 @@ fit_spaft <- function(observed_values,
                       covariate_data_frame,
                       low_con = 2^-4,
                       high_con = 2^4,
-                      tested_concentrations = log2(low_con):log2(high_con)){
+                      tested_concentrations = log2(low_con):log2(high_con),
+                      summary = FALSE){
   outcome <- "surv_object1"
   #variables <-
   variables  <- c("year", paste("covariate_", 1:length(covariate_list), sep = ""))
@@ -41,8 +43,11 @@ fit_spaft <- function(observed_values,
     time2 = df$right_bound,
     type = "interval2")
 
-
+if(summary == TRUE){
   summary(smoothSurvReg(print(f), data = df)) #THIS NEEDS TO VARY FOR COVARIATES
-
+}
+  else{
+    smoothSurvReg(print(f), data = df)
+  }
 
 }

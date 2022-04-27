@@ -4,12 +4,14 @@
 \alias{fit_lr}
 \title{fit_lr}
 \usage{
-fit_lr(df, MIC_breakpoint)
+fit_lr(df, MIC_breakpoint, summary = FALSE)
 }
 \arguments{
 \item{df}{data frame of year, observed values (colname is observed_value), and covariates}
 
 \item{MIC_breakpoint}{on MIC scale, breakpoint for S vs I}
+
+\item{summary}{whether the output is the summary.glm  (TRUE) or the glm object}
 }
 \value{
 

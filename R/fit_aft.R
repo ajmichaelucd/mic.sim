@@ -6,6 +6,7 @@
 #' @param low_con
 #' @param high_con
 #' @param tested_concentrations
+#' @param summary
 #'
 #' @importFrom dplyr mutate
 #' @importFrom magrittr %>%
@@ -20,7 +21,8 @@ fit_aft <- function(observed_values,
                     type,
                     low_con = 2^-4,
                     high_con = 2^4,
-                    tested_concentrations = log2(low_con):log2(high_con)){
+                    tested_concentrations = log2(low_con):log2(high_con),
+                    summary = FALSE){
 
   if(type %in% c("loglogistic", "weibull", "lognormal", "exponential")){
     outcome <- "surv_object1"
@@ -42,9 +44,12 @@ merge(., covariate_data_frame) %>%
       time2 = df$right_bound,
       type = "interval2")
 
-
+if(summary == TRUE){
     summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
-
+}
+    else{
+      survreg(print(f), data = df, dist = type)
+    }
   }
   else if(type %in% c("logistic", "gaussian")){
     outcome <- "surv_object1"
@@ -67,8 +72,12 @@ merge(., covariate_data_frame) %>%
       type = "interval2")
 
 
-    summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
-
+    if(summary == TRUE){
+      summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
+    }
+    else{
+      survreg(print(f), data = df, dist = type)
+    }
   }
   else {
     warning("input error, failed to select from weibull, loglogistic, lognormal, exponential, logistic, gaussian")
