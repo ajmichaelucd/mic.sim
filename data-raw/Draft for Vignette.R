@@ -8,8 +8,9 @@ covariate_list <- list(
   c("numeric", "uniform", 1, 10)
 )
 
+#implement creating covariate_list_2 from covariate list at some point too
 
-simulated_data <- sim_data_and_add_covariates(covariate_list = covariate_list)
+simulated_data <- sim_data_and_add_covariates(covariate_list = covariate_list, covariate_list_2 = covariate_list_2)
 
 
 purrr::map(type_list, ~fit_aft(simulated_data$observed_value, simulated_data, .x, summary = "tidy"))

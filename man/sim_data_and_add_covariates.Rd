@@ -12,6 +12,7 @@ sim_data_and_add_covariates(
   unif_min,
   unif_max,
   covariate_list,
+  covariate_list_2,
   initial_lower_mean = -1,
   initial_upper_mean = 1,
   initial_lower_std_dev = 1,
