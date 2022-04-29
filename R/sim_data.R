@@ -32,14 +32,14 @@ sim_data <- function(nyears = 5, sample_size_dist = "normal", norm_mean = 100, n
   if(sample_size_dist == "normal"){
     tibble(year = rep(0:(nyears - 1), abs(round(rnorm(nyears, norm_mean, norm_sd))))) %>%
       rowwise() %>%
-      mutate(observed_value = draw_observations(year, initial_lower_mean, initial_upper_mean, initial_lower_std_dev, initial_upper_std_dev, initial_lower_slp, initial_upper_slp, initial_lower_slp_qd, initial_upper_slp_qd,
+      mutate(base_value = draw_observations(year, initial_lower_mean, initial_upper_mean, initial_lower_std_dev, initial_upper_std_dev, initial_lower_slp, initial_upper_slp, initial_lower_slp_qd, initial_upper_slp_qd,
                                                 initial_lower_lambda, initial_upper_lambda, initial_lower_slp_lambda, initial_upper_slp_lambda)
       )
   }
   else if(sample_size_dist == "uniform"){
     tibble(year = rep(0:(nyears - 1), abs(round(runif(nyears, unif_min, unif_max))))) %>%
       rowwise() %>%
-      mutate(observed_value = draw_observations(year, initial_lower_mean, initial_upper_mean, initial_lower_std_dev, initial_upper_std_dev, initial_lower_slp, initial_upper_slp, initial_lower_slp_qd, initial_upper_slp_qd,
+      mutate(base_value = draw_observations(year, initial_lower_mean, initial_upper_mean, initial_lower_std_dev, initial_upper_std_dev, initial_lower_slp, initial_upper_slp, initial_lower_slp_qd, initial_upper_slp_qd,
                                                 initial_lower_lambda, initial_upper_lambda, initial_lower_slp_lambda, initial_upper_slp_lambda)
       )
   }

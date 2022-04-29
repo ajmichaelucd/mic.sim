@@ -20,3 +20,6 @@ fit_lr(simulated_data, 4)
 
 fit_spaft(simulated_data$observed_value, simulated_data)
 
+
+
+

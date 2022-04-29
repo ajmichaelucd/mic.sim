@@ -43,6 +43,10 @@ sim_data_and_add_covariates <- function(nyears = 5, sample_size_dist = "normal",
 
   tibble(drawn_observations, drawn_covariates)
 
+  ##Implement covariate effects here
+
+
+
 }
 
 
