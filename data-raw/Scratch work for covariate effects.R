@@ -58,7 +58,7 @@ sim_data_and_add_covariates <- function(nyears = 5, sample_size_dist = "normal",
 
   base_sim <- tibble(drawn_observations, drawn_covariates)
 
-    covariate_effects <- tibble::as_tibble(find_covariate_effects(base_sim, covariate_list_2)) %>%
+    covariate_effects <- dplyr::as_tibble(find_covariate_effects(base_sim, covariate_list_2)) %>%
       rowwise() %>%
       mutate(covariate_sum = sum(c_across(starts_with("cov"))), .keep = "used") %>%
       ungroup() %>%
@@ -82,7 +82,6 @@ bbb %>%
   mutate(covariate_sum = sum(c_across(starts_with("cov"))), .keep = "used") %>%
   ungroup() %>%
   select(covariate_sum)
-
 
 
 
