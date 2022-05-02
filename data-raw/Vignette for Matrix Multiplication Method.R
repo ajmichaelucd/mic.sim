@@ -18,18 +18,11 @@ covariate_list <- list(
 )
 
 
-year = c(rep(0, 10), rep(1, 10), rep(2, 15))
+year <- c(rep(0, 10), rep(1, 10), rep(2, 15))
+year <- create_year()
+
 
 ##Operations
-
-aaa <- find_epsilon(year = year, sd_1 = 1, sd_2 = 1, mean_1_trend = 0, mean_2_trend = 0.5, mean_1_intercept = -1, mean_2_intercept = 2, pi_1_trend = 0, pi_1_intercept = 0.4)
-
-bbb <- add_covariate(covariate_list = covariate_list, year = year)
-
-ccc <- tibble(aaa, bbb)
-
-ddd <- covariate_effect_total(ccc, covariate_effect_vector)
+simulate_mics(year = year, mean_2_trend = 0.2 ,covariate_list = covariate_list, covariate_effect_vector = covariate_effect_vector)
 
 
-tibble(ccc, ddd) %>%
-  mutate(observed_value = epsilon + ddd)
