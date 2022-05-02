@@ -25,10 +25,14 @@ fit_aft <- function(observed_values,
                     tested_concentrations = log2(low_con):log2(high_con),
                     summary = FALSE){
 
+n  <- covariate_data_frame %>%
+    select(starts_with("covariate_")) %>%
+    ncol(.)
+
   if(type %in% c("loglogistic", "weibull", "lognormal", "exponential")){
     outcome <- "surv_object1"
     #variables <-
-    variables  <- c("year", paste("covariate_", 1:length(covariate_list), sep = ""))
+    variables  <- c("year", paste("covariate_", n, sep = ""))
     f <- as.formula(
       paste(outcome,
             paste(variables, collapse = " + "),
@@ -57,7 +61,7 @@ if(summary == TRUE){
   }
   else if(type %in% c("logistic", "gaussian")){
     outcome <- "surv_object1"
-    variables  <- c("year", paste("covariate_", 1:length(covariate_list), sep = ""))
+    variables  <- c("year", paste("covariate_", 1:n, sep = ""))
     f <- as.formula(
       paste(outcome,
             paste(variables, collapse = " + "),

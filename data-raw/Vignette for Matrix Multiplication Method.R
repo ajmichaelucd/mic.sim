@@ -18,11 +18,12 @@ covariate_list <- list(
 )
 
 
-year <- c(rep(0, 10), rep(1, 10), rep(2, 15))
 year <- create_year()
 
 
 ##Operations
-simulate_mics(year = year, mean_2_trend = 0.2 ,covariate_list = covariate_list, covariate_effect_vector = covariate_effect_vector)
+data.sim <- simulate_mics(year = year, mean_2_trend = 0.2 ,covariate_list = covariate_list, covariate_effect_vector = covariate_effect_vector)
+
+purrr::map(type_list, ~fit_aft(data.sim$observed_value, data.sim, .x, summary = TRUE))
 
 
