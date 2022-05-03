@@ -29,3 +29,5 @@ data.sim <- simulate_mics(year = year, mean_2_trend = 0.2 ,covariate_list = cova
 purrr::map(type_list, ~fit_aft(data.sim$observed_value, data.sim, .x, summary = TRUE))
 
 fit_lr(data.sim$observed_value, data.sim, MIC_breakpoint = 2, summary = TRUE)
+
+fit_spaft(data.sim$observed_value, data.sim)

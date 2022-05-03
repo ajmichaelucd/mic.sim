@@ -25,9 +25,14 @@ fit_spaft <- function(observed_values,
                       high_con = 2^4,
                       tested_concentrations = log2(low_con):log2(high_con),
                       summary = FALSE){
+
+  n  <- covariate_data_frame %>%
+    select(starts_with("covariate_")) %>%
+    ncol(.)
+
   outcome <- "surv_object1"
   #variables <-
-  variables  <- c("year", paste("covariate_", 1:length(covariate_list), sep = ""))
+  variables  <- c("year", paste("covariate_", 1:n, sep = ""))
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),
@@ -36,7 +41,7 @@ fit_spaft <- function(observed_values,
                       low_con,
                       high_con,
                       tested_concentrations,
-                      output_scale = "concentration") %>%   ####Need to add covariates back in here before the model is made
+                      output_scale = "concentration") %>%
     merge(., covariate_data_frame) %>%
     tibble()
   surv_object1 <- Surv(
