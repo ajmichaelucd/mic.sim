@@ -4,7 +4,7 @@
 \alias{fit_lr}
 \title{fit_lr}
 \usage{
-fit_lr(df, MIC_breakpoint, summary = FALSE)
+fit_lr(observed_value, df, MIC_breakpoint, summary = FALSE)
 }
 \arguments{
 \item{df}{data frame of year, observed values (colname is observed_value), and covariates}

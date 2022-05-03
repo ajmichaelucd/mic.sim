@@ -12,10 +12,14 @@
 #' @importFrom broom tidy
 #'
 #' @examples
-fit_lr <- function(df, MIC_breakpoint, summary = FALSE){
+fit_lr <- function(observed_value, df, MIC_breakpoint, summary = FALSE){
+
+  n  <- df %>%
+    select(starts_with("covariate_")) %>%
+    ncol(.)
 
   outcome <- "dichot"
-  variables  <- c("year", paste("covariate_", 1:length(covariate_list), sep = ""))
+  variables  <- c("year", paste("covariate_", 1:n, sep = ""))
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),
