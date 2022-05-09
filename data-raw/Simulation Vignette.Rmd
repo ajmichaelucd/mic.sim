@@ -62,7 +62,8 @@ unif_min = NA
 unif_max = NA
 
 
-#type list = ....
+type_list = c("loglogistic", "lognormal", "weibull", "gaussian", "exponential", "logistic") #list of types of AFT error distributions to use
+
 
 ```
 
@@ -130,6 +131,16 @@ fit_spaft(
 )
 ```
 
+```{r}
+fit_aft(
+    data.sim$observed_value,
+    data.sim,
+    type = "gaussian",
+    low_con = 2 ^ -4,
+    high_con = 2 ^ 4,
+    summary = TRUE
+  )
+```
 
 
 
