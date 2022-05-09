@@ -42,16 +42,16 @@ fit_aft <- function(observed_values,
                         high_con,
                         tested_concentrations,
                         output_scale = "concentration") %>%   ####Need to add covariates back in here before the model is made
-merge(., covariate_data_frame) %>%
-  tibble()
+      merge(., covariate_data_frame) %>%
+      tibble()
     surv_object1 <- Surv(
-      time = ifelse(df$left_bound == 0, 0.000000000000000000000000001, df$left_bound), #because the survreg can't take ln of 0 or negative numbers
+      time = ifelse(df$left_bound == 0, -Inf, df$left_bound), #because the survreg can't take ln of 0 or negative numbers
       time2 = df$right_bound,
       type = "interval2")
 
-if(summary == TRUE){
-    summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
-}
+    if(summary == TRUE){
+      summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
+    }
     else if(summary == "tidy"){
       tidy(survreg(print(f), data = df, dist = type))
     }
@@ -72,8 +72,9 @@ if(summary == TRUE){
                         high_con,
                         tested_concentrations,
                         output_scale = "log") %>%   ####Need to add covariates back in here before the model is made
-  merge(., covariate_data_frame) %>%
-  tibble()
+      dplyr::inner_join(., covariate_data_frame) %>%
+      tibble()
+
     surv_object1 <- Surv(
       time = df$left_bound,
       time2 = df$right_bound,
@@ -81,7 +82,7 @@ if(summary == TRUE){
 
 
     if(summary == TRUE){
-      summary(survreg(print(f), data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
+      summary(survreg(f, data = df, dist = type)) #THIS NEEDS TO VARY FOR COVARIATES
     }
     else if(summary == "tidy"){
       tidy(survreg(print(f), data = df, dist = type))

@@ -17,3 +17,7 @@ Imports:
     magrittr
 URL: https://github.com/ajmichaelucd/mic.sim
 BugReports: https://github.com/ajmichaelucd/mic.sim/issues
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

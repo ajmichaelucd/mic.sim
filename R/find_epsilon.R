@@ -35,3 +35,4 @@ find_epsilon <- function(year, sd_1,  sd_2, mean_1_trend, mean_2_trend, mean_1_i
     ungroup()
 }
 
+
