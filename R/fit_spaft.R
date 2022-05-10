@@ -2,61 +2,51 @@
 #'
 #' apply semiparametric accelerated failure time model using smoothSurv
 #'
-#' @param observed_values
-#' @param covariate_data_frame
-#' @param low_con
-#' @param high_con
-#' @param tested_concentrations
+#' @param df
+#' @param covariate_names a vector with all the text names of the covariates (used to build a formula)
+#' @param left_bound
+#' @param right_bound
 #' @param summary
 #'
 #' @return
 #' @export
 #'
-#' @importFrom dplyr mutate
+#' @importFrom dplyr mutate all_of select
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv
 #' @importFrom smoothSurv smoothSurvReg
 #' @importFrom broom tidy
 #'
 #' @examples
-fit_spaft <- function(observed_values,
-                      covariate_data_frame,
-                      low_con = 2^-4,
-                      high_con = 2^4,
-                      tested_concentrations = log2(low_con):log2(high_con),
+fit_spaft <- function(df,
+                      covariate_names,
+                      left_bound,
+                      right_bound,
                       summary = FALSE){
 
-  n  <- covariate_data_frame %>%
-    select(starts_with("covariate_")) %>%
+  n  <- df %>%  ###fix this for covariates from real data
+    select(all_of(covariate_names)) %>%
     ncol(.)
 
   outcome <- "surv_object1"
-  #variables <-
-  variables  <- c("year", paste("covariate_", 1:n, sep = ""))
+  variables  <- c("year", covariate_names)
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),
           sep = " ~ "))
-  df <- censor_values(observed_values,
-                      low_con,
-                      high_con,
-                      tested_concentrations,
-                      output_scale = "concentration") %>%
-    merge(., covariate_data_frame) %>%
-    tibble()
   surv_object1 <- Surv(
-    time = ifelse(df$left_bound == 0, 0.000000000000000000000000001, df$left_bound), #because the survreg can't take ln of 0 or negative numbers
-    time2 = df$right_bound,
+    time = ifelse(left_bound == 0, -Inf, left_bound), #because the survreg can't take ln of 0 or negative numbers
+    time2 = right_bound,
     type = "interval2")
 
 if(summary == TRUE){
-  summary(smoothSurvReg(print(f), data = df)) #THIS NEEDS TO VARY FOR COVARIATES
+  summary(smoothSurvReg(f, data = df)) #THIS NEEDS TO VARY FOR COVARIATES
 }
   else if(summary == "tidy"){
-    tidy(smoothSurvReg(print(f), data = df))
+    tidy(smoothSurvReg(f, data = df))
   }
   else{
-    smoothSurvReg(print(f), data = df)
+    smoothSurvReg(f, data = df)
   }
 
 }

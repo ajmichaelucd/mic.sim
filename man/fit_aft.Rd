@@ -4,17 +4,11 @@
 \alias{fit_aft}
 \title{fit_aft}
 \usage{
-fit_aft(
-  observed_values,
-  covariate_data_frame,
-  type,
-  low_con = 2^-4,
-  high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con),
-  summary = FALSE
-)
+fit_aft(df, covariate_names, left_bound, right_bound, type, summary = FALSE)
 }
 \arguments{
+\item{covariate_names}{a vector with all the text names of the covariates (used to build a formula)}
+
 \item{summary}{}
 }
 \value{

@@ -36,13 +36,15 @@ covariate_list <- list(
   c("categorical", 0.2, 0.2, 0.2, 0.2, 0.2),
   c("numeric", "uniform", 1, 10)
 )
+
+covariate_names <- c("covariate_1", "covariate_2", "covariate_3","covariate_4", "covariate_5")
 ```
 
 
 
 ```{r}
 #Initial Distribution Inputs
-mean_1_intercept = -1
+mean_1_intercept = -4
 sd_1 = 1
 mean_2_intercept = 1
 sd_2 = 1
@@ -100,11 +102,11 @@ head(data.sim)
 purrr::map(
   type_list,
   ~ fit_aft(
-    data.sim$observed_value,
     data.sim,
+    covariate_names,
+    data.sim$left_bound,
+    data.sim$right_bound,
     .x,
-    low_con = 2 ^ -4,
-    high_con = 2 ^ 4,
     summary = TRUE
   )
 )
@@ -114,8 +116,9 @@ purrr::map(
 ```{r}
 
 fit_lr(
-  observed_value = data.sim$observed_value,
   df = data.sim,
+  covariate_names,
+  data.sim$right_bound,
   MIC_breakpoint = 2,
   summary = TRUE
 )
@@ -123,11 +126,11 @@ fit_lr(
 
 ```{r}
 fit_spaft(
-  observed_values = data.sim$observed_value,
-  covariate_data_frame = data.sim,
-  low_con = 2^-4,
-  high_con = 2^4,
-  summary = TRUE
+data.sim,
+    covariate_names,
+    data.sim$left_bound,
+    data.sim$right_bound,
+    summary = TRUE
 )
 ```
 
