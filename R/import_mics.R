@@ -1,0 +1,49 @@
+#' import_mics
+#'
+#' @param df
+#' @param mic_column
+#' @param code_column
+#'
+#' @return
+#' @export
+#'
+#' @importFrom dplyr mutate case_when
+#' @importFrom magrittr %>%
+#' @importFrom stringr str_remove_all
+#'
+#' @examples
+import_mics = function(mic_column, code_column = NULL){
+df_temp <- tibble(mic_column, code_column)
+  if(is.null(code_column)){
+    df_temp %>%
+      mutate(left_bound =
+               dplyr::case_when(
+                 grepl(pattern = "(≤)|(<=)|(=<)", x = mic_column) ~ 0,
+                 grepl(pattern = ">", x = mic_column) ~ as.numeric(stringr::str_remove_all(mic_column, "[>]")),
+                 TRUE ~ as.numeric(mic_column)/2
+               ),
+            right_bound =
+              dplyr::case_when(
+                grepl(pattern = "(≤)|(<=)|(=<)", x = mic_column) ~ stringr::str_remove_all(mic_column, "[≤<=]"),
+                grepl(pattern = ">", x = mic_column) ~ "Inf",
+                TRUE ~ mic_column
+                ) %>% as.numeric()
+            )
+
+  } else{
+    df_temp %>%
+      mutate(left_bound =
+               dplyr::case_when(
+                 grepl(pattern = "(≤)|(<=)|(=<)", x = code_column) ~ 0,
+                 TRUE ~ as.numeric(mic_column)/2
+               ),
+             right_bound =
+               dplyr::case_when(
+                 grepl(pattern = ">", x = code_column) ~ Inf,
+                 TRUE ~ as.numeric(mic_column)
+               )
+      )
+  }
+}
+
+
