@@ -4,16 +4,11 @@
 \alias{fit_spaft}
 \title{fit_spaft}
 \usage{
-fit_spaft(
-  observed_values,
-  covariate_data_frame,
-  low_con = 2^-4,
-  high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con),
-  summary = FALSE
-)
+fit_spaft(df, covariate_names, left_bound, right_bound, summary = FALSE)
 }
 \arguments{
+\item{covariate_names}{a vector with all the text names of the covariates (used to build a formula)}
+
 \item{summary}{}
 }
 \value{

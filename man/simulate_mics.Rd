@@ -15,11 +15,14 @@ simulate_mics(
   pi_1_trend = 0,
   pi_1_intercept = 0.5,
   covariate_list,
-  covariate_effect_vector
+  covariate_effect_vector,
+  low_con = 2^-4,
+  high_con = 2^4,
+  tested_concentrations = log2(low_con):log2(high_con)
 )
 }
 \arguments{
-\item{covariate_effect_vector}{}
+\item{tested_concentrations}{}
 }
 \value{
 
