@@ -10,6 +10,7 @@
 #' @importFrom dplyr mutate case_when
 #' @importFrom magrittr %>%
 #' @importFrom stringr str_remove_all
+#' @importFrom readr parse_number
 #'
 #' @examples
 import_mics = function(mic_column, code_column = NULL){
@@ -19,8 +20,8 @@ df_temp <- tibble(mic_column, code_column)
       mutate(left_bound =
                dplyr::case_when(
                  grepl(pattern = "(≤)|(<=)|(=<)", x = mic_column) ~ 0,
-                 grepl(pattern = ">", x = mic_column) ~ as.numeric(stringr::str_remove_all(mic_column, "[>]")),
-                 TRUE ~ as.numeric(mic_column)/2
+                 grepl(pattern = ">", x = mic_column) ~ readr::parse_number(mic_column),
+                 TRUE ~ readr::parse_number(mic_column)/2
                ),
             right_bound =
               dplyr::case_when(
@@ -35,12 +36,12 @@ df_temp <- tibble(mic_column, code_column)
       mutate(left_bound =
                dplyr::case_when(
                  grepl(pattern = "(≤)|(<=)|(=<)", x = code_column) ~ 0,
-                 TRUE ~ as.numeric(mic_column)/2
+                 TRUE ~ readr::parse_number(mic_column)/2
                ),
              right_bound =
                dplyr::case_when(
                  grepl(pattern = ">", x = code_column) ~ Inf,
-                 TRUE ~ as.numeric(mic_column)
+                 TRUE ~ readr::parse_number(mic_column)
                )
       )
   }
