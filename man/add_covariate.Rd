@@ -4,14 +4,14 @@
 \alias{add_covariate}
 \title{add_covariate}
 \usage{
-add_covariate(covariate_list, year)
+add_covariate(covariate_list, input)
 }
 \arguments{
-\item{year}{}
+\item{input}{}
 }
 \value{
 
 }
 \description{
-adds the covariates based on the covariate_list and year vector
+adds the covariates based on the covariate_list and input vector
 }

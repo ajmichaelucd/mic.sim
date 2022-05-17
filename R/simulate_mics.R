@@ -1,16 +1,14 @@
 #' simulate_mics
 #'
-#' wraps together find_epsilon, add_covariate, covariate_effect_total to produce a tibble with all those outputs included
+#' function that wraps together all the functions that determine t's distribution,
+#' pi and its trends, trends in the mean, component draws, epsilon, covariates,
+#' and censors the data
 #'
-#' @param year
-#' @param sd_1
-#' @param sd_2
-#' @param mean_1_trend
-#' @param mean_2_trend
-#' @param mean_1_intercept
-#' @param mean_2_intercept
-#' @param pi_1_trend
-#' @param pi_1_intercept
+#' @param n
+#' @param t_dist t_dist1 = function(n) {runif(n, min = 0, max = 1)}
+#' @param pi pi = function(t) {z <- 0.5 + 0.2 * t     c(z, 1- z)}
+#' @param mean_func mean_func1 = function(comp, complist = complist1, t) {case_when(comp == 1 ~ complist[[1]](t),comp == 2 ~ complist[[2]](t))}
+#' @param sd_vector
 #' @param covariate_list
 #' @param covariate_effect_vector
 #' @param low_con
@@ -20,13 +18,19 @@
 #' @return
 #' @export
 #'
-#' @importFrom dplyr mutate tibble inner_join
-#' @importFrom magrittr %>%
-#'
 #' @examples
-simulate_mics <- function(year, sd_1 = 1, sd_2 = 1, mean_1_trend = 0, mean_2_trend = 0, mean_1_intercept = -1, mean_2_intercept = 1, pi_1_trend = 0, pi_1_intercept = 0.5, covariate_list, covariate_effect_vector, low_con = 2^-4, high_con = 2^4, tested_concentrations = log2(low_con):log2(high_con)){
-  base_data <- find_epsilon(year, sd_1, sd_2, mean_1_trend, mean_2_trend, mean_1_intercept, mean_2_intercept, pi_1_trend, pi_1_intercept)
-  covariate_data <- add_covariate(covariate_list = covariate_list, year = year)
+simulate_mics <- function(n = 100,
+                           t_dist = t_dist1,
+                           pi = pi1,
+                           mean_func = mean_func1,
+                           sd_vector = c(1,1),
+                           covariate_list,
+                           covariate_effect_vector,
+                           low_con = 2^-4,
+                           high_con = 2^4,
+                           tested_concentrations = log2(low_con):log2(high_con)){
+  base_data <- draw_observed_values(n, t_dist, pi, mean_func, sd_vector)
+  covariate_data <- add_covariate(covariate_list = covariate_list, input = base_data$t)
   merged_data <- tibble(base_data, covariate_data)
   total_cov_effect <- covariate_effect_total(merged_data, covariate_effect_vector)
   simulated_obs <- tibble(merged_data, total_cov_effect) %>%
@@ -34,3 +38,5 @@ simulate_mics <- function(year, sd_1 = 1, sd_2 = 1, mean_1_trend = 0, mean_2_tre
   censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations)
   inner_join(simulated_obs, censored_obs)
 }
+
+

@@ -43,26 +43,34 @@ covariate_names <- c("covariate_1", "covariate_2", "covariate_3","covariate_4", 
 
 
 ```{r}
-#Initial Distribution Inputs
-mean_1_intercept = -4
-sd_1 = 1
-mean_2_intercept = 1
-sd_2 = 1
-pi_1_intercept = 0.5
+n=1000
 
-#Trend Inputs
-mean_1_trend = 0
-mean_2_trend = 0.2
-pi_1_trend = 0
+complist1 = list(
+  f1 = function(t) {3 + t + 2*t^2 -sqrt(t)},
+  f2 = function(t) {3*t}
+)
 
-#Sample Size Inputs
-sample_size_dist = "normal"
-nyears = 5
-norm_mean = 40
-norm_sd = 8
-unif_min = NA
-unif_max = NA
+pi = function(t) {z <- 0.5 + 0.2 * t
+c(z, 1- z)}
 
+
+
+mean_func1 = function(comp, complist, t)
+{
+  case_when(
+    comp == 1 ~ complist[[1]](t),
+    comp == 2 ~ complist[[2]](t))
+}
+
+t_dist1 = function(n)
+{
+  runif(n, min = 0, max = 1)
+}
+
+sd_vector = c(1,1)
+
+low_con = 2^-4
+high_con = 2^4
 
 type_list = c("loglogistic", "lognormal", "weibull", "gaussian", "exponential", "logistic") #list of types of AFT error distributions to use
 
@@ -72,28 +80,17 @@ type_list = c("loglogistic", "lognormal", "weibull", "gaussian", "exponential", 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
 ```{r}
-year <- create_year(sample_size_dist = "normal",
-nyears = 5,
-norm_mean = 40,
-norm_sd = 8,
-unif_min = NA,
-unif_max = NA)
-table(year)
-```
-
-```{r}
 data.sim <- simulate_mics(
-  year = year,
-  sd_1 = sd_1,
-  sd_2 = sd_2,
-  mean_1_trend = mean_1_trend,
-  mean_2_trend = mean_2_trend,
-  mean_1_intercept = mean_1_intercept,
-  mean_2_intercept = mean_2_intercept,
-  pi_1_trend = pi_1_trend,
-  pi_1_intercept = pi_1_intercept,
+  n = n,
+  t_dist = t_dist1,
+  pi = pi1,
+  mean_func = mean_func1,
+  sd_vector = sd_vector,
   covariate_list = covariate_list,
-  covariate_effect_vector = covariate_effect_vector
+  covariate_effect_vector = covariate_effect_vector,
+  low_con = low_con,
+  high_con = high_con
+  
 )
 head(data.sim)
 ```

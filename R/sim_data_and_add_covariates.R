@@ -62,7 +62,4 @@ sim_data_and_add_covariates <- function(nyears = 5, sample_size_dist = "normal",
 }
 
 
-create_cov_names <- function(df){
-  vec = c(1:ncol(df))
-  as_vector(map(vec, ~paste("covariate_", .x, sep = "")))
-}
+

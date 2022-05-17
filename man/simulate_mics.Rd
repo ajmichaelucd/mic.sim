@@ -2,18 +2,14 @@
 % Please edit documentation in R/simulate_mics.R
 \name{simulate_mics}
 \alias{simulate_mics}
-\title{simulate mics}
+\title{simulate_mics}
 \usage{
 simulate_mics(
-  year,
-  sd_1 = 1,
-  sd_2 = 1,
-  mean_1_trend = 0,
-  mean_2_trend = 0,
-  mean_1_intercept = -1,
-  mean_2_intercept = 1,
-  pi_1_trend = 0,
-  pi_1_intercept = 0.5,
+  n = 100,
+  t_dist = t_dist1,
+  pi = pi1,
+  mean_func = mean_func1,
+  sd_vector = c(1, 1),
   covariate_list,
   covariate_effect_vector,
   low_con = 2^-4,
@@ -22,11 +18,19 @@ simulate_mics(
 )
 }
 \arguments{
+\item{t_dist}{t_dist1 = function(n) {runif(n, min = 0, max = 1)}}
+
+\item{pi}{pi = function(t) {z <- 0.5 + 0.2 * t     c(z, 1- z)}}
+
+\item{mean_func}{mean_func1 = function(comp, complist = complist1, t) {case_when(comp == 1 ~ complist[[1]](t),comp == 2 ~ complist[[2]](t))}}
+
 \item{tested_concentrations}{}
 }
 \value{
 
 }
 \description{
-wraps together find_epsilon, add_covariate, covariate_effect_total to produce a tibble with all those outputs included
+function that wraps together all the functions that determine t's distribution,
+pi and its trends, trends in the mean, component draws, epsilon, covariates,
+and censors the data
 }
