@@ -1,6 +1,5 @@
 #' import_mics
 #'
-#' @param df
 #' @param mic_column
 #' @param code_column
 #'

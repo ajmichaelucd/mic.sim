@@ -1,4 +1,4 @@
-#' simulate mics
+#' simulate_mics
 #'
 #' wraps together find_epsilon, add_covariate, covariate_effect_total to produce a tibble with all those outputs included
 #'
