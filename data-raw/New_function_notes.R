@@ -51,7 +51,7 @@ draw_observed_values <- function(n = 100,
                                  mean_func = mean_func1,
                                  comp_func = gen_comp,
                                  sd_vector = c("1" = 1, "2" = 2)){
-  component_mean(n, t_dist, pi, mean_func, comp_func) %>%
+  component_mean(n, t_dist, pi, mean_func) %>%
   mutate(sd = sd_vector[comp]) %>%
   mutate(epsilon = rnorm(length(t), x, sd))
 

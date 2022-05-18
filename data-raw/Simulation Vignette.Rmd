@@ -50,7 +50,7 @@ complist1 = list(
   f2 = function(t) {3*t}
 )
 
-pi = function(t) {z <- 0.5 + 0.2 * t
+pi1 = function(t) {z <- 0.5 + 0.2 * t
 c(z, 1- z)}
 
 
@@ -77,7 +77,7 @@ type_list = c("loglogistic", "lognormal", "weibull", "gaussian", "exponential", 
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
 
 ```{r}
 data.sim <- simulate_mics(
@@ -85,6 +85,7 @@ data.sim <- simulate_mics(
   t_dist = t_dist1,
   pi = pi1,
   mean_func = mean_func1,
+  complist = complist1,
   sd_vector = sd_vector,
   covariate_list = covariate_list,
   covariate_effect_vector = covariate_effect_vector,

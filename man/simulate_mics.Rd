@@ -9,6 +9,7 @@ simulate_mics(
   t_dist = t_dist1,
   pi = pi1,
   mean_func = mean_func1,
+  complist = complist1,
   sd_vector = c(1, 1),
   covariate_list,
   covariate_effect_vector,

@@ -4,10 +4,16 @@
 \alias{component_mean}
 \title{component_mean}
 \usage{
-component_mean(n = 100, t_dist = t_dist1, pi = pi1, mean_func = mean_func1)
+component_mean(
+  n = 100,
+  t_dist = t_dist1,
+  pi = pi1,
+  mean_func = mean_func1,
+  complist = complist1
+)
 }
 \arguments{
-\item{mean_func}{}
+\item{complist}{}
 }
 \value{
 
