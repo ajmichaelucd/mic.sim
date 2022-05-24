@@ -3,7 +3,6 @@
 #' @param n
 #' @param t_dist
 #' @param pi
-#' @param mean_func
 #' @param complist
 #'
 #' @return
@@ -15,21 +14,37 @@
 #'
 #' @examples
 component_mean = function(
-    n = 100,
-    t_dist = t_dist1,
-    pi = pi1,
-    mean_func = mean_func1,
-    complist = complist1)
+  n = 100,
+  t_dist = t_dist1,
+  pi = pi1,
+  complist = complist1)
 {
+  temp =
+    tibble(t = t_dist(n = n),
+      p = map(t, ~ pi(.x)),
+      comp = gen_comp(p)) |>
+    group_by(comp)
 
-  tibble(
-    t = t_dist(n = n),
-    p = map(t, ~pi(.x)),
-    comp = as_vector(gen_comp(t, p)),
-    x = mean_func(t = t, comp = comp, complist = complist))
+  temp2 = split(temp, f = temp$comp)
+
+  temp3 = purrr::map_dfr(
+    .x = names(temp2),
+    .f = function(x)
+    {
+      temp2[[x]] |>
+        mutate(x = complist[[x]](t))
+
+    }
+  )
+
 }
 
-gen_comp = function(t, p)
+gen_comp = function(p)
 {
-  map(p, ~sample.int(n = length(.x), size = 1, prob = .x, replace = TRUE))
+  purrr::map_chr(p, ~ sample(
+    x = names(.x),
+    size = 1,
+    prob = .x,
+    replace = TRUE
+  ))
 }

@@ -18,13 +18,12 @@
 draw_epsilon <- function(n = 100,
                                  t_dist = t_dist1,
                                  pi = pi1,
-                                 mean_func = mean_func1,
                                  complist = list(
-                                   f1 = function(t) {3 + t + 2*t^2 -sqrt(t)},
-                                   f2 = function(t) {3*t}
+                                   "1" = function(t) {3 + t + 2*t^2 -sqrt(t)},
+                                   "2" = function(t) {3*t}
                                  ),
-                                 sd_vector = c("1" = 1, "2" = 2)){
-  component_mean(n, t_dist, pi, mean_func, complist) %>%
+                                 sd_vector = c("group1" = 1, "group2" = 2)){
+  component_mean(n, t_dist, pi, complist) %>%
     mutate(sd = sd_vector[comp]) %>%
     mutate(epsilon = rnorm(length(t), x, sd))
 }
