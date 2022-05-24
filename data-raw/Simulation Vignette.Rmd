@@ -74,7 +74,7 @@ high_con = 2^4
 
 type_list = c("loglogistic", "lognormal", "weibull", "gaussian", "exponential", "logistic") #list of types of AFT error distributions to use
 
-
+MIC_breakpoint = 2
 ```
 
 
@@ -101,6 +101,7 @@ purrr::map(
   type_list,
   ~ fit_aft(
     data.sim,
+    time = "t",
     covariate_names,
     data.sim$left_bound,
     data.sim$right_bound,
@@ -115,16 +116,18 @@ purrr::map(
 
 fit_lr(
   df = data.sim,
+  time = "t",
   covariate_names,
   data.sim$right_bound,
-  MIC_breakpoint = 2,
+  MIC_breakpoint = MIC_breakpoint,
   summary = TRUE
 )
 ```
 
 ```{r}
 fit_spaft(
-data.sim,
+  data.sim,
+  time = "t",
     covariate_names,
     data.sim$left_bound,
     data.sim$right_bound,
