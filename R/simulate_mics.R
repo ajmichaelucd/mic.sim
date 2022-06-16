@@ -37,7 +37,8 @@ simulate_mics <- function(
   covariate_effect_vector,
   low_con = 2^-4,
   high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con)){
+  tested_concentrations = log2(low_con):log2(high_con))
+{
   base_data <- draw_epsilon(n, t_dist, pi, complist, sd_vector)
   covariate_data <- add_covariate(covariate_list = covariate_list, input = base_data$t)
   merged_data <- tibble(base_data, covariate_data)
