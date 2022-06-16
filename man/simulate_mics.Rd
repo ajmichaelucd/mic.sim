@@ -8,7 +8,6 @@ simulate_mics(
   n = 100,
   t_dist = t_dist1,
   pi = pi1,
-  mean_func = mean_func1,
   complist = complist1,
   sd_vector = c(1, 1),
   covariate_list,
@@ -23,12 +22,7 @@ simulate_mics(
 
 \item{pi}{pi = function(t) {z <- 0.5 + 0.2 * t     c(z, 1- z)}}
 
-\item{mean_func}{mean_func1 = function(comp, complist = complist1, t) {case_when(comp == 1 ~ complist[[1]](t),comp == 2 ~ complist[[2]](t))}}
-
 \item{tested_concentrations}{}
-}
-\value{
-
 }
 \description{
 function that wraps together all the functions that determine t's distribution,

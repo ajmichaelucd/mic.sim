@@ -9,9 +9,6 @@ import_mics(mic_column, code_column = NULL)
 \arguments{
 \item{code_column}{}
 }
-\value{
-
-}
 \description{
 import_mics
 }

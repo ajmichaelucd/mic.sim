@@ -9,11 +9,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(mic.sim)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
 ##Covariate inputs--------------------
@@ -80,6 +75,7 @@ MIC_breakpoint = 2
 
 
 ```{r}
+
 data.sim <- simulate_mics(
   n = n,
   t_dist = t_dist1,
@@ -90,9 +86,8 @@ data.sim <- simulate_mics(
   covariate_list = covariate_list,
   covariate_effect_vector = covariate_effect_vector,
   low_con = low_con,
-  high_con = high_con
-  
-)
+  high_con = high_con)
+
 head(data.sim)
 ```
 
