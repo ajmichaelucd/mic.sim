@@ -6,6 +6,7 @@
 \usage{
 fit_lr(
   df,
+  time = "t",
   covariate_names,
   left_bound,
   right_bound,

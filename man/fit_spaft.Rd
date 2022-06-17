@@ -4,7 +4,14 @@
 \alias{fit_spaft}
 \title{fit_spaft}
 \usage{
-fit_spaft(df, covariate_names, left_bound, right_bound, summary = FALSE)
+fit_spaft(
+  df,
+  time = "t",
+  covariate_names,
+  left_bound,
+  right_bound,
+  summary = FALSE
+)
 }
 \arguments{
 \item{covariate_names}{a vector with all the text names of the covariates (used to build a formula)}
