@@ -12,7 +12,7 @@ c(z, 1- z)}
 
 
 
-mean_func1 = function(comp, complist = complist1, t)
+mean_func1 = function(comp, complist, t)
 {
   case_when(
     comp == 1 ~ complist[[1]](t),
@@ -33,23 +33,16 @@ component_mean = function(
     n = 100,
     t_dist = t_dist1,
     pi = pi1,
-    mean_func = mean_func1,
-    comp_func = gen_comp)
+    mean_func = mean_func1)
 {
 
   tibble(
     t = t_dist(n = n),
     p = map(t, ~pi(.x)),
-    comp = gen_comp(t, p),
-    x = mean_func(t = t, comp = comp)) %>%
-    mutate(sd = sd[as.numeric(comp)]) %>%
-    rowwise() %>%
-    mutate(value = rnorm(1, x, sd)) %>%
-    ungroup() %>%
-    mutate(comp = as.double(as_vector(comp)))
-
+    comp = as_vector(gen_comp(t, p)),
+    x = mean_func(t = t, comp = comp))
 }
-
+component_mean()
 sd = c(1, 2)
 
 draw_observed_values <- function(n = 100,
@@ -57,33 +50,36 @@ draw_observed_values <- function(n = 100,
                                  pi = pi1,
                                  mean_func = mean_func1,
                                  comp_func = gen_comp,
-                                 sd_vector = c(1,1)){
-  component_mean(n, t_dist, pi, mean_func, comp_func) %>%
-  mutate(sd = sd_vector[as.numeric(comp)]) %>%
-  rowwise() %>%
-  mutate(value = rnorm(1, x, sd)) %>%
-  ungroup() %>%
-  mutate(comp = as.double(as_vector(comp)))
+                                 sd_vector = c("1" = 1, "2" = 2)){
+  component_mean(n, t_dist, pi, mean_func) %>%
+  mutate(sd = sd_vector[comp]) %>%
+  mutate(epsilon = rnorm(length(t), x, sd))
 
 }
-
-  draw_observed_values()
-
-  %>%
-  mutate(z = (value - x) / sd) %>% select( !p) %>%
-  ggplot2::ggplot() +
-  ggplot2::geom_histogram(ggplot2::aes(x = z))
-
-simulate_mics()
+draw_observed_values()
+  #draw_observed_values(n, t_dist, pi, mean_func, comp_func, sd_vector)
 
 
-as_vector(a$comp)
-
-a %>%
-  select(comp) %>%
-  filter(comp = 1)
-
-
-p =
-mapply(function(x) sample.int(n = length(p), size = length(t), prob = x,), p)
-
+  simulate_mics2 <- function(n = 100,
+                            t_dist = t_dist1,
+                            pi = pi1,
+                            mean_func = mean_func1,
+                            comp_func = gen_comp,
+                            sd_vector = c(1,1),
+                            covariate_list,
+                            covariate_effect_vector,
+                            low_con = 2^-4,
+                            high_con = 2^4,
+                            tested_concentrations = log2(low_con):log2(high_con)){
+    #base_data <- find_epsilon(year, sd_1, sd_2, mean_1_trend, mean_2_trend, mean_1_intercept, mean_2_intercept, pi_1_trend, pi_1_intercept)
+    base_data <- draw_observed_values(n, t_dist, pi, mean_func, comp_func, sd_vector)
+    covariate_data <- add_covariate(covariate_list = covariate_list, input = base_data$t)
+    merged_data <- tibble(base_data, covariate_data)
+    total_cov_effect <- covariate_effect_total(merged_data, covariate_effect_vector)
+    simulated_obs <- tibble(merged_data, total_cov_effect) %>%
+      mutate(observed_value = epsilon + total_cov_effect)
+    censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations)
+    inner_join(simulated_obs, censored_obs)
+  }
+simulate_mics2(covariate_list = covariate_list,
+               covariate_effect_vector = covariate_effect_vector)

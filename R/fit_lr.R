@@ -1,6 +1,7 @@
 #' fit_lr
 #'
 #' @param df data frame of year, observed values (colname is observed_value), and covariates
+#' @param time
 #' @param covariate_names
 #' @param right_bound
 #' @param MIC_breakpoint on MIC scale, highest value that is still S (so if the guide says all organisms with an MIC ≤ 2  are S and ≥ 4 are R, the breakpoint is 2)
@@ -14,14 +15,14 @@
 #' @importFrom broom tidy
 #'
 #' @examples
-fit_lr <- function(df, covariate_names, left_bound, right_bound, MIC_breakpoint, summary = FALSE){
+fit_lr <- function(df, time = "t", covariate_names, left_bound, right_bound, MIC_breakpoint, summary = FALSE){
 
   n  <- df %>%  ###fix this for covariates from real data
     select(all_of(covariate_names)) %>%
     ncol(.)
 
   outcome <- "dichot"
-  variables  <- c("year", covariate_names)
+  variables  <- c(time, covariate_names)
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),

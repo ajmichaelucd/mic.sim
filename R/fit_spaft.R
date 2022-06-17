@@ -3,6 +3,7 @@
 #' apply semiparametric accelerated failure time model using smoothSurv
 #'
 #' @param df
+#' @param time
 #' @param covariate_names a vector with all the text names of the covariates (used to build a formula)
 #' @param left_bound
 #' @param right_bound
@@ -19,6 +20,7 @@
 #'
 #' @examples
 fit_spaft <- function(df,
+                      time = "t",
                       covariate_names,
                       left_bound,
                       right_bound,
@@ -29,7 +31,7 @@ fit_spaft <- function(df,
     ncol(.)
 
   outcome <- "surv_object1"
-  variables  <- c("year", covariate_names)
+  variables  <- c(time, covariate_names)
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),

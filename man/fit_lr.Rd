@@ -6,6 +6,7 @@
 \usage{
 fit_lr(
   df,
+  time = "t",
   covariate_names,
   left_bound,
   right_bound,
@@ -19,9 +20,6 @@ fit_lr(
 \item{MIC_breakpoint}{on MIC scale, highest value that is still S (so if the guide says all organisms with an MIC ≤ 2  are S and ≥ 4 are R, the breakpoint is 2)}
 
 \item{summary}{whether the output is the summary.glm  (TRUE) or the glm object}
-}
-\value{
-
 }
 \description{
 fit_lr

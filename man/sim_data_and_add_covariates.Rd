@@ -30,9 +30,6 @@ sim_data_and_add_covariates(
 \arguments{
 \item{initial_upper_slp_lambda}{}
 }
-\value{
-
-}
 \description{
 Title
 }

@@ -4,15 +4,20 @@
 \alias{fit_aft}
 \title{fit_aft}
 \usage{
-fit_aft(df, covariate_names, left_bound, right_bound, type, summary = FALSE)
+fit_aft(
+  df,
+  time = "t",
+  covariate_names,
+  left_bound,
+  right_bound,
+  type,
+  summary = FALSE
+)
 }
 \arguments{
 \item{covariate_names}{a vector with all the text names of the covariates (used to build a formula)}
 
 \item{summary}{}
-}
-\value{
-
 }
 \description{
 fit_aft
