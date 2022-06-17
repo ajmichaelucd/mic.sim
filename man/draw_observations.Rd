@@ -23,9 +23,6 @@ draw_observations(
 \arguments{
 \item{initial_upper_slp_lambda}{}
 }
-\value{
-
-}
 \description{
 draws a single observation from a two-component gaussian mixture model
 }

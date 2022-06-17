@@ -6,10 +6,16 @@
 \usage{
 simulate_mics(
   n = 100,
+<<<<<<< HEAD
   t_dist = function(n) {     runif(n, min = 0, max = 1) },
   pi = function(t) {     z <- 0.5 + 0.2 * t     c(z, 1 - z) },
   complist = list(`1` = function(t) {     3 + t + 2 * t^2 - sqrt(t) }, `2` =
     function(t) {     3 * t }),
+=======
+  t_dist = t_dist1,
+  pi = pi1,
+  complist = complist1,
+>>>>>>> f9e90138c01c250990b562d0793552f368a42331
   sd_vector = c(1, 1),
   covariate_list,
   covariate_effect_vector,
@@ -24,9 +30,6 @@ simulate_mics(
 \item{pi}{pi = function(t) {z <- 0.5 + 0.2 * t     c(z, 1- z)}}
 
 \item{tested_concentrations}{}
-}
-\value{
-
 }
 \description{
 function that wraps together all the functions that determine t's distribution,

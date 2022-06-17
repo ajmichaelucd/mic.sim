@@ -4,6 +4,7 @@
 \alias{component_mean}
 \title{component_mean}
 \usage{
+<<<<<<< HEAD
 component_mean(
   n = 100,
   t_dist = function(n) {     runif(n, min = 0, max = 1) },
@@ -11,12 +12,12 @@ component_mean(
   complist = list(f1 = function(t) {     3 + t + 2 * t^2 - sqrt(t) }, f2 = function(t)
     {     3 * t })
 )
+=======
+component_mean(n = 100, t_dist = t_dist1, pi = pi1, complist = complist1)
+>>>>>>> f9e90138c01c250990b562d0793552f368a42331
 }
 \arguments{
 \item{complist}{}
-}
-\value{
-
 }
 \description{
 component_mean
