@@ -18,7 +18,7 @@
 #' @return
 #' @export
 #'
-#' @importFrom dplyr tibble mutate inner_join
+#' @importFrom dplyr tibble mutate inner_join group_by
 #' @importFrom magrittr %>%
 #' @importFrom purrr map as_vector
 #'

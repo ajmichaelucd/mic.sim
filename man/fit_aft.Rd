@@ -19,6 +19,9 @@ fit_aft(
 
 \item{summary}{}
 }
+\value{
+
+}
 \description{
 fit_aft
 }

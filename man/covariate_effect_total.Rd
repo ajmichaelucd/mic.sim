@@ -9,6 +9,9 @@ covariate_effect_total(data_tibble, covariate_effect_vector)
 \arguments{
 \item{covariate_effect_vector}{}
 }
+\value{
+
+}
 \description{
 uses model.matrix to
 }

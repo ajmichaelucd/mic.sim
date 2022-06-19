@@ -14,6 +14,9 @@ censor_values(
 \arguments{
 \item{tested_concentrations}{}
 }
+\value{
+
+}
 \description{
 adds new columns with left and right censoring indicators, setting up the creation of a Surv object with interval2 format
 }

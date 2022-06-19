@@ -19,6 +19,9 @@ find_epsilon(
 \arguments{
 \item{pi_1_intercept}{}
 }
+\value{
+
+}
 \description{
 finds the base value for each observation by drawing from a gaussian mixture with 2 components
 }
