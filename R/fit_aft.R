@@ -31,7 +31,7 @@ fit_aft <- function(df,
 
   if(type %in% c("loglogistic", "weibull", "lognormal", "exponential")){
     outcome <- "surv_object1"
-    variables  <- c(time, covariate_names)
+    variables  <- ifelse(is.null(time) & is.null(covariate_names), "1", c(time, covariate_names))
     f <- as.formula(
       paste(outcome,
             paste(variables, collapse = " + "),
@@ -53,7 +53,7 @@ fit_aft <- function(df,
   }
   else if(type %in% c("logistic", "gaussian")){
     outcome <- "surv_object1"
-    variables  <- c(time, covariate_names)
+    variables  <- ifelse(is.null(time) & is.null(covariate_names), "1", c(time, covariate_names))
     f <- as.formula(
       paste(outcome,
             paste(variables, collapse = " + "),

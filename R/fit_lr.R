@@ -22,7 +22,7 @@ fit_lr <- function(df, time = "t", covariate_names, left_bound, right_bound, MIC
     ncol(.)
 
   outcome <- "dichot"
-  variables  <- c(time, covariate_names)
+  variables  <- ifelse(is.null(time) & is.null(covariate_names), "1", c(time, covariate_names))
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),

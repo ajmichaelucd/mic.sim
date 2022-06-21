@@ -31,7 +31,7 @@ fit_spaft <- function(df,
     ncol(.)
 
   outcome <- "surv_object1"
-  variables  <- c(time, covariate_names)
+  variables  <- ifelse(is.null(time) & is.null(covariate_names), "1", c(time, covariate_names))
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),

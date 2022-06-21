@@ -17,10 +17,10 @@ component_mean = function(
   n = 100,
   t_dist = function(n){runif(n, min = 0, max = 1)},
   pi = function(t) {z <- 0.5 + 0.2 * t
-                    c(z, 1- z)},
+                    c("1" = z, "2" = 1- z)},
   complist = list(
-    f1 = function(t) {3 + t + 2*t^2 -sqrt(t)},
-    f2 = function(t) {3*t}
+    "1" = function(t) {3 + t + 2*t^2 -sqrt(t)},
+    "2" = function(t) {3*t}
   ))
 {
   temp =

@@ -7,10 +7,10 @@
 simulate_mics(
   n = 100,
   t_dist = function(n) {     runif(n, min = 0, max = 1) },
-  pi = function(t) {     z <- 0.5 + 0.2 * t     c(z, 1 - z) },
+  pi = function(t) {     z <- 0.5 + 0.2 * t     c(`1` = z, `2` = 1 - z) },
   complist = list(`1` = function(t) {     3 + t + 2 * t^2 - sqrt(t) }, `2` =
     function(t) {     3 * t }),
-  sd_vector = c(1, 1),
+  sd_vector = c(`1` = 1, `2` = 2),
   covariate_list,
   covariate_effect_vector,
   low_con = 2^-4,
