@@ -7,14 +7,14 @@ mean_i <- intercept + year_coef * (year)
 rnorm(1, mean_i, sd)
 }
 
-dat <- tibble(year = c(rep(0, 10),
-                rep(1, 15),
-                rep(2, 20),
-                rep(3, 30)
+dat <- tibble(year = c(rep(0, 10000),
+                rep(1, 15000),
+                rep(2, 20000),
+                rep(3, 30000)
                 )) %>%
-  rowwise() %>% 
-  mutate(value = draw_base(., year = year, year_coef = 1, intercept = 0, sd = 1)) %>% 
-  ungroup() %>% 
+  rowwise() %>%
+  mutate(value = draw_base(., year = year, year_coef = 1, intercept = 0, sd = 1)) %>%
+  ungroup() %>%
   mutate(ub = ceiling(value),
          lb = floor(value))
 
@@ -38,7 +38,7 @@ survreg(Z ~ year, data = dat, dist = 'exponential') #takes the log of the times
 survreg(Z ~ year, data = dat, dist = 'loglogistic') #takes the log of the times
 
 survreg(Z ~ year, data = dat, dist = 'gaussian') #takes the log of the times
-survreg(Z ~ year, data = dat, dist = 'exponential') 
+survreg(Z ~ year, data = dat, dist = 'exponential')
 
 
 survreg(L ~ year, data = dat, dist = 'weibull')

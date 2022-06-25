@@ -41,7 +41,7 @@ if(is.null(covariate_list)){
   base_data <- draw_epsilon(n, t_dist, pi, complist, sd_vector)
   simulated_obs <- base_data %>% mutate(observed_value = epsilon)
   censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations)
-  inner_join(simulated_obs, censored_obs)
+  inner_join(simulated_obs, censored_obs, by = "observed_value")
   } else{
   base_data <- draw_epsilon(n, t_dist, pi, complist, sd_vector)
   covariate_data <- add_covariate(covariate_list = covariate_list, input = base_data$t)
