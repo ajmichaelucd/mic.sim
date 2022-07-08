@@ -26,8 +26,7 @@ component_mean = function(
   temp =
     tibble(t = t_dist(n = n),
       p = map(t, ~ pi(.x)),
-      comp = gen_comp(p)) %>%
-    group_by(comp)
+      comp = gen_comp(p))
 
   temp2 = split(temp, f = temp$comp)
 

@@ -39,7 +39,7 @@ simulate_mics <- function(n = 100,
                            tested_concentrations = log2(low_con):log2(high_con)){
 if(is.null(covariate_list)){
   base_data <- draw_epsilon(n, t_dist, pi, complist, sd_vector)
-  simulated_obs <- base_data %>% mutate(observed_value = epsilon)
+  simulated_obs <- base_data %>% mutate(observed_value = epsilon + x)
   censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations)
   inner_join(simulated_obs, censored_obs, by = "observed_value")
   } else{
@@ -48,7 +48,7 @@ if(is.null(covariate_list)){
   merged_data <- tibble(base_data, covariate_data)
   total_cov_effect <- covariate_effect_total(merged_data, covariate_effect_vector)
   simulated_obs <- tibble(merged_data, total_cov_effect) %>%
-    mutate(observed_value = epsilon + total_cov_effect)
+    mutate(observed_value = epsilon + total_cov_effect + x)
   censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations)
   inner_join(simulated_obs, censored_obs)
   }

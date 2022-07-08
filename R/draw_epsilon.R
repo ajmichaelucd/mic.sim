@@ -26,5 +26,5 @@ draw_epsilon <- function(n = 100,
                                  sd_vector = c("1" = 1, "2" = 2)){
   component_mean(n, t_dist, pi, complist) %>%
     mutate(sd = sd_vector[comp]) %>%
-    mutate(epsilon = rnorm(length(t), x, sd))
+    mutate(epsilon = rnorm(length(t), 0, sd))
 }

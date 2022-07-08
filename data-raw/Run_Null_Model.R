@@ -109,16 +109,16 @@ bbb
 
 
 ccc <- bbb %>% mutate(
-  loglogistic = log2(exp(loglogistic)),
-  lognormal = log2(exp(lognormal)),
-  weibull = log2(exp(weibull)),
-  exponential = log2(exp(exponential))
+  loglogistic = ((loglogistic) / ln(2)),
+  lognormal = ((lognormal) / ln(2))
+#  weibull = log2(exp(weibull)),
+#  exponential = log2(exp(exponential))
 )
 ccc %>%
   pivot_longer(loglogistic:logistic) %>%
   group_by(name) %>%
   summarize(mean =  mean(value),
-            sd = sd(value)) #standard error should be 0.1 b/c 1/sqrt(100) = 0.1
+            se = sd(value)) #standard error should be 0.1 b/c 1/sqrt(100) = 0.1
 
 ccc %>%
   pivot_longer(loglogistic:logistic) %>%
