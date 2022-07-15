@@ -6,3 +6,6 @@
 .Rdata
 .httr-oauth
 inst/doc
+mic.sim.Rcheck/
+mic.sim*.tar.gz
+mic.sim*.tgz
