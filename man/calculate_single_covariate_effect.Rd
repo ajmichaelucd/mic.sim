@@ -12,6 +12,9 @@ calculate_single_covariate_effect(
 \arguments{
 \item{covariate_list_of_lists}{}
 }
+\value{
+
+}
 \description{
 used in the find_covariate_effects function on each covariate to find the individual covariate effect for each observation in simulated data
 }

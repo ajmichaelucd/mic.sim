@@ -2,6 +2,7 @@
 #'
 #' @param mic_column
 #' @param code_column
+#' @param combination_agent
 #'
 #' @return
 #' @export
@@ -12,8 +13,14 @@
 #' @importFrom readr parse_number
 #'
 #' @examples
-import_mics = function(mic_column, code_column = NULL){
-df_temp <- tibble(mic_column, code_column)
+import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE){
+
+  df_temp <- dplyr::tibble(mic_column = dplyr::case_when(
+    combination_agent == FALSE ~ mic_column,
+    TRUE ~ gsub("/.*$", "", mic_column)
+  ),
+  code_column)
+
   if(is.null(code_column)){
     df_temp %>%
       mutate(left_bound =

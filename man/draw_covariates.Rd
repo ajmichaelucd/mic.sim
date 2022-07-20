@@ -9,6 +9,9 @@ draw_covariates(input, cov_list)
 \arguments{
 \item{cov_list}{}
 }
+\value{
+
+}
 \description{
 draw_covariates function uses the draw_categorical_covariate and draw_numerical_covariate to add covariates to a dataframe or tibble of drawn observations
 }

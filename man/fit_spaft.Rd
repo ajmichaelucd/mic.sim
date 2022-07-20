@@ -18,6 +18,9 @@ fit_spaft(
 
 \item{summary}{}
 }
+\value{
+
+}
 \description{
 apply semiparametric accelerated failure time model using smoothSurv
 }

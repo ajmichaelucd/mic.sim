@@ -4,10 +4,13 @@
 \alias{import_mics}
 \title{import_mics}
 \usage{
-import_mics(mic_column, code_column = NULL)
+import_mics(mic_column, code_column = NULL, combination_agent = FALSE)
 }
 \arguments{
-\item{code_column}{}
+\item{combination_agent}{}
+}
+\value{
+
 }
 \description{
 import_mics

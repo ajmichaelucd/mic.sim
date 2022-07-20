@@ -28,6 +28,9 @@ sim_data(
 \arguments{
 \item{initial_upper_slp_lambda}{}
 }
+\value{
+
+}
 \description{
 Function to draw values for each year
 }

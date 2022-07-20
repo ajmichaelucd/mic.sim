@@ -15,15 +15,18 @@
 #' @examples
 component_mean = function(
   n = 100,
-  t_dist = t_dist1,
-  pi = pi1,
-  complist = complist1)
+  t_dist = function(n){runif(n, min = 0, max = 1)},
+  pi = function(t) {z <- 0.5 + 0.2 * t
+                    c("1" = z, "2" = 1- z)},
+  complist = list(
+    "1" = function(t) {3 + t + 2*t^2 -sqrt(t)},
+    "2" = function(t) {3*t}
+  ))
 {
   temp =
     tibble(t = t_dist(n = n),
       p = map(t, ~ pi(.x)),
-      comp = gen_comp(p)) |>
-    group_by(comp)
+      comp = gen_comp(p))
 
   temp2 = split(temp, f = temp$comp)
 
@@ -31,7 +34,7 @@ component_mean = function(
     .x = names(temp2),
     .f = function(x)
     {
-      temp2[[x]] |>
+      temp2[[x]] %>%
         mutate(x = complist[[x]](t))
 
     }

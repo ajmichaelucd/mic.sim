@@ -16,6 +16,9 @@ create_year(
 \arguments{
 \item{unif_max}{}
 }
+\value{
+
+}
 \description{
 create_year
 }
