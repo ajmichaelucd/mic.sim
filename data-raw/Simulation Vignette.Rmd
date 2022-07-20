@@ -54,7 +54,7 @@ sd_vector = c("1" = 1, "2" = 2)
 low_con = 2^-4
 high_con = 2^4
 
-type_list = c("loglogistic", "lognormal", "weibull", "gaussian", "exponential", "logistic") #list of types of AFT error distributions to use
+type_list = c("exponential", "weibull", "lognormal",   "loglogistic", "gaussian", "logistic" ) #list of types of AFT error distributions to use
 
 MIC_breakpoint = 2
 ```
@@ -89,7 +89,7 @@ purrr::map(
     .x,
     summary = TRUE
   )
-)
+) %>% set_names(nm = type_list)
 
 ```
 

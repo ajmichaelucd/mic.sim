@@ -39,7 +39,8 @@ data.sim <- simulate_mics(
 data.sim
 
 plot(data.sim$t, data.sim$observed_value)
-abline(a = 0, b = 0.5, col = "blue")
+abline(a = 0, b = 1000, col = "blue")
+min(data.sim$observed_value)
 
 
 purrr::map(
@@ -54,6 +55,20 @@ purrr::map(
     summary = TRUE
   )
 )
+
+lm1 = lm(Sepal.Length ~ 1, data = iris)
+get_se = function(model, parameters = c("(Intercept)"))
+{
+  if(!inherits(model, "summary")) model = summary(model)
+   temp = model %>% coef()
+  temp2 = temp[parameters, "Std. Error"]
+  return(temp2)
+}
+
+get_se(lm1, parameters = "(Intercept)")
+#map get_se across list
+#write another for t_coef, intercept, Log(scale)
+
 
 grab_aft_output <- function(data.sim, time, covariate_names, left_bound, right_bound, type_list, summary){
   aa <- fit_aft(data.sim, time, covariate_names, left_bound, right_bound, type_list, summary)
@@ -99,11 +114,39 @@ run_an_aft_model <- function(covariate_effect_vector, covariate_list, covariate_
       summary
     )
   ) %>% dplyr::bind_rows() %>%
-    tidyr::pivot_wider(names_from = name, values_from = coef) %>% mutate(iteration = iteration)
+    tidyr::pivot_wider(names_from = name, values_from = coef) %>%
+    mutate(iteration = iteration)
 }
+#slope 0.5
+complist1 = list(
+  "1" = function(t) {0 + 0.5 * t})
+
+purrr::map(c(1:10), ~run_an_aft_model(covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, covariate_names = covariate_names, n = 100, t_dist = t_dist1, pi = pi1, complist = complist1, sd_vector = sd_vector, low_con = 2^-4, high_con = 2^4, type_list = type_list, time = "t", MIC_breakpoint = 0, summary = FALSE, iteration = .x)) %>%
+  dplyr::bind_rows() -> slope_0.5
+#slope 1000
+complist1 = list(
+  "1" = function(t) {0 + 1000 * t})
 
 purrr::map(c(1:1000), ~run_an_aft_model(covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, covariate_names = covariate_names, n = 100, t_dist = t_dist1, pi = pi1, complist = complist1, sd_vector = sd_vector, low_con = 2^-4, high_con = 2^4, type_list = type_list, time = "t", MIC_breakpoint = 0, summary = FALSE, iteration = .x)) %>%
-  dplyr::bind_rows() -> bbb
+  dplyr::bind_rows() -> slope_1000
+#slope 0.001
+complist1 = list(
+  "1" = function(t) {0 + 0.001 * t})
+
+purrr::map(c(1:1000), ~run_an_aft_model(covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, covariate_names = covariate_names, n = 100, t_dist = t_dist1, pi = pi1, complist = complist1, sd_vector = sd_vector, low_con = 2^-4, high_con = 2^4, type_list = type_list, time = "t", MIC_breakpoint = 0, summary = FALSE, iteration = .x)) %>%
+  dplyr::bind_rows() -> slope_0.001
+
+
+#add check n_distinct > 1
+
+
+
+
+
+
+
+
+
 
 bbb
 #with 2^data, we need to take log2(exp(coef)) to get the coefficient
@@ -113,8 +156,8 @@ bbb
 
 
 ccc <- bbb %>% mutate(
-  loglogistic = ((loglogistic) / ln(2)),
-  lognormal = ((lognormal) / ln(2))
+  loglogistic = ((loglogistic) / log(2)),
+  lognormal = ((lognormal) / log(2))
   #  weibull = log2(exp(weibull)),
   #  exponential = log2(exp(exponential))
 )
