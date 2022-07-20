@@ -3,7 +3,7 @@
 #' @param n
 #' @param t_dist
 #' @param pi
-#' @param complist
+#' @param `E[X|T,C]`
 #'
 #' @return
 #' @export
