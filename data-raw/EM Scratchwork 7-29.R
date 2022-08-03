@@ -1,7 +1,7 @@
 library(magrittr)
 
 #data generation------------
-n=100
+n=200
 
 pi1 = function(t) {z <- 0.65
 c("1" = z, "2" = 1- z)}
@@ -32,6 +32,13 @@ data.sim <- simulate_mics(
 
 hist(data.sim$observed_value)
 
+data.sim %>% group_by(comp) %>%
+  summarise(
+    n = n()) %>%
+  mutate(total = n / sum(n))
+
+
+
 
 visible_data <- data.sim %>%
   select(c(t, y = observed_value)) %>%
@@ -42,9 +49,9 @@ visible_data <- data.sim %>%
 #mu_initial <-
 #sigma_initial <-
 random_complement_probs <- function(min = 0, max = 1){
-a <- runif(1, min, max)
-b <- 1-a
-c(a, b)}
+  a <- runif(1, min, max)
+  b <- 1-a
+  c(a, b)}
 random_complement_probs()
 
 mean_y <- mean(visible_data$y)
@@ -57,11 +64,15 @@ possible_data <- visible_data %>% #visible data with c for component
   ) %>%
   mutate(
     `P(C=c|y,t)` = ifelse(y > mean_y, c == "1", c == "2"
-                          ) %>% as.numeric()) %>%
+    ) %>% as.numeric()) %>%
   print()
 
 
 max_it = 80
+
+likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 2)
+likelihood_documentation [,1] <- 1:max_it
+
 
 
 for(i in 1:max_it){
@@ -69,8 +80,9 @@ for(i in 1:max_it){
   #first M step--------
   #MLE of all parameters
   if(i != 1){
-    oldmodel <- c(model$coefficients, sigma(model))
-    oldpi <- pi}
+  oldmodel <- c(model$coefficients, sigma(model))
+  oldpi <- pi
+  old_log_likelihood <- log_likelihood}
 
   #model P(Y|t,c)
   model <- lm(y ~ c - 1, weights =  `P(C=c|y,t)`, data = possible_data) #if not from normal, change the link function and error dist
@@ -88,6 +100,10 @@ for(i in 1:max_it){
     check_model = min((c(model$coefficients, sigma(model)) - oldmodel)^2)
     check_pi = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
   }
+
+  if( check_model < 0.00001 && check_pi < 0.00001)
+  {message("stopped on coefficients")
+    break}
   #marginal_likelihood  #add warning: Chicago style pizza is a casserole
   #observed data likelihood sum(log(P(y_i|t_i)))
   #`P(Y|t,c)` * `P(C=c|t)` = P(Y, C|t) then sum over possible values of C
@@ -118,13 +134,60 @@ for(i in 1:max_it){
       `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
     ) %>% ungroup()
   print(pi)
+print(c(model$coefficients, sigma = sigma(model)))
+
+log_likelihood_obs <- possible_data %>%
+  group_by(obs_id) %>%
+  summarise(likelihood_i = sum(`P(c,y|t)`),
+            log_likelihood_i = log(likelihood_i))
+log_likelihood<- sum(log_likelihood_obs$log_likelihood_i)
+
+likelihood_documentation[i, 2] <- log_likelihood
+
+
+message(log_likelihood)
+
+if(i != 1){
+
+check_ll = log_likelihood - old_log_likelihood
+
+
+#if(check_ll < 0 ){
+#  warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
+#break
+#}
+#
+#if(check_ll < 0.000000000001 ){
+#  message("stopped on likelihood")
+#  break
+#}
+
 }
+
+
+
+}
+
 
 
 #we need to calculate P(Y|t,c) and add to data set
 
+plot(x = likelihood_documentation[,1], y = likelihood_documentation[,2]) ##Log likelihood appears to be decreasing???????
+
 lm(observed_value ~ comp - 1, data = data.sim)
 
+model
 #missing from algorithm (aside from extension) is convergence criterion: likelihood and parameters we are estimating, see how much they change by and if they change by less than some amount you stop
+
+data.sim %>% group_by(comp) %>%
+  summarise(
+    n = n()) %>%
+  mutate(total = n / sum(n))
+
+pi
+
+
+
+
 
 
