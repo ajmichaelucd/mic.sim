@@ -10,7 +10,7 @@
 #' @param n
 #' @param t_dist
 #' @param pi
-#' @param complist
+#' @param `E[X|T,C]`
 #' @param sd_vector
 #' @param low_con
 #' @param high_con
@@ -22,7 +22,7 @@
 #' @return
 #' @export
 #'
-#' @importFrom dplyr mutate all_of select bind_rows tibble inner_join group_by
+#' @importFrom dplyr mutate all_of select bind_rows tibble inner_join group_by case_when
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv survreg
 #' @importFrom broom tidy
@@ -39,8 +39,13 @@ batch_aft_runs_new_data <- function(
     t_dist = function(n){runif(n, min = 0, max = 1)},
     pi = function(t) {z <- 1 + 0* t
     c("1" = z)},
-    complist = list(
-      "1" = function(t) {0 + 0 * t}),
+    `E[X|T,C]` = function(t, c)
+    {
+      case_when(
+        c == "1" ~ 0 + 0 * t,
+        TRUE ~ NaN
+      )
+    },
     sd_vector =  c("1" = 1),
     low_con = 2^-4,
     high_con = 2^4,
@@ -49,5 +54,5 @@ batch_aft_runs_new_data <- function(
     #summary = TRUE, #summary must be TRUE for the part that grabs coefficients to work, if needed could run an if statement later for this
     MIC_breakpoint = 1,
     stderr = FALSE)
-{purrr::map(c(1:iterations), ~single_aft_run_new_data(covariate_effect_vector, covariate_list, covariate_names, n, t_dist, pi, complist, sd_vector, low_con, high_con, type_list, time, MIC_breakpoint, iteration = .x, stderr)) %>%
+{purrr::map(c(1:iterations), ~single_aft_run_new_data(covariate_effect_vector, covariate_list, covariate_names, n, t_dist, pi, `E[X|T,C]`, sd_vector, low_con, high_con, type_list, time, MIC_breakpoint, iteration = .x, stderr)) %>%
     dplyr::bind_rows() }

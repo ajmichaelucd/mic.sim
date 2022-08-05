@@ -11,7 +11,7 @@ single_aft_run_new_data(
   n = 100,
   t_dist = function(n) {     runif(n, min = 0, max = 1) },
   pi = function(t) {     z <- 1 + 0 * t     c(`1` = z) },
-  complist = list(`1` = function(t) {     0 + 0 * t }),
+  `E[X|T,C]` = function(t, c) {     case_when(c == "1" ~ 0 + 0 * t, TRUE ~ NaN) },
   sd_vector = c(`1` = 1),
   low_con = 2^-4,
   high_con = 2^4,

@@ -1,14 +1,19 @@
 library(magrittr)
 
 #data generation------------
-n=200
+n=2000
 
 pi1 = function(t) {z <- 0.65
 c("1" = z, "2" = 1- z)}
 
-complist1 = list(
-  "1" = function(t) {0*t},
-  "2" = function(t) {3.5 + 0*t})
+`E[X|T,C]` = function(t, c)
+{
+  case_when(
+    c == "1" ~ 0 + 0 * t,
+    c == "2" ~ 3.5 + 0 * t,
+    TRUE ~ NaN
+  )
+}
 
 t_dist1 = function(n){runif(n, min = 0, max = 1)}
 
@@ -22,7 +27,7 @@ data.sim <- simulate_mics(
   n = n,
   t_dist = t_dist1,
   pi = pi1,
-  complist = complist1,
+  `E[X|T,C]` = `E[X|T,C]`,
   sd_vector = sd_vector,
   covariate_list = covariate_list,
   covariate_effect_vector = covariate_effect_vector,
@@ -48,11 +53,11 @@ visible_data <- data.sim %>%
 #pi_initial <- 0.5
 #mu_initial <-
 #sigma_initial <-
-random_complement_probs <- function(min = 0, max = 1){
-  a <- runif(1, min, max)
-  b <- 1-a
-  c(a, b)}
-random_complement_probs()
+# random_complement_probs <- function(min = 0, max = 1){
+#   a <- runif(1, min, max)
+#   b <- 1-a
+#   c(a, b)}
+# random_complement_probs()
 
 mean_y <- mean(visible_data$y)
 #first E step-----
@@ -68,7 +73,7 @@ possible_data <- visible_data %>% #visible data with c for component
   print()
 
 
-max_it = 80
+max_it = 99
 
 likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 2)
 likelihood_documentation [,1] <- 1:max_it
@@ -82,7 +87,8 @@ for(i in 1:max_it){
   if(i != 1){
   oldmodel <- c(model$coefficients, sigma(model))
   oldpi <- pi
-  old_log_likelihood <- log_likelihood}
+  old_log_likelihood <- log_likelihood
+  old_possible_data <- possible_data}
 
   #model P(Y|t,c)
   model <- lm(y ~ c - 1, weights =  `P(C=c|y,t)`, data = possible_data) #if not from normal, change the link function and error dist
@@ -96,14 +102,19 @@ for(i in 1:max_it){
     summarise(`P(C = c)` = sum(`P(C=c|y,t)`) / nrow(visible_data) )
   #pull(`P(C = c)`, name = c)
 
+  newmodel <- c(model$coefficients, sigma(model))
+
   if(i != 1){
-    check_model = min((c(model$coefficients, sigma(model)) - oldmodel)^2)
-    check_pi = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
-  }
+    check_model = max(abs(newmodel - oldmodel))
+    check_pi_tibble = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
+    check_pi = max(abs(check_pi_tibble$pi_dif))
+
 
   if( check_model < 0.00001 && check_pi < 0.00001)
   {message("stopped on coefficients")
     break}
+
+  }
   #marginal_likelihood  #add warning: Chicago style pizza is a casserole
   #observed data likelihood sum(log(P(y_i|t_i)))
   #`P(Y|t,c)` * `P(C=c|t)` = P(Y, C|t) then sum over possible values of C
@@ -131,16 +142,16 @@ for(i in 1:max_it){
     mutate(
       `P(c,y|t)` = `P(Y|t,c)` * `P(C = c)`,
       `P(Y=y|t)` = sum(`P(c,y|t)`),
-      `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
+      `P(C=c|y,t)` = ifelse(`P(c,y|t)` / `P(Y=y|t)` < 0.00000000001, 0, `P(c,y|t)` / `P(Y=y|t)`)
     ) %>% ungroup()
   print(pi)
 print(c(model$coefficients, sigma = sigma(model)))
 
 log_likelihood_obs <- possible_data %>%
   group_by(obs_id) %>%
-  summarise(likelihood_i = sum(`P(c,y|t)`),
-            log_likelihood_i = log(likelihood_i))
-log_likelihood<- sum(log_likelihood_obs$log_likelihood_i)
+  summarise(likelihood_i = sum(`P(c,y|t)`)) %>%
+            mutate(log_likelihood_i = log(likelihood_i))
+log_likelihood <- sum(log_likelihood_obs$log_likelihood_i)
 
 likelihood_documentation[i, 2] <- log_likelihood
 
@@ -172,9 +183,9 @@ check_ll = log_likelihood - old_log_likelihood
 
 #we need to calculate P(Y|t,c) and add to data set
 
-plot(x = likelihood_documentation[,1], y = likelihood_documentation[,2]) ##Log likelihood appears to be decreasing???????
+plot(x = likelihood_documentation[,1], y = likelihood_documentation[,2], type = "line") ##Log likelihood appears to be decreasing???????
 
-lm(observed_value ~ comp - 1, data = data.sim)
+data.sim_summary <- lm(observed_value ~ comp - 1, data = data.sim)
 
 model
 #missing from algorithm (aside from extension) is convergence criterion: likelihood and parameters we are estimating, see how much they change by and if they change by less than some amount you stop
@@ -188,6 +199,11 @@ pi
 
 
 
+sigma(data.sim_summary)
 
+.391
 
+.549
 
+##Possible issue with weights?
+##Main issue is that sigma starts correct, drops a few times (and the likelihood also drops), then sigma increases and likelihood starts to climb, but sigma does not get back to where it started

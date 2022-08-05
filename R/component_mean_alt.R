@@ -8,9 +8,9 @@
 #' @return
 #' @export
 #'
-#' @importFrom dplyr tibble mutate inner_join
+#' @importFrom dplyr tibble mutate inner_join case_when
 #' @importFrom magrittr %>%
-#' @importFrom purrr map as_vector
+#' @importFrom purrr map as_vector map_chr
 #'
 #' @examples
 component_mean_alt = function(
