@@ -1,4 +1,5 @@
 library(magrittr)
+library(dplyr)
 
 #data generation------------
 n=2000
@@ -10,14 +11,14 @@ c("1" = z, "2" = 1- z)}
 {
   case_when(
     c == "1" ~ 0 + 0 * t,
-    c == "2" ~ 10 + 0 * t,
+    c == "2" ~ 3 + 0 * t,
     TRUE ~ NaN
   )
 }
 
 t_dist1 = function(n){runif(n, min = 0, max = 1)}
 
-sd_vector = c("1" = 2, "2" = 3)
+sd_vector = c("1" = 1, "2" = 1)
 
 low_con = 2^-4
 high_con = 2^4
