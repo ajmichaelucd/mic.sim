@@ -27,6 +27,10 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
   #maxiter is the maximum number of iterations
   #tol is the convergence criterion
 
+  likelihood_documentation_gmm <- matrix(data = NA, nrow = maxiter, ncol = 2)
+  likelihood_documentation_gmm [,1] <- 1:maxiter
+
+
   nobs <- sum(wt) #number of observations
 
   parms <- matrix(NA, ncol=3, nrow=n)
@@ -125,6 +129,8 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
 
     posteriorP <- P/rowSums(P)
 
+    likelihood_documentation_gmm [iteration,2] <- logLikC
+
     #check convergence criterion
     if (( abs(logLikC-loglikInit) / (abs(loglikInit)+.001*tol) ) < tol) break
     loglikInit <- logLikC #update log-likelihood
@@ -135,5 +141,5 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
   list(components=parms[,1:2], prior=priorP, loglik=logLikC,
        AIC=-2*logLikC + 2*(n-1+2*n), BIC=-2*logLikC + (n-1+2*n)*log(nobs),
        strategy=classify, distribution=dist, iterations=iteration,
-       standardError=stdErr, posterior=posteriorP)
+       standardError=stdErr, posterior=posteriorP, likelihood_documentation_gmm = likelihood_documentation_gmm)
 }

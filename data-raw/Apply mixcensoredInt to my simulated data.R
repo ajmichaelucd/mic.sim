@@ -23,6 +23,21 @@ sd_vector = c("1" = 1, "2" = 1)
 low_con = 2^-4
 high_con = 2^4
 
+##Covariate inputs--------------------
+covariate_effect_vector <- c(0 #0 at start is intercept, then add in the desired coefficients for the covariates
+)
+
+#a is the baseline level for all categorical covariates so, add terms for the coefficients for other levels of the variable that reflect the difference between that level and a
+
+## y = B0 + B1X1 + B2X2b + B3X2c + B4X3b + B5X3c + B6X4b + B7X4c + B8X4d + B9X4e + B10X5 + \epsilon
+
+covariate_list <-
+  NULL
+
+
+covariate_names <- NULL
+
+
 
 data.sim <- simulate_mics(
   n = n,
@@ -46,7 +61,8 @@ hist(data.sim$observed_value)
 
 
 
-mixcensoredInt(y1 = data.sim$observed_value,
+
+gmm_int_cen <- mixcensoredInt(y1 = data.sim$observed_value,
                y2 = data.sim$observed_value,
                d = rep(1, nrow(data.sim)),
                wt=rep(1, length(data.sim$observed_value)),
@@ -71,6 +87,8 @@ mixcensoredInt(y1 = data.sim$observed_value,
 
 
 
+plot(x = gmm_int_cen$likelihood_documentation_gmm[,1], y= gmm_int_cen$likelihood_documentation_gmm[,2], type = "l")
+lines(x = likelihood_documentation[,1], y = likelihood_documentation[,2])
 
 
 
