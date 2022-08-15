@@ -15,7 +15,11 @@ Imports:
     purrr,
     dplyr,
     magrittr,
-    smoothSurv
+    smoothSurv,
+    broom,
+    readr,
+    survival,
+    LearnBayes
 URL: https://github.com/ajmichaelucd/mic.sim
 BugReports: https://github.com/ajmichaelucd/mic.sim/issues
 Suggests: 
