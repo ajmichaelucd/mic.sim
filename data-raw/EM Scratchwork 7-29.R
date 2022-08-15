@@ -1,11 +1,17 @@
 rm(list = ls())
 library(magrittr)
 library(dplyr)
-<<<<<<< HEAD
+#<<<<<<< HEAD
 load_all()
 
-rm(list = ls())
-=======
+
+#NEXT STEPS:
+##DIFFERENT SIGMAS
+##INTERVAL CENSORING
+##MORE THAN 2 COMPONENTS
+##FUNCTIONS OF TIME AND COVARIATES: MEANS AND PI
+
+#=======
 library(mic.sim)
 library(LearnBayes)
 library(survival)
@@ -24,7 +30,7 @@ covariate_list <-
 
 covariate_names <- NULL
 
->>>>>>> f8a23b83e1c920f1303df831494854a95491ecc4
+#>>>>>>> f8a23b83e1c920f1303df831494854a95491ecc4
 
 #data generation------------
 n=2000
