@@ -1,5 +1,8 @@
 library(magrittr)
 library(dplyr)
+load_all()
+
+rm(list = ls())
 
 #data generation------------
 n=2000
