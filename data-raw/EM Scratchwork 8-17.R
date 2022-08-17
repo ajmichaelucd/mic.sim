@@ -103,15 +103,15 @@ possible_data <- visible_data %>% #visible data with c for component
   group_by_all() %>%
   summarise(
     c = as.character(1:2), #split at mean and assign
-    # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+    `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
     .groups = "drop"
   ) %>%
-  mutate(
-  `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-                           left_bound > median_y & c == "2" ~ 0.4,
-                           left_bound <= median_y & c == "1" ~ 0.4,
-                           left_bound <= median_y & c == "2" ~ 0.6)
-  ) %>%
+  # mutate(
+  # `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+  #                          left_bound > median_y & c == "2" ~ 0.4,
+  #                          left_bound <= median_y & c == "1" ~ 0.4,
+  #                          left_bound <= median_y & c == "2" ~ 0.6)
+  # ) %>%
   print()
 
 
