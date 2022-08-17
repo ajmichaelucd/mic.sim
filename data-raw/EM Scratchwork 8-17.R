@@ -45,13 +45,13 @@ c("1" = z, "2" = 1- z)}
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ 0 + 0 * t,
-    c == "2" ~ 3 + 0 * t,
+    c == "1" ~ 0 - 0.5 * t,
+    c == "2" ~ 3 + 0.4 * t,
     TRUE ~ NaN
   )
 }
 
-t_dist1 = function(n){runif(n, min = 0, max = 1)}
+t_dist1 = function(n){runif(n, min = 0, max = 4)}
 
 sd_vector = c("1" = 1, "2" = 1)
 
@@ -231,7 +231,7 @@ for(i in 1:max_it){
 
   message(log_likelihood)
 
-  plot(x = likelihood_documentation[,1], y = likelihood_documentation[,2], type = "l")
+  plot(x = likelihood_documentation[1:i,1], y = likelihood_documentation[1:i,2], type = "l")
 
   if(i != 1){
 
