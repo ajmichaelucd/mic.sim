@@ -1,4 +1,5 @@
 rm(list = ls())
+set.seed(1)
 library(magrittr)
 library(dplyr)
 #<<<<<<< HEAD
@@ -13,6 +14,7 @@ load_all()
 
 #=======
 library(mic.sim)
+library(ggplot2)
 library(LearnBayes)
 library(survival)
 library(biglm)
@@ -43,7 +45,7 @@ c("1" = z, "2" = 1- z)}
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ -6 + 0 * t,
+    c == "1" ~ 0 + 0 * t,
     c == "2" ~ 3 + 0 * t,
     TRUE ~ NaN
   )
@@ -71,6 +73,11 @@ data.sim <- simulate_mics(
 
 hist(data.sim$observed_value)
 
+data.sim %>%
+  ggplot() +
+  geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black")
+
+
 data.sim %>% group_by(comp) %>%
   summarise(
     n = n()) %>%
@@ -81,7 +88,9 @@ data.sim %>% group_by(comp) %>%
 
 visible_data <- data.sim %>%
   select(t, left_bound, right_bound, true_comp = comp) %>%
-  mutate(obs_id = 1:n()) %>%
+  mutate(obs_id = 1:n(),
+         left_bound = log2(left_bound),
+         right_bound = log2(right_bound)) %>%
   relocate(obs_id, .before = everything())
 
 #pi_initial <- 0.5
@@ -106,16 +115,16 @@ possible_data <- visible_data %>% #visible data with c for component
     `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
     .groups = "drop"
   ) %>%
-  # mutate(
-  # `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-  #                          left_bound > median_y & c == "2" ~ 0.4,
-  #                          left_bound <= median_y & c == "1" ~ 0.4,
-  #                          left_bound <= median_y & c == "2" ~ 0.6)
-  # ) %>%
+ #  mutate(
+ #  `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+ #                           left_bound > median_y & c == "2" ~ 0.4,
+ #                           left_bound <= median_y & c == "1" ~ 0.4,
+ #                           left_bound <= median_y & c == "2" ~ 0.6)
+ #  ) %>%
   print()
 
 
-max_it = 300
+max_it = 3000
 
 likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 2)
 likelihood_documentation [,1] <- 1:max_it
@@ -184,10 +193,6 @@ for(i in 1:max_it){
   #A. it is going up (with EM algorithm it should always increase)
   #B. if it is not going up by very much, you can stop
   #if conditions are met, use break
-  cp <- ifelse(d==0, 1-pnorm(z1), #right censoring
-               ifelse(d==1, 1/(sigma) * dnorm(z1), #exact observations  #1/σ is a transformation of density (dnorm) needed when going from normal to standard normal
-                      ifelse(d==2, pnorm(z1), #left censoring
-                             pnorm(z2)-pnorm(z1) )))
 
 
 
@@ -226,6 +231,8 @@ for(i in 1:max_it){
 
   message(log_likelihood)
 
+  plot(x = likelihood_documentation[,1], y = likelihood_documentation[,2], type = "l")
+
   if(i != 1){
 
     check_ll = log_likelihood - old_log_likelihood
@@ -253,7 +260,7 @@ for(i in 1:max_it){
 
 #we need to calculate P(Y|t,c) and add to data set
 
-plot(x = likelihood_documentation[1:20,1], y = likelihood_documentation[1:20,2], type = "l") ##Log likelihood appears to be decreasing???????
+plot(x = likelihood_documentation[1:i,1], y = likelihood_documentation[1:i,2], type = "l") ##Log likelihood appears to be decreasing???????
 
 lm(observed_value ~ comp - 1, data = data.sim)
 
