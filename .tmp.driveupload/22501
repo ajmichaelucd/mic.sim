@@ -1,0 +1,512 @@
+t_dist1 = function(n){runif(n, min = 0, max = 1)}
+sd_vector = c("1" = 1, "2" = 1)
+low_con = 2^-4
+high_con = 2^4
+##Covariate inputs--------------------
+covariate_effect_vector <- c(0 #0 at start is intercept, then add in the desired coefficients for the covariates
+)
+covariate_list <-
+NULL
+covariate_names <- NULL
+data.sim <- simulate_mics(
+n = n,
+t_dist = t_dist1,
+pi = pi1,
+`E[X|T,C]` = `E[X|T,C]`,
+sd_vector = sd_vector,
+covariate_list = covariate_list,
+covariate_effect_vector = covariate_effect_vector,
+low_con = low_con,
+high_con = high_con)
+hist(data.sim$observed_value)
+table(data.sim$indicator == 2)
+table(data.sim$left_bound)
+table(ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ))
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="CEM",
+maxiter=10000, tol=1e-6)
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="SEM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+`E[X|T,C]` = function(t, c)
+{
+case_when(
+c == "1" ~ -2 + 0 * t,
+c == "2" ~ 2 + 0 * t,
+TRUE ~ NaN
+)
+}
+t_dist1 = function(n){runif(n, min = 0, max = 1)}
+sd_vector = c("1" = 1, "2" = 1)
+low_con = 2^-4
+high_con = 2^4
+##Covariate inputs--------------------
+covariate_effect_vector <- c(0 #0 at start is intercept, then add in the desired coefficients for the covariates
+)
+covariate_list <-
+NULL
+covariate_names <- NULL
+data.sim <- simulate_mics(
+n = n,
+t_dist = t_dist1,
+pi = pi1,
+`E[X|T,C]` = `E[X|T,C]`,
+sd_vector = sd_vector,
+covariate_list = covariate_list,
+covariate_effect_vector = covariate_effect_vector,
+low_con = low_con,
+high_con = high_con)
+hist(data.sim$observed_value)
+table(data.sim$indicator == 2)
+table(data.sim$left_bound)
+table(ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ))
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+gmm_int_cen <- mixcensoredInt(y1 = data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+gmm_int_cen <- mixcensoredInt(y1 = data.sim$left_bound ,  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+plot(x = gmm_int_cen$likelihood_documentation_gmm[,1], y= gmm_int_cen$likelihood_documentation_gmm[,2], type = "l")
+lines(x = likelihood_documentation[,1], y = likelihood_documentation[,2])
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+plot(x = gmm_int_cen$likelihood_documentation_gmm[,1], y= gmm_int_cen$likelihood_documentation_gmm[,2], type = "l")
+lines(x = likelihood_documentation[,1], y = likelihood_documentation[,2])
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$iterations
+gmm_int_cen$prior
+gmm_int_cen$loglik
+gmm_int_cen$prior
+gmm_int_cen$standardError
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+gmm_int_cen$prior
+gmm_int_cen$loglik
+gmm_int_cen$iterations
+gmm_int_cen$standardError
+plot(x = gmm_int_cen$likelihood_documentation_gmm[,1], y= gmm_int_cen$likelihood_documentation_gmm[,2], type = "l")
+hist(data.sim$observed_value)
+library(ggplot2)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value))
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value), binwidth = 1)
+?geom_histogram
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value), binwidth = 1, boundary = 0)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, color = indicator), binwidth = 1, boundary = 0)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, color = factor(indicator)), binwidth = 1, boundary = 0)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = black)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black")
+pi1 = function(t) {z <- 0.6
+c("1" = z, "2" = 1- z)}
+`E[X|T,C]` = function(t, c)
+{
+case_when(
+c == "1" ~ 0 + 0 * t,
+c == "2" ~ 2 + 0 * t,
+TRUE ~ NaN
+)
+}
+t_dist1 = function(n){runif(n, min = 0, max = 1)}
+sd_vector = c("1" = 1, "2" = 1)
+low_con = 2^-4
+high_con = 2^4
+##Covariate inputs--------------------
+covariate_effect_vector <- c(0 #0 at start is intercept, then add in the desired coefficients for the covariates
+)
+covariate_list <-
+NULL
+covariate_names <- NULL
+data.sim <- simulate_mics(
+n = n,
+t_dist = t_dist1,
+pi = pi1,
+`E[X|T,C]` = `E[X|T,C]`,
+sd_vector = sd_vector,
+covariate_list = covariate_list,
+covariate_effect_vector = covariate_effect_vector,
+low_con = low_con,
+high_con = high_con)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black")
+table(data.sim$indicator == 2)
+table(data.sim$left_bound)
+table(ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ))
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+gmm_int_cen$prior
+gmm_int_cen$loglik
+gmm_int_cen$iterations
+gmm_int_cen$standardError
+`E[X|T,C]` = function(t, c)
+{
+case_when(
+c == "1" ~ 0 + 0 * t,
+c == "2" ~ 4 + 0 * t,
+TRUE ~ NaN
+)
+}
+t_dist1 = function(n){runif(n, min = 0, max = 1)}
+sd_vector = c("1" = 1, "2" = 1)
+low_con = 2^-4
+high_con = 2^4
+##Covariate inputs--------------------
+covariate_effect_vector <- c(0 #0 at start is intercept, then add in the desired coefficients for the covariates
+)
+covariate_list <-
+NULL
+covariate_names <- NULL
+data.sim <- simulate_mics(
+n = n,
+t_dist = t_dist1,
+pi = pi1,
+`E[X|T,C]` = `E[X|T,C]`,
+sd_vector = sd_vector,
+covariate_list = covariate_list,
+covariate_effect_vector = covariate_effect_vector,
+low_con = low_con,
+high_con = high_con)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black")
+table(data.sim$indicator == 2)
+table(data.sim$left_bound)
+table(ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ))
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components
+gmm_int_cen$prior
+gmm_int_cen$loglik
+gmm_int_cen$iterations
+gmm_int_cen$standardError
+exp(0.68)
+0.68/log(2)
+2.75/lo(2)
+2.75/log(2)
+gmm_int_cen$prior
+gmm_int_cen$loglik
+gmm_int_cen$iterations
+gmm_int_cen$standardError
+mm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components  ###Divide by log2 to get correct things here
+gmm_int_cen$prior
+gmm_int_cen$loglik
+gmm_int_cen$iterations
+gmm_int_cen$standardError
+2.75/log(2)
+.6871/log(2)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black")
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black") +
+facet_wrap(~indicator)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black") +
+facet_wrap(~comp)
+`E[X|T,C]` = function(t, c)
+{
+case_when(
+c == "1" ~ -2 + 0 * t,
+c == "2" ~ 5 + 0 * t,
+TRUE ~ NaN
+)
+}
+t_dist1 = function(n){runif(n, min = 0, max = 1)}
+sd_vector = c("1" = 1, "2" = 1)
+low_con = 2^-4
+high_con = 2^4
+##Covariate inputs--------------------
+covariate_effect_vector <- c(0 #0 at start is intercept, then add in the desired coefficients for the covariates
+)
+covariate_list <-
+NULL
+covariate_names <- NULL
+data.sim <- simulate_mics(
+n = n,
+t_dist = t_dist1,
+pi = pi1,
+`E[X|T,C]` = `E[X|T,C]`,
+sd_vector = sd_vector,
+covariate_list = covariate_list,
+covariate_effect_vector = covariate_effect_vector,
+low_con = low_con,
+high_con = high_con)
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black") +
+facet_wrap(~comp)
+table(data.sim$indicator == 2)
+table(data.sim$left_bound)
+table(ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ))
+data.sim %>%
+ggplot() +
+geom_histogram(aes(x = observed_value, fill = factor(indicator)), binwidth = 1, boundary = 0, color = "black")
+gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$right_bound, data.sim$left_bound ),  #format would be wrong for this, need a conversion factor if using this notation
+y2 = data.sim$right_bound,
+d = data.sim$indicator,
+wt=rep(1, length(data.sim$observed_value)),
+dist="lognormal",
+n = 2,
+cluster=NULL,
+classify="EM",
+maxiter=10000, tol=1e-6)
+#d is the censoring indicator (0=right censored, 1=event at time,
+# 2=left censored, 3=interval censored)
+#wt are the weights for the observations
+#dist: either the "weibull", "lognormal", or "gaussian" distribution
+#n is the number of components
+#cluster: start with random initialization of posterior probabilities (=NULL), or
+# a matrix with n columns of initial posterior probabilities for the observations
+#classify: "EM", "CEM", or "SEM" strategy
+#maxiter is the maximum number of iterations
+#tol is the convergence criterion
+gmm_int_cen$components  ###Divide by log2 to get correct things here
+gmm_int_cen$prior
+gmm_int_cen$loglik
+gmm_int_cen$iterations
+gmm_int_cen$standardError
+3.433/log(2)
+-1.39/log(2)

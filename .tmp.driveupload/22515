@@ -1,0 +1,26 @@
+{
+    "id": "EE6D2CFB",
+    "path": "~/Desktop/Dissertation Project/Chapter 1/mic.sim/R/fit_aft.R",
+    "project_path": "R/fit_aft.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1660766593173.0,
+    "source_on_save": false,
+    "relative_order": 7,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "63,6",
+        "scrollLine": "46"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1655771590,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1655771590,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -43,7 +43,7 @@ c("1" = z, "2" = 1- z)}
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ 0 + 0 * t,
+    c == "1" ~ -6 + 0 * t,
     c == "2" ~ 3 + 0 * t,
     TRUE ~ NaN
   )
@@ -80,7 +80,7 @@ data.sim %>% group_by(comp) %>%
 
 
 visible_data <- data.sim %>%
-  select(t, y = observed_value, true_comp = comp) %>%
+  select(t, left_bound, right_bound, true_comp = comp) %>%
   mutate(obs_id = 1:n()) %>%
   relocate(obs_id, .before = everything())
 
@@ -97,7 +97,7 @@ posteriorP <- rdirichlet(length(n), alpha)
 
 
 
-mean_y <- mean(visible_data$y)
+median_y <- median(visible_data$left_bound)
 #first E step-----
 possible_data <- visible_data %>% #visible data with c for component
   group_by_all() %>%
@@ -107,10 +107,10 @@ possible_data <- visible_data %>% #visible data with c for component
     .groups = "drop"
   ) %>%
   mutate(
-  `P(C=c|y,t)` = case_when(y > mean_y & c == "1" ~ 0.6,
-                           y > mean_y & c == "2" ~ 0.4,
-                           y <= mean_y & c == "1" ~ 0.4,
-                           y <= mean_y & c == "2" ~ 0.6)
+  `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+                           left_bound > median_y & c == "2" ~ 0.4,
+                           left_bound <= median_y & c == "1" ~ 0.4,
+                           left_bound <= median_y & c == "2" ~ 0.6)
   ) %>%
   print()
 
@@ -140,7 +140,9 @@ for(i in 1:max_it){
   #   data = possible_data) #if not from normal, change the link function and error dist
   #eg if lognormal, survreg with lognormal(change error distand link function)
   model <- survival::survreg(
-    formula = Surv(y, rep(1, length(y))) ~ c - 1,
+    formula = Surv(time = left_bound,
+                   time2 = right_bound,
+                   type = "interval2") ~ c - 1,
     weights = `P(C=c|y,t)`,
     data = possible_data,
     dist = "gaussian")
@@ -182,6 +184,12 @@ for(i in 1:max_it){
   #A. it is going up (with EM algorithm it should always increase)
   #B. if it is not going up by very much, you can stop
   #if conditions are met, use break
+  cp <- ifelse(d==0, 1-pnorm(z1), #right censoring
+               ifelse(d==1, 1/(sigma) * dnorm(z1), #exact observations  #1/σ is a transformation of density (dnorm) needed when going from normal to standard normal
+                      ifelse(d==2, pnorm(z1), #left censoring
+                             pnorm(z2)-pnorm(z1) )))
+
+
 
 
 
@@ -192,7 +200,12 @@ for(i in 1:max_it){
     mutate(`E[Y|t,c]` = predict(model),
            `Var[Y|t,c]` = `sd(y)`^2,
            `sd[Y|t,c]` = `sd(y)`,
-           `P(Y|t,c)` = dnorm(y, mean = `E[Y|t,c]`, sd = `sd[Y|t,c]`)) %>%
+           `P(Y|t,c)` =  if_else(
+             left_bound == right_bound,
+             dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+             pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) - pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+           )
+           ) %>%
     group_by(obs_id) %>%
     mutate(
       `P(c,y|t)` = `P(Y|t,c)` * `P(C = c)`,

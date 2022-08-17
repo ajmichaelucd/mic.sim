@@ -1,0 +1,25 @@
+{
+    "id": "22C37586",
+    "path": null,
+    "project_path": null,
+    "type": "r_code_browser",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1660248221370.0,
+    "source_on_save": false,
+    "relative_order": 7,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "context": "package:LearnBayes:::rdirichlet"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 8315180330276251497,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1660248221370,
+    "read_only": false,
+    "read_only_alternatives": []
+}
