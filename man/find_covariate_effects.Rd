@@ -11,9 +11,6 @@ find_covariate_effects(input, cov_list)
 
 \item{cov_list}{this is the covariate list where each entry is a list of 2 vectors, the first describes the distribution of the variable and the second describes its effects}
 }
-\value{
-
-}
 \description{
 uses map from purrr package to find the single covariate effect over each covariate
 }

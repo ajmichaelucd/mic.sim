@@ -6,10 +6,17 @@
 \usage{
 simulate_mics(
   n = 100,
-  t_dist = function(n) {     runif(n, min = 0, max = 1) },
-  pi = function(t) {     z <- 0.5 + 0.2 * t     c(`1` = z, `2` = 1 - z) },
-  `E[X|T,C]` = function(t, c) {     case_when(c == "1" ~ 3 + t + 2 * t^2 - sqrt(t), c
-    == "2" ~ 3 * t, TRUE ~ NaN) },
+  t_dist = function(n) {
+     runif(n, min = 0, max = 1)
+ },
+  pi = function(t) {
+     z <- 0.5 + 0.2 * t
+     c(`1` = z, `2` = 1 - z)
+ },
+  `E[X|T,C]` = function(t, c) {
+     case_when(c == "1" ~ 3 + t + 2 * t^2 - sqrt(t), c ==
+    "2" ~ 3 * t, TRUE ~ NaN)
+ },
   sd_vector = c(`1` = 1, `2` = 2),
   covariate_list,
   covariate_effect_vector,
@@ -24,9 +31,6 @@ simulate_mics(
 \item{pi}{pi = function(t) {z <- 0.5 + 0.2 * t     c(z, 1- z)}}
 
 \item{tested_concentrations}{}
-}
-\value{
-
 }
 \description{
 function that wraps together all the functions that determine t's distribution,
