@@ -18,34 +18,20 @@ fit_model = function(
   median_y <- median(visible_data$left_bound)
   #first E step-----
 
-  `p(c|y,t)` =
-    LearnBayes::rdirichlet(nrow(visible_data), rep(.1, ncomp)) |>
-    as.data.frame() |>
-    mutate(id = 1:n()) |>
-    pivot_longer(cols = -id, names_prefix = "V", values_to = "P(C=c|y,t)", names_to = "comp") |>
-    as_tibble() |>
-    # mutate(key = substr(key, start = 2,stop = 10)) |>
-    print()
-
-
   possible_data <-
     visible_data %>% #visible data with c for component
-    left_join(
-      `p(c|y,t)`  |> rename(c = comp),
-      by = c("obs_id" = "id")
-    ) |>
-    # group_by_all() %>%
-    # summarise(
-    #   c = as.character(1:2), #split at mean and assign
-    #   `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-    #   .groups = "drop"
+    group_by_all() %>%
+    summarise(
+      c = as.character(1:2), #split at mean and assign
+      `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+      .groups = "drop"
+    ) %>%
+    # mutate(
+    # `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+    #                          left_bound > median_y & c == "2" ~ 0.4,
+    #                          left_bound <= median_y & c == "1" ~ 0.4,
+    #                          left_bound <= median_y & c == "2" ~ 0.6)
     # ) %>%
-    #  mutate(
-    #  `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-    #                           left_bound > median_y & c == "2" ~ 0.4,
-    #                           left_bound <= median_y & c == "1" ~ 0.4,
-    #                           left_bound <= median_y & c == "2" ~ 0.6)
-    #  ) %>%
     print()
 
 
@@ -74,33 +60,15 @@ fit_model = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    newmodel = NULL
+    model <- survival::survreg(
+      formula = Surv(time = left_bound,
+                     time2 = right_bound,
+                     type = "interval2") ~ 0 + c + strata(c),
+      weights = `P(C=c|y,t)`,
+      data = possible_data,
+      dist = "gaussian")
 
-    for (cur_comp in 1:ncomp)
-    {
-# browser()
-      model <- survival::survreg(
-        formula = Surv(time = left_bound,
-                       time2 = right_bound,
-                       type = "interval2") ~ 1,
-        weights = `P(C=c|y,t)`,
-        data = possible_data |> dplyr::filter(c == cur_comp),
-        dist = "gaussian")
-
-      newmodel = rbind(newmodel,
-                           c(coef(model), model$scale))
-    }
-
-    rownames(newmodel) = 1:ncomp
-#
-    # model <- survival::survreg(
-    #   formula = Surv(time = left_bound,
-    #                  time2 = right_bound,
-    #                  type = "interval2") ~ c - 1,
-    #   weights = `P(C=c|y,t)`,
-    #   data = possible_data,
-    #   dist = "gaussian")
-    # newmodel = c(coef(model), model$scale)
+    newmodel = bind_cols(mean = coef(model), sd = model$scale)
 
     #Estimate mixing probabilities--------
     pi <- possible_data %>%
@@ -148,17 +116,16 @@ fit_model = function(
       select(-any_of("P(C = c)")) %>%
       left_join(pi, by = "c") %>%
       mutate(
-        # `E[Y|t,c]` = predict(model),
-        `E[Y|t,c]` = newmodel[c, 1],
-             # `Var[Y|t,c]` = `sd(y)`^2,
-        `Var[Y|t,c]` = newmodel[c,2]^2,
-        # `sd[Y|t,c]` = `sd(y)`,
-             `sd[Y|t,c]` = newmodel[c,2],
-             `P(Y|t,c)` =  if_else(
-               left_bound == right_bound,
-               dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-               pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) - pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
-             )
+        `E[Y|t,c]` = predict(model),
+        `sd[Y|t,c]` = model$scale[c],
+        `Var[Y|t,c]` = `sd[Y|t,c]`^2,
+
+        `P(Y|t,c)` =  if_else(
+          left_bound == right_bound,
+          dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+            pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+        )
       ) %>%
       group_by(obs_id) %>%
       mutate(
@@ -180,9 +147,13 @@ fit_model = function(
 
     message(log_likelihood)
 
-    plot(x = likelihood_documentation[1:i,1], y = likelihood_documentation[1:i,2], type = "l")
+    plot(
+      x = likelihood_documentation[1:i,1],
+      y = likelihood_documentation[1:i,2],
+      type = "l")
 
-    if(i != 1){
+    if(i != 1)
+    {
 
       check_ll = log_likelihood - old_log_likelihood
 
@@ -196,7 +167,7 @@ fit_model = function(
 
 
       if(check_ll_2 & param_checks)
-        {
+      {
         message("Stopped on combined LL and parameters")
         break
       }
