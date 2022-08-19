@@ -21,9 +21,6 @@ fit_lr(
 
 \item{summary}{whether the output is the summary.glm  (TRUE) or the glm object}
 }
-\value{
-
-}
 \description{
 fit_lr
 }

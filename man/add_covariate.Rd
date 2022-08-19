@@ -9,9 +9,6 @@ add_covariate(covariate_list, input)
 \arguments{
 \item{input}{}
 }
-\value{
-
-}
 \description{
 adds the covariates based on the covariate_list and input vector
 }

@@ -1,18 +1,20 @@
 library(magrittr)
 library(dplyr)
 library(ggplot2)
-
+set.seed(2)
+rm(list = ls())
+load_all()
 #data generation------------
 n=2000
 
-pi1 = function(t) {z <- 0.7
+pi1 = function(t) {z <- 0.6
 c("1" = z, "2" = 1- z)}
 
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ -2 + 0 * t,
-    c == "2" ~ 5 + 0 * t,
+    c == "1" ~ 0,
+    c == "2" ~ 3,
     TRUE ~ NaN
   )
 }

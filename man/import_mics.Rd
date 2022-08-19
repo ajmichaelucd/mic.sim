@@ -9,9 +9,6 @@ import_mics(mic_column, code_column = NULL, combination_agent = FALSE)
 \arguments{
 \item{combination_agent}{}
 }
-\value{
-
-}
 \description{
 import_mics
 }
