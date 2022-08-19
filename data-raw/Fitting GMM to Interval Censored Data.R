@@ -140,6 +140,11 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
     }
     loglikInit <- logLikC #update log-likelihood
     iteration <- iteration + 1 #increment counter
+
+    print(iteration)
+    print(logLikC)
+    print(parms[,1:2])
+    print(priorP)
   }
 
   if (iteration == maxiter) warning("Maximum number of iterations exceeded")

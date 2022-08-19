@@ -82,6 +82,17 @@ gmm_int_cen <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, data.sim$righ
                cluster=NULL,
                classify="EM",
                maxiter=10000, tol=1e-6)
+
+
+aaaa <- mixcensoredInt(y1 = ifelse(data.sim$indicator == 2, log2(data.sim$right_bound), log2(data.sim$left_bound )),  #format would be wrong for this, need a conversion factor if using this notation
+               y2 = log2(data.sim$right_bound),
+               d = data.sim$indicator,
+               wt=rep(1, length(data.sim$observed_value)),
+               dist="gaussian",
+               n = 2,
+               cluster=NULL,
+               classify="EM",
+               maxiter=10000, tol=1e-6)
 #y1 is the right/left censored value, the exact lifetime observation, or for
 # interval censoring the lower value of the censoring interval
 #y2 is the upper value of the censoring interval
@@ -105,7 +116,11 @@ gmm_int_cen$standardError
 plot(x = gmm_int_cen$likelihood_documentation_gmm[,1], y= gmm_int_cen$likelihood_documentation_gmm[,2], type = "l")
 lines(x = likelihood_documentation[,1], y = likelihood_documentation[,2])
 
-
+aaaa$components  ###Divide by log2 to get correct things here
+aaaa$prior
+aaaa$loglik
+aaaa$iterations
+aaaa$standardError
 
 
 
