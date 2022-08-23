@@ -1,5 +1,5 @@
 rm(list = ls())
-set.seed(2)
+set.seed(4)
 library(magrittr)
 library(dplyr)
 #<<<<<<< HEAD
@@ -45,13 +45,13 @@ c("1" = z, "2" = 1- z)}
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ 0,
-    c == "2" ~ 3,
+    c == "1" ~ 0 + -0.4 * t,
+    c == "2" ~ 3 + 0.2 * t,
     TRUE ~ NaN
   )
 }
 
-t_dist1 = function(n){runif(n, min = 0, max = 1)}
+t_dist1 = function(n){runif(n, min = 0, max = 4)}
 
 sd_vector = c("1" = 1, "2" = 1)
 
@@ -68,7 +68,8 @@ data.sim <- simulate_mics(
   covariate_list = covariate_list,
   covariate_effect_vector = covariate_effect_vector,
   low_con = low_con,
-  high_con = high_con)
+  high_con = high_con,
+  scale = "log")
 
 
 hist(data.sim$observed_value)
@@ -124,7 +125,7 @@ sigma(data.sim_summary)
 
 
 
-glm(y ~ c - 1, weights =  `P(C=c|y,t)`, data = possible_data)
+glm(observed_value ~ comp - 1, data = data.sim)
 sigma(glm(y ~ c - 1, weights =  `P(C=c|y,t)`, data = possible_data))
 
 
@@ -143,6 +144,11 @@ sum(old_possible_data[1:2,5, drop = TRUE])
 
 possible_data %>% filter(c == 1) %>% ggplot2::ggplot(aes(x = t, y= y, color = `P(C=c|y,t)`)) + geom_point() + facet_wrap(~true_comp) + ggtitle("2")
 old_possible_data %>% filter(c == 1) %>% ggplot2::ggplot(aes(x = t, y= y, color = `P(C=c|y,t)`)) + geom_point() + facet_wrap(~true_comp) + ggtitle("1")
+
+
+
+
+
 
 
 

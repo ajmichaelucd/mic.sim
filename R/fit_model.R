@@ -4,12 +4,16 @@
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
+#' @param formula
 #'
 #' @return
 #' @export
 #'
 fit_model = function(
     visible_data,
+    formula = Surv(time = left_bound,
+                   time2 = right_bound,
+                   type = "interval2") ~ 0 + c + strata(c) + t:c,
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6)
@@ -61,14 +65,12 @@ fit_model = function(
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
     model <- survival::survreg(
-      formula = Surv(time = left_bound,
-                     time2 = right_bound,
-                     type = "interval2") ~ 0 + c + strata(c),
+      formula,  ##Make this chunk into an argument of the function
       weights = `P(C=c|y,t)`,
       data = possible_data,
       dist = "gaussian")
 
-    newmodel = bind_cols(mean = coef(model), sd = model$scale)
+    newmodel = bind_cols(mean = coef(model) %>% t(), sd = model$scale %>% t())
 
     #Estimate mixing probabilities--------
     pi <- possible_data %>%
@@ -146,11 +148,29 @@ fit_model = function(
 
 
     message(log_likelihood)
+#par(mfrow = c(2,1))
+#    plot(
+#      x = likelihood_documentation[1:i,1],
+#      y = likelihood_documentation[1:i,2],
+#      type = "l")
 
-    plot(
-      x = likelihood_documentation[1:i,1],
-      y = likelihood_documentation[1:i,2],
-      type = "l")
+  c1_plot <-   possible_data %>%
+      mutate(
+        mid =
+          case_when(
+            left_bound == -Inf ~ right_bound - 0.5,
+            right_bound == Inf ~ left_bound + 0.5,
+            TRUE ~ (left_bound + right_bound) / 2
+          )
+      ) %>%
+      filter(c == 1) %>%
+  ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
+      geom_point() +
+    geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
+    geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
+print(c1_plot)
+
+
 
     if(i != 1)
     {

@@ -8,11 +8,12 @@ censor_values(
   observed_value,
   low_con = 2^-4,
   high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con)
+  tested_concentrations = log2(low_con):log2(high_con),
+  scale = "MIC"
 )
 }
 \arguments{
-\item{tested_concentrations}{}
+\item{scale}{}
 }
 \description{
 adds new columns with left and right censoring indicators, setting up the creation of a Surv object with interval2 format

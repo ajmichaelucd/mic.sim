@@ -22,7 +22,8 @@ simulate_mics(
   covariate_effect_vector,
   low_con = 2^-4,
   high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con)
+  tested_concentrations = log2(low_con):log2(high_con),
+  scale = "MIC"
 )
 }
 \arguments{
@@ -30,7 +31,7 @@ simulate_mics(
 
 \item{pi}{pi = function(t) {z <- 0.5 + 0.2 * t     c(z, 1- z)}}
 
-\item{tested_concentrations}{}
+\item{scale}{}
 }
 \description{
 function that wraps together all the functions that determine t's distribution,

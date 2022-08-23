@@ -14,6 +14,7 @@
 #' @param low_con
 #' @param high_con
 #' @param tested_concentrations
+#' @param scale
 #'
 #' @return
 #' @export
@@ -40,12 +41,15 @@ simulate_mics <- function(n = 100,
                            covariate_effect_vector,
                            low_con = 2^-4,
                            high_con = 2^4,
-                           tested_concentrations = log2(low_con):log2(high_con)){
+                           tested_concentrations = log2(low_con):log2(high_con),
+                          scale = "MIC"){
 if(is.null(covariate_list)){
   base_data <- draw_epsilon(n, t_dist, pi, `E[X|T,C]`, sd_vector)
   simulated_obs <- base_data %>% mutate(observed_value = epsilon + x)
-  censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations)
-  inner_join(simulated_obs, censored_obs, by = "observed_value")
+  censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations, scale)
+  df <- inner_join(simulated_obs, censored_obs, by = "observed_value")
+  attr(df, "scale") <- scale
+  return(df)
   } else{
   base_data <- draw_epsilon(n, t_dist, pi, `E[X|T,C]`, sd_vector)
   covariate_data <- add_covariate(covariate_list = covariate_list, input = base_data$t)
@@ -53,8 +57,10 @@ if(is.null(covariate_list)){
   total_cov_effect <- covariate_effect_total(merged_data, covariate_effect_vector)
   simulated_obs <- tibble(merged_data, total_cov_effect) %>%
     mutate(observed_value = epsilon + total_cov_effect + x)
-  censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations)
-  inner_join(simulated_obs, censored_obs)
+  censored_obs <- censor_values(simulated_obs$observed_value, low_con, high_con, tested_concentrations, scale)
+  df <- inner_join(simulated_obs, censored_obs)
+  attr(df, "scale") <- scale
+  return(df)
   }
 }
 
