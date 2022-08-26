@@ -6,6 +6,8 @@
 #' @param tol_ll
 #' @param formula
 #'
+#' @importFrom gridExtra grid.arrange
+#'
 #' @return
 #' @export
 #'
@@ -19,7 +21,7 @@ fit_model = function(
     tol_ll = 1e-6)
 {
 
-  median_y <- median(visible_data$left_bound)
+
   #first E step-----
 
   possible_data <-
@@ -64,13 +66,24 @@ fit_model = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
+    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
+    #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
+
     model <- survival::survreg(
       formula,  ##Make this chunk into an argument of the function
       weights = `P(C=c|y,t)`,
-      data = possible_data,
+      data = df_temp,
       dist = "gaussian")
 
     newmodel = bind_cols(mean = coef(model) %>% t(), sd = model$scale %>% t())
+
+    nn <- paste("c", 1:ncomp, sep = "")
+
+    ##newmodel2 <- tibble(t(data.frame(split(newmodel$mean, rep_len(nn, length.out = length(newmodel$mean)))))) %>%
+     # rename(comp_mean = 1) %>%
+     # mutate(sd = c(newmodel$sd)) %>%
+     # mutate(names = nn) %>%
+     # relocate(names, .before = everything()) %>% print()
 
     #Estimate mixing probabilities--------
     pi <- possible_data %>%
@@ -118,7 +131,7 @@ fit_model = function(
       select(-any_of("P(C = c)")) %>%
       left_join(pi, by = "c") %>%
       mutate(
-        `E[Y|t,c]` = predict(model),
+        `E[Y|t,c]` = predict(model, newdata = possible_data),
         `sd[Y|t,c]` = model$scale[c],
         `Var[Y|t,c]` = `sd[Y|t,c]`^2,
 
@@ -154,6 +167,8 @@ fit_model = function(
 #      y = likelihood_documentation[1:i,2],
 #      type = "l")
 
+
+
   c1_plot <-   possible_data %>%
       mutate(
         mid =
@@ -172,6 +187,7 @@ print(c1_plot)
 
 
 
+
     if(i != 1)
     {
 
@@ -179,6 +195,11 @@ print(c1_plot)
 
       check_ll_2 = check_ll < tol_ll
 
+  #    other_plot <- tibble(likelihood_documentation) %>% ggplot() +
+  #      geom_line(aes(x = likelihood_documentation[,1],
+  #                    y = likelihood_documentation[,2]))
+#
+  #    print(grid.arrange(c1_plot, other_plot, nrow = 1))
 
       #if(check_ll < 0 ){
       #  warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????

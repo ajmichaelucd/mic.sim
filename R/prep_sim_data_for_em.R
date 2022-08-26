@@ -18,10 +18,24 @@ prep_sim_data_for_em <- function(
     left_bound_name = "left_bound",
     right_bound_name = "right_bound",
     time = "t",
-    covariate_names,
+    covariate_names = NULL,
     scale = NULL
 ) {
-if(scale == "MIC"){
+if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
+    data.sim %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
+      mutate(obs_id = 1:n(),
+             left_bound = log2(left_bound),
+             right_bound = log2(right_bound)) %>%
+      relocate(obs_id, .before = everything())
+  }
+  else if (is.null(scale) && attr(data.sim, "scale") == "log"){
+    data.sim %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
+      mutate(obs_id = 1:n()) %>%
+      relocate(obs_id, .before = everything())
+  }
+  else if(scale == "MIC"){
   data.sim %>%
     select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
     mutate(obs_id = 1:n(),
@@ -30,20 +44,6 @@ if(scale == "MIC"){
     relocate(obs_id, .before = everything())
 }
 else if (scale == "log"){
-    data.sim %>%
-      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
-      mutate(obs_id = 1:n()) %>%
-      relocate(obs_id, .before = everything())
-  }
-else if(is.null(scale) & attr(data.sim, "scale") == "MIC")  {
-  data.sim %>%
-    select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
-    mutate(obs_id = 1:n(),
-           left_bound = log2(left_bound),
-           right_bound = log2(right_bound)) %>%
-    relocate(obs_id, .before = everything())
-}
-  else if (is.null(scale) & attr(data.sim, "scale") == "log"){
     data.sim %>%
       select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
       mutate(obs_id = 1:n()) %>%

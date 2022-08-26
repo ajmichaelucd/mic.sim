@@ -18,6 +18,7 @@ library(ggplot2)
 library(LearnBayes)
 library(survival)
 library(biglm)
+library(gridExtra)
 ##Covariate inputs--------------------
 covariate_effect_vector <- c(0 #0 at start is intercept, then add in the desired coefficients for the covariates
 )
@@ -46,7 +47,7 @@ c("1" = z, "2" = 1- z)}
 {
   case_when(
     c == "1" ~ 0 + -0.4 * t,
-    c == "2" ~ 3 + 0.2 * t,
+    c == "2" ~ 2 + 0.2 * t,
     TRUE ~ NaN
   )
 }
@@ -55,8 +56,8 @@ t_dist1 = function(n){runif(n, min = 0, max = 4)}
 
 sd_vector = c("1" = 1, "2" = 1)
 
-low_con = 2^-4
-high_con = 2^4
+low_con = 2^-2
+high_con = 2^2
 
 
 data.sim <- simulate_mics(
@@ -84,15 +85,15 @@ data.sim %>% group_by(comp) %>%
     n = n()) %>%
   mutate(total = n / sum(n))
 
+visible_data <- prep_sim_data_for_em(data.sim, covariate_names = NULL)
 
 
-
-visible_data <- data.sim %>%
-  select(t, left_bound, right_bound, true_comp = comp) %>%
-  mutate(obs_id = 1:n(),
-         left_bound = log2(left_bound),
-         right_bound = log2(right_bound)) %>%
-  relocate(obs_id, .before = everything())
+# visible_data <- data.sim %>%
+#   select(t, left_bound, right_bound, true_comp = comp) %>%
+#   mutate(obs_id = 1:n(),
+#          left_bound = log2(left_bound),
+#          right_bound = log2(right_bound)) %>%
+#   relocate(obs_id, .before = everything())
 
 likelihood_documentation = fit_model(visible_data)
 

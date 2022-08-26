@@ -10,7 +10,7 @@
 #' @return
 #' @export
 #'
-#' @importFrom dplyr mutate
+#' @importFrom dplyr mutate case_when
 #' @importFrom magrittr %>%
 #' @importFrom broom tidy
 #'
@@ -22,7 +22,8 @@ fit_lr <- function(df, time = "t", covariate_names, left_bound, right_bound, MIC
     ncol(.)
 
   outcome <- "dichot"
-  variables  <- ifelse(is.null(time) & is.null(covariate_names), "1", c(time, covariate_names))
+  variables  <- case_when(is.null(time) & is.null(covariate_names) ~ "1",
+                          TRUE ~ c(time, covariate_names))
   f <- as.formula(
     paste(outcome,
           paste(variables, collapse = " + "),
