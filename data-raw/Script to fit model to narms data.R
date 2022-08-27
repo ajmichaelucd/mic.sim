@@ -1,3 +1,25 @@
+
+rm(list = ls())
+set.seed(4)
+library(magrittr)
+library(dplyr)
+#<<<<<<< HEAD
+load_all()
+
+
+#NEXT STEPS:
+##DIFFERENT SIGMAS
+##INTERVAL CENSORING
+##MORE THAN 2 COMPONENTS
+##FUNCTIONS OF TIME AND COVARIATES: MEANS AND PI
+
+#=======
+library(mic.sim)
+library(ggplot2)
+library(LearnBayes)
+library(survival)
+library(biglm)
+library(gridExtra)
 library(readxl)
 full_narms <- read.csv("~/Desktop/2021-FSIS-00065-F_3663/FOIA2021-065.csv", na.strings="NULL")
 key <- full_narms %>%
@@ -26,18 +48,18 @@ hist(log2(narms_CA$Tetracycline_MIC))
 
 narms_CA %>% mutate(Species = tolower(Species)) %>% filter(Species %in% c("coli", "jejuni")) %>%
 ggplot() +
-  geom_histogram(aes(x = log2(Florfenicol_MIC), fill = Species), binwidth = 1)
+  geom_histogram(aes(x = log2(Gentamicin_MIC), fill = Species), binwidth = 1)
 
-ca_cip_mics <- import_mics(narms_CA$Florfenicol_MIC, narms_CA$Florfenicol_Operator)
+ca_cip_mics <- import_mics(narms_CA$Gentamicin_MIC, narms_CA$Gentamicin_Operator)
 
 ca_cip <- narms_CA %>%
   select(EstID:Updated_Profile) %>%
   mutate(Species = tolower(Species)) %>%
   tibble(., ca_cip_mics) %>%
   mutate(t = lubridate::decimal_date( lubridate::dmy(Collection_Date)) - 2013) %>%
-  filter(Species %in% c("coli"
+  filter(Species %in% c(#"coli"
                         #,
-                        #"jejuni"
+                        "jejuni"
                         ))
 
 ca_cip %>% group_by(code_column) %>% summarize(pct = 100 * n() / nrow(ca_cip))
@@ -48,8 +70,8 @@ fit_model(., formula = Surv(time = left_bound, time2 = right_bound, type = "inte
           #+ t:Species
           #+ Sampling_Program
           #+ Animal_Host
-           # + Species:c
-          )
+           # + Species
+          , ncomp = 1)
 
 ##need those approximate decimals to be converted to exact values
 
