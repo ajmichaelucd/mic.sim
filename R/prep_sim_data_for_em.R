@@ -5,6 +5,7 @@
 #' @param right_bound_name
 #' @param time
 #' @param covariate_names
+#' @param scale
 #'
 #' @return
 #' @export

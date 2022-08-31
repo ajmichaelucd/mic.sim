@@ -14,7 +14,7 @@ prep_sim_data_for_em(
 )
 }
 \arguments{
-\item{covariate_names}{}
+\item{scale}{}
 }
 \description{
 Intermediate function to prepare simulated data for use in EM algorithm

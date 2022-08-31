@@ -169,21 +169,21 @@ fit_model = function(
 
 
 
-  c1_plot <-   possible_data %>%
-      mutate(
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          )
-      ) %>%
-      filter(c == 1) %>%
-  ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
-      geom_point() +
-    geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
-    geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
-print(c1_plot)
+#  c1_plot <-   possible_data %>%
+#      mutate(
+#        mid =
+#          case_when(
+#            left_bound == -Inf ~ right_bound - 0.5,
+#            right_bound == Inf ~ left_bound + 0.5,
+#            TRUE ~ (left_bound + right_bound) / 2
+#          )
+#      ) %>%
+#      filter(c == 1) %>%
+#  ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
+#      geom_point() +
+#    geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
+#    geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
+#print(c1_plot)
 
 
 
@@ -219,6 +219,6 @@ print(c1_plot)
 
   }
 
-  return(likelihood_documentation[1:i,])
+  return(list(likelihood_documentation[1:i,], possible_data, pi, newmodel))
 
 }
