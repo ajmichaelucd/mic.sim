@@ -10,11 +10,13 @@ fit_model(
     strata(c) + t:c,
   max_it = 3000,
   ncomp = 2,
-  tol_ll = 1e-06
+  tol_ll = 1e-06,
+  browse_at_end = FALSE,
+  browse_each_step = FALSE
 )
 }
 \arguments{
-\item{formula}{}
+\item{browse_each_step}{}
 }
 \description{
 Title

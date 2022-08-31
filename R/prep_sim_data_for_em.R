@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @importFrom magrittr %>%
-#' @importFrom dplyr select all_of mutate n relocate .before
+#' @importFrom dplyr select all_of mutate n relocate
 #'
 #' @examples
 prep_sim_data_for_em <- function(

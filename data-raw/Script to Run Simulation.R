@@ -13,6 +13,7 @@ library(gridExtra)
 library(data.table)
 
 #parameters-------
+run_name
 iterations <- 1
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
@@ -151,10 +152,8 @@ errors %>%
 #
 
 
-list(summary_stats1, `E[X|T,C]`, pi1, sd_vector) -> run3
-
-run1
-run2
+list(summary_stats1, `E[X|T,C]`, pi1, sd_vector) %>%
+  save(fs::path("misc", run_name, ext = "Rdata"))
 
 
 

@@ -5,8 +5,11 @@
 #' @param ncomp
 #' @param tol_ll
 #' @param formula
+#' @param browse_at_end
+#' @param browse_each_step
 #'
 #' @importFrom gridExtra grid.arrange
+#' @importFrom ggplot2 ggplot geom_point
 #'
 #' @return
 #' @export
@@ -18,10 +21,12 @@ fit_model = function(
                    type = "interval2") ~ 0 + c + strata(c) + t:c,
     max_it = 3000,
     ncomp = 2,
-    tol_ll = 1e-6)
+    tol_ll = 1e-6,
+    browse_at_end = FALSE,
+    browse_each_step = FALSE)
 {
 
-
+  median_y = median(visible_data$left_bound)
   #first E step-----
 
   possible_data <-
@@ -29,15 +34,15 @@ fit_model = function(
     group_by_all() %>%
     summarise(
       c = as.character(1:2), #split at mean and assign
-      `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+     # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
       .groups = "drop"
     ) %>%
-    # mutate(
-    # `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-    #                          left_bound > median_y & c == "2" ~ 0.4,
-    #                          left_bound <= median_y & c == "1" ~ 0.4,
-    #                          left_bound <= median_y & c == "2" ~ 0.6)
-    # ) %>%
+     mutate(
+     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+                              left_bound > median_y & c == "2" ~ 0.4,
+                              left_bound <= median_y & c == "1" ~ 0.4,
+                              left_bound <= median_y & c == "2" ~ 0.6)
+     ) %>%
     print()
 
 
@@ -123,7 +128,21 @@ fit_model = function(
     #if conditions are met, use break
 
 
-
+    c1_plot <-   possible_data %>%
+      mutate(
+        mid =
+          case_when(
+            left_bound == -Inf ~ right_bound - 0.5,
+            right_bound == Inf ~ left_bound + 0.5,
+            TRUE ~ (left_bound + right_bound) / 2
+          )
+      ) %>%
+      filter(c == 1) %>%
+      ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
+      geom_point() +
+      geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
+      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
+    print(c1_plot)
 
 
     #Next E step-------------
@@ -133,7 +152,7 @@ fit_model = function(
       mutate(
         `E[Y|t,c]` = predict(model, newdata = possible_data),
         `sd[Y|t,c]` = model$scale[c],
-        `Var[Y|t,c]` = `sd[Y|t,c]`^2,
+       # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
 
         `P(Y|t,c)` =  if_else(
           left_bound == right_bound,
@@ -169,25 +188,11 @@ fit_model = function(
 
 
 
-#  c1_plot <-   possible_data %>%
-#      mutate(
-#        mid =
-#          case_when(
-#            left_bound == -Inf ~ right_bound - 0.5,
-#            right_bound == Inf ~ left_bound + 0.5,
-#            TRUE ~ (left_bound + right_bound) / 2
-#          )
-#      ) %>%
-#      filter(c == 1) %>%
-#  ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
-#      geom_point() +
-#    geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
-#    geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
-#print(c1_plot)
 
 
 
 
+if(browse_each_step){browser(message("End of step ", i))}
     if(i != 1)
     {
 
@@ -218,6 +223,7 @@ fit_model = function(
 
 
   }
+ if(browse_at_end){browser()}
 
   return(list(likelihood_documentation[1:i,], possible_data, pi, newmodel))
 
