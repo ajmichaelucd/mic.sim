@@ -13,31 +13,31 @@ library(gridExtra)
 library(data.table)
 
 #parameters-------
-run_name
-iterations <- 1
+run_name <- "small_trend_run_2_09012022"
+iterations <- 2 #100
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
 n=2000
 ncomp = 2
-pi1 = function(t) {z <- 0.6
+pi1 = function(t) {z <- 0.8
 c("1" = z, "2" = 1- z)}
 
 `E[X|T,C]` = function(t, c)
 {
   case_when(
     c == "1" ~ 0 + 0.05 * t,
-    c == "2" ~ 3 + 0 * t,
+    c == "2" ~ 1.5 + 0 * t,
     TRUE ~ NaN
   )
 }
 
 t_dist1 = function(n){runif(n, min = 0, max = 5)}
 
-sd_vector = c("1" = 1, "2" = 1)
+sd_vector = c("1" = 1, "2" = 0.5)
 
 low_con = 2^-2
-high_con = 2^3
+high_con = 2^4 #errored out when this was 2^3
 
 scale = "log"
 
@@ -50,7 +50,7 @@ tol_ll = 1e-6
 
 #run--------
 results <- purrr::map(
-  12,
+  1:iterations,
   ~ full_sim_in_1_function(
     .x,
     n = n,
@@ -101,8 +101,7 @@ post_run_analysis_2 <- function(results, intercepts, trends, sigma){
 
 
 
-  #c1-c2 format
-  #c2-c1 format
+
 }
 
 errors <- purrr::map( results, ~post_run_analysis_2(.x,
@@ -119,6 +118,9 @@ errors %>%
             bias = mean(error),
             MSE = mean(error^2)
   ) -> summary_stats1
+
+final <- list(summary_stats1, `E[X|T,C]`, pi1, sd_vector)
+  save(final, file = fs::path("misc", run_name, ext = "Rdata"))
 
 #scratch_work------
 
@@ -152,8 +154,6 @@ errors %>%
 #
 
 
-list(summary_stats1, `E[X|T,C]`, pi1, sd_vector) %>%
-  save(fs::path("misc", run_name, ext = "Rdata"))
 
 
 

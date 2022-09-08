@@ -7,6 +7,7 @@
 #' @param formula
 #' @param browse_at_end
 #' @param browse_each_step
+#' @param plot_visuals
 #'
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
@@ -23,7 +24,8 @@ fit_model = function(
     ncomp = 2,
     tol_ll = 1e-6,
     browse_at_end = FALSE,
-    browse_each_step = FALSE)
+    browse_each_step = FALSE,
+    plot_visuals = FALSE)
 {
 
   median_y = median(visible_data$left_bound)
@@ -37,12 +39,20 @@ fit_model = function(
      # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
       .groups = "drop"
     ) %>%
-     mutate(
-     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-                              left_bound > median_y & c == "2" ~ 0.4,
-                              left_bound <= median_y & c == "1" ~ 0.4,
-                              left_bound <= median_y & c == "2" ~ 0.6)
-     ) %>%
+#     mutate(
+#     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+#                              left_bound > median_y & c == "2" ~ 0.4,
+#                              left_bound <= median_y & c == "1" ~ 0.4,
+#                              left_bound <= median_y & c == "2" ~ 0.6)
+#     ) %>%
+    mutate(
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5 ,
+                               left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5,
+                               left_bound == -Inf & c == "1" ~ 0.01,
+                               left_bound == -Inf & c == "2" ~ 0.99)
+    ) %>%
     print()
 
 
@@ -126,7 +136,7 @@ fit_model = function(
     #A. it is going up (with EM algorithm it should always increase)
     #B. if it is not going up by very much, you can stop
     #if conditions are met, use break
-
+if(plot_visuals == TRUE){
 
     c1_plot <-   possible_data %>%
       mutate(
@@ -143,7 +153,7 @@ fit_model = function(
       geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
       geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
     print(c1_plot)
-
+}
 
     #Next E step-------------
     possible_data %<>%

@@ -54,6 +54,7 @@ full_sim_in_1_function <- function(i,
                                    tol_ll = 1e-6
 ){
   set.seed(i)
+  message("starting run number", i)
 
 
 

@@ -12,11 +12,12 @@ fit_model(
   ncomp = 2,
   tol_ll = 1e-06,
   browse_at_end = FALSE,
-  browse_each_step = FALSE
+  browse_each_step = FALSE,
+  plot_visuals = FALSE
 )
 }
 \arguments{
-\item{browse_each_step}{}
+\item{plot_visuals}{}
 }
 \description{
 Title
