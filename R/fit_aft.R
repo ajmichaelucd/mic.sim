@@ -8,7 +8,7 @@
 #' @param type
 #' @param summary
 #'
-#' @importFrom dplyr mutate all_of select
+#' @importFrom dplyr mutate all_of select case_when
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv survreg
 #' @importFrom broom tidy
@@ -31,7 +31,8 @@ fit_aft <- function(df,
 
   if(type %in% c("loglogistic", "weibull", "lognormal", "exponential")){
     outcome <- "surv_object1"
-    variables  <- ifelse(is.null(time) & is.null(covariate_names), "1", c(time, covariate_names))
+    variables  <- case_when(is.null(time) & is.null(covariate_names) ~ "1",
+                            TRUE ~ c(time, covariate_names))
     f <- as.formula(
       paste(outcome,
             paste(variables, collapse = " + "),
@@ -53,7 +54,8 @@ fit_aft <- function(df,
   }
   else if(type %in% c("logistic", "gaussian")){
     outcome <- "surv_object1"
-    variables  <- ifelse(is.null(time) & is.null(covariate_names), "1", c(time, covariate_names))
+    variables  <- case_when(is.null(time) & is.null(covariate_names) ~ "1",
+                            TRUE ~ c(time, covariate_names))
     f <- as.formula(
       paste(outcome,
             paste(variables, collapse = " + "),

@@ -9,13 +9,17 @@ Description: More about what it does (maybe more than one line)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.1
 Imports: 
     mixtools,
     purrr,
     dplyr,
     magrittr,
-    smoothSurv
+    smoothSurv,
+    broom,
+    readr,
+    survival,
+    LearnBayes
 URL: https://github.com/ajmichaelucd/mic.sim
 BugReports: https://github.com/ajmichaelucd/mic.sim/issues
 Suggests: 

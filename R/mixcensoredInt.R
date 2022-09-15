@@ -1,5 +1,3 @@
-library(SPREDA)
-library(LearnBayes)
 
 ##INTERVAL CENSORED DATA
 
@@ -9,6 +7,23 @@ library(LearnBayes)
 
 #NOTE: this function employs the type="interval" coding scheme as used
 #in the "Surv" function (from the survival package) for interval censored data
+
+#' Title
+#'
+#' @param y1
+#' @param y2
+#' @param d
+#' @param wt
+#' @param dist
+#' @param n
+#' @param cluster
+#' @param classify
+#' @param maxiter
+#' @param tol
+#'
+#' @return
+#' @export
+#'
 
 mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
                             dist="gaussian", n, cluster=NULL, classify="EM",
@@ -46,7 +61,7 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
   #initialize posterior probabilities
   if (is.null(cluster)) {
     alpha <- rep(.1, n)
-    posteriorP <- rdirichlet(length(y1), alpha)}
+    posteriorP <- LearnBayes::rdirichlet(length(y1), alpha)}
   else {posteriorP <- cluster}
 
   while (iteration < maxiter) {
@@ -57,6 +72,7 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
     if (classify=="EM"){
       for (i in 1:n) {
         wtp <- ifelse(wt*posteriorP[,i]<=0, 1e-15, wt*posteriorP[,i]) #E step
+        # browser()
         cp <- survreg(Surv(y1,y2,d, type="interval")~1, weights=wtp, dist=dist) #M step
         parms[i,] <- c(coef(cp)[1], cp$scale, logLik(cp)[1])
         stdErr[i,] <- sqrt(diag(vcov(cp)))}
@@ -119,7 +135,7 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
 
         z1 <- (y1-mu)/sigma
         z2 <- (y2-mu)/sigma
- #P(y | c, t)
+        #P(y | c, t)
         cp <- ifelse(d==0, 1-pnorm(z1), #right censoring
                      ifelse(d==1, 1/(sigma) * dnorm(z1), #exact observations  #1/σ is a transformation of density (dnorm) needed when going from normal to standard normal
                             ifelse(d==2, pnorm(z1), #left censoring
@@ -129,27 +145,33 @@ mixcensoredInt <- function (y1, y2, d, wt=rep(1, length(y1)),
 
     posteriorP <- P/rowSums(P) #row sums of joint distributions = marginal distribution, so this is P(c | y)
 
-    likelihood_documentation_gmm [iteration,2] <- logLikC
+
 
     #check convergence criterion
     if (( abs(logLikC-loglikInit) / (abs(loglikInit)+.001*tol) ) < tol)
 
-      {
+    {
       message("converged after ", iteration, " iterations")
       break
     }
+
     loglikInit <- logLikC #update log-likelihood
     iteration <- iteration + 1 #increment counter
-
-    print(iteration)
-    print(logLikC)
-    print(parms[,1:2])
+    likelihood_documentation_gmm [iteration,2] <- logLikC
+    message("iteration = ", iteration)
+    print(parms)
     print(priorP)
+    print(logLikC)
+
+    plot(x = likelihood_documentation_gmm[1:iteration,1], y = likelihood_documentation_gmm[1:iteration,2], type = "l")
+
   }
+
+
 
   if (iteration == maxiter) warning("Maximum number of iterations exceeded")
   list(components=parms[,1:2], prior=priorP, loglik=logLikC,
        AIC=-2*logLikC + 2*(n-1+2*n), BIC=-2*logLikC + (n-1+2*n)*log(nobs),
        strategy=classify, distribution=dist, iterations=iteration,
-       standardError=stdErr, posterior=posteriorP, likelihood_documentation_gmm = likelihood_documentation_gmm)
+       standardError=stdErr, posterior=posteriorP, likelihood_documentation_gmm = likelihood_documentation_gmm[1:iteration,])
 }

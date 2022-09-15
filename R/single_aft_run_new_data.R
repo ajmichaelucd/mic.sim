@@ -8,7 +8,7 @@
 #' @param n
 #' @param t_dist
 #' @param pi
-#' @param complist
+#' @param `E[X|T,C]`
 #' @param sd_vector
 #' @param low_con
 #' @param high_con
@@ -21,11 +21,11 @@
 #' @return
 #' @export
 #'
-#' @importFrom dplyr mutate all_of select bind_rows tibble inner_join group_by
+#' @importFrom dplyr mutate all_of select bind_rows tibble inner_join group_by case_when
 #' @importFrom magrittr %>%
 #' @importFrom survival Surv survreg
 #' @importFrom broom tidy
-#' @importFrom purrr map as_vector
+#' @importFrom purrr map as_vector map_chr
 #' @importFrom tidyr pivot_wider
 #'
 #'
@@ -39,8 +39,13 @@ single_aft_run_new_data <- function(covariate_effect_vector = c(0),
                                     t_dist = function(n){runif(n, min = 0, max = 1)},
                                     pi = function(t) {z <- 1 + 0* t
                                     c("1" = z)},
-                                    complist = list(
-                                      "1" = function(t) {0 + 0 * t}),
+                                    `E[X|T,C]` = function(t, c)
+                                    {
+                                      case_when(
+                                        c == "1" ~ 0 + 0 * t,
+                                        TRUE ~ NaN
+                                      )
+                                    },
                                     sd_vector =  c("1" = 1),
                                     low_con = 2^-4,
                                     high_con = 2^4,
@@ -55,7 +60,7 @@ if(stderr == FALSE){
     n,
     t_dist,
     pi,
-    complist,
+    `E[X|T,C]`,
     sd_vector,
     covariate_list,
     covariate_effect_vector,
@@ -83,7 +88,7 @@ if(stderr == FALSE){
       n,
       t_dist,
       pi,
-      complist,
+      `E[X|T,C]`,
       sd_vector,
       covariate_list,
       covariate_effect_vector,

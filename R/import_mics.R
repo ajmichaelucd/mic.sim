@@ -15,14 +15,16 @@
 #' @examples
 import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE){
 
-  df_temp <- dplyr::tibble(mic_column = dplyr::case_when(
-    combination_agent == FALSE ~ mic_column,
-    TRUE ~ gsub("/.*$", "", mic_column)
-  ),
-  code_column)
+  mic_column <- dplyr::case_when(
+    grepl("/", as.character(mic_column)) ~ gsub("/.*$", "", mic_column),
+    TRUE ~ as.character(mic_column))
+  code_column <- code_column
+  df_temp <- dplyr::tibble(mic_column, code_column)
+
+
 
   if(is.null(code_column)){
-    df_temp %>%
+    df <- df_temp %>%
       mutate(left_bound =
                dplyr::case_when(
                  grepl(pattern = "(≤)|(<=)|(=<)", x = mic_column) ~ 0,
@@ -38,10 +40,11 @@ import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE
             )
 
   } else{
-    df_temp %>%
+    df <- df_temp %>%
       mutate(left_bound =
                dplyr::case_when(
                  grepl(pattern = "(≤)|(<=)|(=<)", x = code_column) ~ 0,
+                 grepl(pattern = ">", x = code_column) ~ readr::parse_number(mic_column),
                  TRUE ~ readr::parse_number(mic_column)/2
                ),
              right_bound =
@@ -51,6 +54,28 @@ import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE
                )
       )
   }
+  df %>%
+    mutate(
+      left_bound = case_when(
+        left_bound == "0.12" ~ 0.125,
+        left_bound == "0.06" ~ 2^-4,
+        left_bound == "0.03" ~ 2^-5,
+        left_bound == "0.015" ~ 2^-6,
+        left_bound == "0.0075" ~ 2^-7,
+        left_bound == "0.00375" ~ 2^-8,
+        TRUE ~ left_bound
+      ),
+      right_bound = case_when(
+        right_bound == "0.12" ~ 0.125,
+        right_bound == "0.06" ~ 2^-4,
+        right_bound == "0.03" ~ 2^-5,
+        right_bound == "0.015" ~ 2^-6,
+        right_bound == "0.0075" ~ 2^-7,
+        right_bound == "0.00375" ~ 2^-8,
+        TRUE ~ right_bound
+      )
+    ) %>% return()
+
 }
 
 
