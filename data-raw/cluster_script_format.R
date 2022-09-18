@@ -70,18 +70,18 @@ results <- purrr::map(
     ncomp = ncomp,
     tol_ll = tol_ll,
     silent = TRUE
-  )
+  ))
 
 
-results
+
 ##add a save here
 
 
 
 file_name <- paste(run_name, args, sep = "_")
-file <- paste0(file_name, ".Rdata")
-path <- paste(run_name, file, sep = "/")
-path
+path <- paste0(file_name, ".Rdata")
+
+save(results, file = path)
 
 
 
