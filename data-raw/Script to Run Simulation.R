@@ -3,7 +3,7 @@
 library(magrittr)
 library(dplyr)
 library(tidyr)
-load_all()
+#load_all()
 library(mic.sim)
 library(ggplot2)
 library(LearnBayes)
@@ -14,7 +14,7 @@ library(data.table)
 
 #parameters-------
 run_name <- "small_trend_run_2_09012022"
-iterations <- 2 #100
+iterations <- 1 #100
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
@@ -66,7 +66,8 @@ results <- purrr::map(
     formula = formula,
     max_it = max_it,
     ncomp = ncomp,
-    tol_ll = tol_ll
+    tol_ll = tol_ll,
+    silent = TRUE
   )
 )
 

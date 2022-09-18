@@ -51,7 +51,8 @@ full_sim_in_1_function <- function(i,
                                                   type = "interval2") ~ 0 + c + strata(c) + t:c,
                                    max_it = 3000,
                                    ncomp = 2,
-                                   tol_ll = 1e-6
+                                   tol_ll = 1e-6,
+                                   silent = FALSE
 ){
   set.seed(i)
   message("starting run number", i)
@@ -73,7 +74,9 @@ full_sim_in_1_function <- function(i,
 
   visible_data <- prep_sim_data_for_em(data.sim, left_bound_name = "left_bound", right_bound_name = "right_bound", time = "t", covariate_names, scale = scale)
 
-  single_model_output = fit_model(visible_data, formula, max_it, ncomp, tol_ll)
+  single_model_output = fit_model(visible_data, formula, max_it, ncomp, tol_ll, silent = silent)
+
+  single_model_output <- append(single_model_output, i)
 
   return(single_model_output)
 

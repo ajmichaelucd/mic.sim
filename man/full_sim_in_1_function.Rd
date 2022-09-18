@@ -28,7 +28,8 @@ full_sim_in_1_function(
     strata(c) + t:c,
   max_it = 3000,
   ncomp = 2,
-  tol_ll = 1e-06
+  tol_ll = 1e-06,
+  silent = FALSE
 )
 }
 \arguments{

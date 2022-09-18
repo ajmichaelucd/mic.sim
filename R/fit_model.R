@@ -8,6 +8,7 @@
 #' @param browse_at_end
 #' @param browse_each_step
 #' @param plot_visuals
+#' @param silent
 #'
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
@@ -25,7 +26,8 @@ fit_model = function(
     tol_ll = 1e-6,
     browse_at_end = FALSE,
     browse_each_step = FALSE,
-    plot_visuals = FALSE)
+    plot_visuals = FALSE,
+    silent = FALSE)
 {
 
   median_y = median(visible_data$left_bound)
@@ -52,8 +54,8 @@ fit_model = function(
                                left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5,
                                left_bound == -Inf & c == "1" ~ 0.01,
                                left_bound == -Inf & c == "2" ~ 0.99)
-    ) %>%
-    print()
+    ) #%>%
+    #print()
 
 
 
@@ -64,7 +66,8 @@ fit_model = function(
 
 
   for(i in 1:max_it){
-    message("starting iteration number ", i)
+    if(silent == FALSE){
+    message("starting iteration number ", i)}
     #first M step--------
     #MLE of all parameters
     if(i != 1){
@@ -177,8 +180,9 @@ if(plot_visuals == TRUE){
         `P(Y=y|t)` = sum(`P(c,y|t)`),
         `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
       ) %>% ungroup()
+    if(silent == FALSE){
     print(pi)
-    print(newmodel)
+    print(newmodel)}
 
     log_likelihood_obs <- possible_data %>%
       group_by(obs_id) %>%
@@ -188,8 +192,8 @@ if(plot_visuals == TRUE){
 
     likelihood_documentation[i, 2] <- log_likelihood
 
-
-    message(log_likelihood)
+    if(silent == FALSE){
+    message(log_likelihood)}
 #par(mfrow = c(2,1))
 #    plot(
 #      x = likelihood_documentation[1:i,1],
@@ -224,7 +228,8 @@ if(browse_each_step){browser(message("End of step ", i))}
 
       if(check_ll_2 & param_checks)
       {
-        message("Stopped on combined LL and parameters")
+        if(silent == FALSE){
+        message("Stopped on combined LL and parameters")}
         break
       }
 
