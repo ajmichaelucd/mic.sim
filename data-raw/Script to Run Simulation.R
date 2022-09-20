@@ -3,7 +3,7 @@
 library(magrittr)
 library(dplyr)
 library(tidyr)
-load_all()
+#load_all()
 library(mic.sim)
 library(ggplot2)
 library(LearnBayes)
@@ -26,8 +26,8 @@ c("1" = z, "2" = 1- z)}
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ 0 + 0.05 * t,
-    c == "2" ~ 1.5 + 0 * t,
+    c == "1" ~ 100 + 0.05 * t,
+    c == "2" ~ 150 + 0 * t,
     TRUE ~ NaN
   )
 }
@@ -48,10 +48,12 @@ max_it = 3000
 ncomp = 2
 tol_ll = 1e-6
 
+poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
+
 #run--------
 results <- purrr::map(
   1:iterations,
-  ~ full_sim_in_1_function(
+  ~ poss_full_sim_in_1_function(
     .x,
     n = n,
     t_dist = t_dist1,
@@ -66,7 +68,8 @@ results <- purrr::map(
     formula = formula,
     max_it = max_it,
     ncomp = ncomp,
-    tol_ll = tol_ll
+    tol_ll = tol_ll,
+    silent = TRUE
   )
 )
 

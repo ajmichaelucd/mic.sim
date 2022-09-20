@@ -13,11 +13,12 @@ fit_model(
   tol_ll = 1e-06,
   browse_at_end = FALSE,
   browse_each_step = FALSE,
-  plot_visuals = FALSE
+  plot_visuals = FALSE,
+  silent = FALSE
 )
 }
 \arguments{
-\item{plot_visuals}{}
+\item{silent}{}
 }
 \description{
 Title
