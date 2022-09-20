@@ -12,10 +12,10 @@ library(data.table)
 
 #command line arguments------------
 args <- commandArgs(trailingOnly = TRUE)
-iteration_set <- ((10 * args) - 9):(10 * args)
+iteration_set <- ((10 * args) - 9):(10 * args) #batch size: 10, so set the subtracted term to be "batch size - 1"
 #parameters-------
-run_name <- "small_trend_run_2_09012022"
-iterations <- 1 #100
+run_name <- "small_trend_run_3_09192022"
+#iterations <- 1 #not used for this script because we are doing batches up above
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
@@ -38,7 +38,7 @@ t_dist1 = function(n){runif(n, min = 0, max = 5)}
 sd_vector = c("1" = 1, "2" = 0.5)
 
 low_con = 2^-2
-high_con = 2^5 #errored out when this was 2^3
+high_con = 2^2 #errored out when this was 2^3
 
 scale = "log"
 
@@ -49,11 +49,12 @@ max_it = 3000
 ncomp = 2
 tol_ll = 1e-6
 
+poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
 
 #run--------
 results <- purrr::map(
   iteration_set,
-  ~ full_sim_in_1_function(
+  ~ poss_full_sim_in_1_function(
     .x,
     n = n,
     t_dist = t_dist1,
