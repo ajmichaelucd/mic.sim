@@ -29,7 +29,8 @@ full_sim_in_1_function(
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
-  silent = FALSE
+  silent = FALSE,
+  ...
 )
 }
 \arguments{

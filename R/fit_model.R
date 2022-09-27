@@ -12,6 +12,7 @@
 #'
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
+#' @importFrom survival strata survreg Surv
 #'
 #' @return
 #' @export
@@ -240,6 +241,6 @@ if(browse_each_step){browser(message("End of step ", i))}
   }
  if(browse_at_end){browser()}
 
-  return(list(likelihood_documentation[1:i,], possible_data, pi, newmodel))
+  return(list(likelihood = likelihood_documentation[1:i,], possible_data = possible_data, pi = pi, coefficients_and_sd = newmodel))
 
 }

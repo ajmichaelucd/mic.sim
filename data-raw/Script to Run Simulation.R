@@ -117,7 +117,7 @@ data.table::rbindlist() %>% tibble() %>%
 errors %>%
   group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
-            std_error = sd(est) / sqrt(length(results)),
+            std_error = sd(est),
             bias = mean(error),
             MSE = mean(error^2)
   ) -> summary_stats1
