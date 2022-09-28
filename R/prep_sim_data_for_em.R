@@ -20,35 +20,54 @@ prep_sim_data_for_em <- function(
     right_bound_name = "right_bound",
     time = "t",
     covariate_names = NULL,
-    scale = NULL
+    scale = NULL,
+    observed_value_choice = FALSE,
+    observed_value_name = "observed_value"
 ) {
+truth <- data.sim %>% select("observed_value")
+
 if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
-    data.sim %>%
+    df <- data.sim %>%
       select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
       mutate(obs_id = 1:n(),
              left_bound = log2(left_bound),
              right_bound = log2(right_bound)) %>%
       relocate(obs_id, .before = everything())
+    if(observed_value_choice){
+      df <- cbind(df, truth) %>% tibble()
+    }
   }
   else if (is.null(scale) && attr(data.sim, "scale") == "log"){
-    data.sim %>%
+    df <- data.sim %>%
       select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
+    if(observed_value_choice){
+      df <- cbind(df, truth) %>% tibble()
+    }
   }
   else if(scale == "MIC"){
-  data.sim %>%
+    df <- data.sim %>%
     select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
     mutate(obs_id = 1:n(),
            left_bound = log2(left_bound),
            right_bound = log2(right_bound)) %>%
     relocate(obs_id, .before = everything())
+    if(observed_value_choice){
+      df <- cbind(df, truth) %>% tibble()
+    }
 }
 else if (scale == "log"){
-    data.sim %>%
+  df <- data.sim %>%
       select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
+  if(observed_value_choice){
+    df <- cbind(df, truth) %>% tibble()
+  }
   }
   else{warningCondition(message = "Either (A.) set scale variable to MIC or log or (B.) data.sim should have a scale attribute of either MIC or log")}
-}
+
+return(df)
+
+  }
