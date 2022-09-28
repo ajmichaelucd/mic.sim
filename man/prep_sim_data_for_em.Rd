@@ -10,7 +10,9 @@ prep_sim_data_for_em(
   right_bound_name = "right_bound",
   time = "t",
   covariate_names = NULL,
-  scale = NULL
+  scale = NULL,
+  observed_value_choice = FALSE,
+  observed_value_name = "observed_value"
 )
 }
 \arguments{
