@@ -4,10 +4,16 @@
 \alias{error_measures_one_run}
 \title{error_measures_one_run}
 \usage{
-error_measures_one_run(individual_run, intercepts, trends, sigma)
+error_measures_one_run(
+  individual_run,
+  intercepts,
+  trends,
+  sigma,
+  error_threshold = 10
+)
 }
 \arguments{
-\item{sigma}{}
+\item{error_threshold}{}
 }
 \description{
 Extracts error measures from a single simulation. Useful when used in a map function applied to a batch of simulations.

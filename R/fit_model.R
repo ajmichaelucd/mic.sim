@@ -13,6 +13,7 @@
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
 #' @importFrom survival strata survreg Surv
+#' @importFrom pryr mem_used
 #'
 #' @return
 #' @export
@@ -67,8 +68,12 @@ fit_model = function(
 
 
   for(i in 1:max_it){
-    if(silent == FALSE){
+    if(!silent){
     message("starting iteration number ", i)}
+    if(verbose){
+      message("mem used = ")
+      print(pryr::mem_used())
+    }
     #first M step--------
     #MLE of all parameters
     if(i != 1){

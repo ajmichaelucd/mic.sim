@@ -6,6 +6,7 @@
 #' @param intercepts
 #' @param trends
 #' @param sigma
+#' @param error_threshold
 #'
 #' @return
 #' @export
@@ -15,7 +16,7 @@
 #' @importFrom tidyr pivot_longer pivot_wider separate
 #'
 #' @examples
-error_measures_one_run <- function(individual_run, intercepts, trends, sigma){
+error_measures_one_run <- function(individual_run, intercepts, trends, sigma, error_threshold = 10){
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
   if(length(individual_run) == 1 && individual_run == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}

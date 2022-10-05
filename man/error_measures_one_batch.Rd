@@ -12,11 +12,13 @@ error_measures_one_batch(
   i,
   intercepts,
   trends,
-  sigma
+  sigma,
+  pi,
+  error_threshold = 10
 )
 }
 \arguments{
-\item{sigma}{}
+\item{error_threshold}{}
 }
 \description{
 error_measures_one_batch

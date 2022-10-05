@@ -8,6 +8,8 @@
 #' @param intercepts
 #' @param trends
 #' @param sigma
+#' @param pi
+#' @param error_threshold
 #'
 #' @return
 #' @export
@@ -19,13 +21,13 @@
 #' @importFrom fs path
 #'
 #' @examples
-error_measures_one_batch <- function(location, format, array_name, date, i, intercepts, trends, sigma){
+error_measures_one_batch <- function(location, format, array_name, date, i, intercepts, trends, sigma, pi, error_threshold = 10){
   file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
   results <- loadRData(file)
 
 
 
-  map(results, ~error_measures_one_run(.x, intercepts, trends, sigma)) %>%
+  map(results, ~error_measures_one_run_both_directions(.x, intercepts, trends, sigma, pi, error_threshold)) %>%
     data.table::rbindlist()
 
 }
