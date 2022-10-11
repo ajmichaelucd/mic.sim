@@ -14,11 +14,14 @@ error_measures_one_batch(
   trends,
   sigma,
   pi,
-  error_threshold = 10
+  sigma_tolerance = 100,
+  pi_tolerance = 100,
+  intercepts_tolerance = 100,
+  trends_tolerance = 100
 )
 }
 \arguments{
-\item{error_threshold}{}
+\item{trends_tolerance}{}
 }
 \description{
 error_measures_one_batch

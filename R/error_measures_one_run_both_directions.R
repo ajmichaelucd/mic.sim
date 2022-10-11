@@ -6,6 +6,10 @@
 #' @param sigma
 #' @param pi
 #' @param error_threshold
+#' @param sigma_tolerance
+#' @param pi_tolerance
+#' @param intercepts_tolerance
+#' @param trends_tolerance
 #'
 #' @return
 #' @export
@@ -17,11 +21,11 @@
 #'
 #'
 #' @examples
-error_measures_one_run_both_directions <- function(individual_run, intercepts, trends, sigma, pi, error_threshold = Inf){
+error_measures_one_run_both_directions <- function(individual_run, intercepts, trends, sigma, pi, sigma_tolerance = 100, pi_tolerance = 100, intercepts_tolerance = 100, trends_tolerance = 100){
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
-  if(length(individual_run) == 1 && individual_run == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}
-  else{
+  if(length(individual_run) == 1 && individual_run == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error", sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE"))
+    } else{
 
 
     #  a <- min_rank(abs(intercepts - individual_run[[4]]$mean[1]))
@@ -78,12 +82,43 @@ f_error <- f_error$total_error
 r_error <- reverse %>% summarize(total_error = sum(abs(error)))
 r_error <- r_error$total_error
 
-if(min(c(f_error, r_error)) > error_threshold){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}
+# if(min(c(f_error, r_error)) > error_threshold){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}
+#
+#     if(f_error < r_error){return(forward)}
+#     else if(f_error > r_error){return(reverse)}
+#     else{warningCondition("We have ourselves an issue in determining which version has lower error")
+#       return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}
 
-    if(f_error < r_error){return(forward)}
-    else if(f_error > r_error){return(reverse)}
-    else{warningCondition("We have ourselves an issue in determining which version has lower error")
-      return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}
+
+  if(f_error < r_error){df <- forward
+                        selection = "f"}
+  else if(f_error > r_error){df <- reverse
+                        selection = "r"}
+  else{warningCondition("We have ourselves an issue in determining which version has lower error")
+    df <- forward
+    selection = "e"
   }
+
+  }
+
+ a <- df %>% filter(parameter == "sigma")
+ if(max(abs(a$est)) > sigma_tolerance){sigma_error = TRUE
+ } else{sigma_error = FALSE}
+
+ a <- df %>% filter(parameter == "pi")
+ if(max(a$est) >= 1){pi_error = TRUE
+ } else{pi_error = FALSE}
+
+ a <- df %>% filter(parameter == "intercepts")
+ if(max(abs(a$est)) >=100){intercept_error = TRUE
+ } else{intercept_error = FALSE}
+
+ a <- df %>% filter(parameter == "trends")
+ if(max(abs(a$est)) >=100){trends_error = TRUE
+ } else{trends_error = FALSE}
+
+ df2 <- df %>% mutate(sigma_error = sigma_error, pi_error = pi_error, intercept_error = intercept_error, trends_error = trends_error)
+
+ return(df2)
 
 }

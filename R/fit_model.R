@@ -8,7 +8,7 @@
 #' @param browse_at_end
 #' @param browse_each_step
 #' @param plot_visuals
-#' @param silent
+#' @param verbose
 #'
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
@@ -29,7 +29,15 @@ fit_model = function(
     browse_at_end = FALSE,
     browse_each_step = FALSE,
     plot_visuals = FALSE,
-    silent = FALSE)
+    #silent = FALSE,
+    verbose = 3)
+#verbose = 0: print nothing
+#verbose = 1: print run number (controlled outside in the purrr::map of this) --done
+#verbose = 2: print run number and iteration number --done
+#verbose = 3: print run number, iteration number, and iteration results --done
+#verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
+#verbose = 0:
+
 {
 
   median_y = median(visible_data$left_bound)
@@ -68,9 +76,9 @@ fit_model = function(
 
 
   for(i in 1:max_it){
-    if(!silent){
+    if(verbose > 1){
     message("starting iteration number ", i)}
-    if(verbose){
+    if(verbose > 3){
       message("mem used = ")
       print(pryr::mem_used())
     }
@@ -92,12 +100,23 @@ fit_model = function(
 
     df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
-
+if(verbose <= 3){
     model <- survival::survreg(
       formula,  ##Make this chunk into an argument of the function
       weights = `P(C=c|y,t)`,
       data = df_temp,
       dist = "gaussian")
+} else{
+  model <- survival::survreg(
+    formula,  ##Make this chunk into an argument of the function
+    weights = `P(C=c|y,t)`,
+    data = df_temp,
+    dist = "gaussian",
+    debug = 2)
+    }
+
+
+
 
     newmodel = bind_cols(mean = coef(model) %>% t(), sd = model$scale %>% t())
 
@@ -186,9 +205,10 @@ if(plot_visuals == TRUE){
         `P(Y=y|t)` = sum(`P(c,y|t)`),
         `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
       ) %>% ungroup()
-    if(silent == FALSE){
+    if(verbose > 2){
     print(pi)
-    print(newmodel)}
+    print(newmodel)
+    }
 
     log_likelihood_obs <- possible_data %>%
       group_by(obs_id) %>%
@@ -198,8 +218,9 @@ if(plot_visuals == TRUE){
 
     likelihood_documentation[i, 2] <- log_likelihood
 
-    if(silent == FALSE){
-    message(log_likelihood)}
+    if(verbose > 2){
+    message(log_likelihood)
+      }
 #par(mfrow = c(2,1))
 #    plot(
 #      x = likelihood_documentation[1:i,1],
@@ -234,7 +255,7 @@ if(browse_each_step){browser(message("End of step ", i))}
 
       if(check_ll_2 & param_checks)
       {
-        if(silent == FALSE){
+        if(verbose > 0){
         message("Stopped on combined LL and parameters")}
         break
       }

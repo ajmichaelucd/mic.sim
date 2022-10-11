@@ -14,11 +14,11 @@ fit_model(
   browse_at_end = FALSE,
   browse_each_step = FALSE,
   plot_visuals = FALSE,
-  silent = FALSE
+  verbose = 3
 )
 }
 \arguments{
-\item{silent}{}
+\item{verbose}{}
 }
 \description{
 Title

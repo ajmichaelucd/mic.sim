@@ -13,7 +13,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/Sim_Results/component_mean_run_5_09272022/"
+location <- "~/Desktop/Sim_Results/component_mean_run_3_09272022/"
 
 #two formats i have used:
 #name_date_number
@@ -21,7 +21,7 @@ location <- "~/Desktop/Sim_Results/component_mean_run_5_09272022/"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "component_mean_run_5"
+array_name <- "component_mean_run_3"
 date <- "09272022"
 
 
@@ -29,12 +29,16 @@ date <- "09272022"
 
 
 #target values
-intercepts = c(-1, 2.0)
+intercepts = c(-1, 1.75)
 trends = c(0.1, 0)
 sigma = c(1, 0.5)
 pi = c(0.5, 0.5)
 
-error_threshold = 10
+#thresholds
+sigma_tolerance = 100
+pi_tolerance = 0.95
+intercepts_tolerance = 100
+trends_tolerance = 100
 
 
 
@@ -57,16 +61,17 @@ error_threshold = 10
 
 
 
-array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, error_threshold = error_threshold))
+array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
 failure_to_converge_pct <- (array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% summarize(n = n() / (number_of_batches * number_per_batch)))
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+converge_incorrectly_pct <- (array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & (sigma_error == TRUE | pi_error == TRUE | intercept_error == TRUE | trends_error == TRUE)) %>% group_by(iter) %>% summarise(n = 1 / (number_of_batches * number_per_batch)) %>% summarise(n = sum(n)))
+array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
             std_error = sd(est),
             bias = mean(error),
             MSE = mean(error^2)
   )
 
-results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric)
+results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric)
 
 #intercepts
 #trends
@@ -75,7 +80,7 @@ results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != 
 library(ggplot2)
 
 
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>%
+results_tibble %>%
   filter(parameter == "intercepts") %>%
   filter(comp == "c2") %>%
 #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
@@ -86,7 +91,7 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutat
   ggtitle(label = "Component 2 Intercept")
 #+ geom_text(stat='count', aes(label=..count..), vjust = -10)
 
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>%
+results_tibble %>%
   filter(parameter == "intercepts") %>%
   filter(comp == "c1") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
@@ -98,7 +103,7 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutat
   ggtitle(label = "Component 1 Intercept")
 
 
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>%
+results_tibble %>%
   filter(parameter == "trends") %>%
   filter(comp == "c2") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
@@ -111,7 +116,7 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutat
   ggtitle(label = "Component 2 Slope")
 
 
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>%
+results_tibble %>%
   filter(parameter == "trends") %>%
   filter(comp == "c1") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
@@ -123,7 +128,7 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutat
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
   ggtitle(label = "Component 1 Slope")
 
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>%
+results_tibble %>%
   filter(parameter == "sigma") %>%
   filter(comp == "c1") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
@@ -135,7 +140,7 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutat
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
   ggtitle(label = "Component 1 Sigma")
 
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>%
+results_tibble %>%
   filter(parameter == "sigma") %>%
   filter(comp == "c2") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
@@ -147,12 +152,17 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutat
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
   ggtitle(label = "Component 2 Sigma")
 
-
-
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% filter(iter == 69) %>% View
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% filter(iter == 460) %>% View
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% filter(iter == 578) %>% View
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% filter(iter == 499) %>% View
+results_tibble %>%
+  filter(parameter == "pi") %>%
+  filter(comp == "c1") %>%
+  #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
+  ggplot(aes(x = error)) +
+  geom_histogram(
+    #binwidth = 0.02,
+    fill = "darkgreen", color = "black") +
+  geom_vline(aes(xintercept = 0), color = "red") +
+  #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
+  ggtitle(label = "Component 2 Pi")
 
 
 
