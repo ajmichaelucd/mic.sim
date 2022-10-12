@@ -85,7 +85,7 @@ results <- purrr::map(
     max_it = max_it,
     ncomp = ncomp,
     tol_ll = tol_ll,
-    verbose = 1
+    verbose = 2
   ))
 
 
