@@ -24,7 +24,20 @@
 #' @importFrom fs path
 #'
 #' @examples
-error_measures_one_batch <- function(location, format, array_name, date, i, intercepts, trends, sigma, pi, sigma_tolerance = 100, pi_tolerance = 100, intercepts_tolerance = 100, trends_tolerance = 100 ){
+error_measures_one_batch <- function(location,
+                                     format,
+                                     array_name,
+                                     date,
+                                     i,
+                                     intercepts,
+                                     trends,
+                                     sigma,
+                                     pi,
+                                     sigma_tolerance = c(.05, 100),
+                                     pi_tolerance = c(.05, .95),
+                                     intercepts_tolerance = 100,
+                                     trends_tolerance = 100
+){
   file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
   results <- loadRData(file)
 

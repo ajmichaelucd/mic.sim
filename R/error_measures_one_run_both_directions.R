@@ -21,7 +21,16 @@
 #'
 #'
 #' @examples
-error_measures_one_run_both_directions <- function(individual_run, intercepts, trends, sigma, pi, sigma_tolerance = 100, pi_tolerance = 100, intercepts_tolerance = 100, trends_tolerance = 100){
+error_measures_one_run_both_directions <- function(individual_run,
+                                                   intercepts,
+                                                   trends,
+                                                   sigma,
+                                                   pi,
+                                                   sigma_tolerance = c(.05, 100),
+                                                   pi_tolerance = c(.05, .95),
+                                                   intercepts_tolerance = 100,
+                                                   trends_tolerance = 100 ){
+
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
   if(length(individual_run) == 1 && individual_run == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error", sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE"))
@@ -96,25 +105,25 @@ r_error <- r_error$total_error
                         selection = "r"}
   else{warningCondition("We have ourselves an issue in determining which version has lower error")
     df <- forward
-    selection = "e"
+    #selection = "e"
   }
 
   }
 
  a <- df %>% filter(parameter == "sigma")
- if(max(abs(a$est)) > sigma_tolerance){sigma_error = TRUE
+ if(max(abs(a$est)) > max(sigma_tolerance) | min(abs(a$est)) < min(sigma_tolerance) ){sigma_error = TRUE
  } else{sigma_error = FALSE}
 
  a <- df %>% filter(parameter == "pi")
- if(max(a$est) >= 1){pi_error = TRUE
+ if(max(a$est) >= max(pi_tolerance) | min(a$est) <= min(pi_tolerance)){pi_error = TRUE
  } else{pi_error = FALSE}
 
  a <- df %>% filter(parameter == "intercepts")
- if(max(abs(a$est)) >=100){intercept_error = TRUE
+ if(max(abs(a$est)) >= intercepts_tolerance){intercept_error = TRUE
  } else{intercept_error = FALSE}
 
  a <- df %>% filter(parameter == "trends")
- if(max(abs(a$est)) >=100){trends_error = TRUE
+ if(max(abs(a$est)) >= trends_tolerance){trends_error = TRUE
  } else{trends_error = FALSE}
 
  df2 <- df %>% mutate(sigma_error = sigma_error, pi_error = pi_error, intercept_error = intercept_error, trends_error = trends_error)

@@ -4,6 +4,7 @@ library(tidyr)
 library(purrr)
 library(data.table)
 library(fs)
+library(ggplot2)
 
 #number of batches (e.g. 100)
 number_of_batches = 100
@@ -13,7 +14,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/Sim_Results/component_mean_run_3_09272022/"
+location <- "~/Desktop/Sim_Results/component_mean_run_6_09272022/"
 
 #two formats i have used:
 #name_date_number
@@ -21,7 +22,7 @@ location <- "~/Desktop/Sim_Results/component_mean_run_3_09272022/"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "component_mean_run_3"
+array_name <- "component_mean_run_6"
 date <- "09272022"
 
 
@@ -29,36 +30,16 @@ date <- "09272022"
 
 
 #target values
-intercepts = c(-1, 1.75)
+intercepts = c(-1, 2.1)
 trends = c(0.1, 0)
 sigma = c(1, 0.5)
 pi = c(0.5, 0.5)
 
 #thresholds
-sigma_tolerance = 100
-pi_tolerance = 0.95
+sigma_tolerance = c(0.25, 40)
+pi_tolerance = c(0.05, 0.95)
 intercepts_tolerance = 100
 trends_tolerance = 100
-
-
-
-
-
-#load("~/Desktop/small_trend_run_1_09192022/small_trend_run_1_09192022_35.Rdata")
-
-
-
-
-
-
-#need a method for when result is "Error"
-
-
-
-
-
-
-
 
 
 array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
@@ -71,13 +52,15 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_er
             MSE = mean(error^2)
   )
 
+tibble(failed_convergence = failure_to_converge_pct$n, incorrect_convergence = converge_incorrectly_pct$n, total_failure_proportion = failure_to_converge_pct$n + converge_incorrectly_pct$n)
+
 results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric)
 
 #intercepts
 #trends
 #sigma
 
-library(ggplot2)
+
 
 
 results_tibble %>%

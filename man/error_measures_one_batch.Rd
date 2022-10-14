@@ -14,8 +14,8 @@ error_measures_one_batch(
   trends,
   sigma,
   pi,
-  sigma_tolerance = 100,
-  pi_tolerance = 100,
+  sigma_tolerance = c(0.05, 100),
+  pi_tolerance = c(0.05, 0.95),
   intercepts_tolerance = 100,
   trends_tolerance = 100
 )
