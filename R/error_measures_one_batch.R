@@ -5,6 +5,7 @@
 #' @param array_name
 #' @param date
 #' @param i
+#' @param batch_size
 #' @param intercepts
 #' @param trends
 #' @param sigma
@@ -18,6 +19,7 @@
 #' @export
 #'
 #' @importFrom data.table rbindlist
+#' @importFrom purrr map map2
 #' @importFrom dplyr tibble mutate
 #' @importFrom magrittr %>%
 #' @importFrom tidyr pivot_longer pivot_wider separate
@@ -29,6 +31,7 @@ error_measures_one_batch <- function(location,
                                      array_name,
                                      date,
                                      i,
+                                     batch_size,
                                      intercepts,
                                      trends,
                                      sigma,
@@ -39,11 +42,12 @@ error_measures_one_batch <- function(location,
                                      trends_tolerance = 100
 ){
   file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
-  results <- loadRData(file)
+  results_pre <- loadRData(file)
+
+  results <- purrr::map2(1:batch_size, results_pre, ~append(.y, (i*(batch_size - 1) + .x )))
 
 
-
-  map(results, ~error_measures_one_run_both_directions(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
+  purrr::map(results, ~error_measures_one_run_both_directions(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
     data.table::rbindlist()
 
 }

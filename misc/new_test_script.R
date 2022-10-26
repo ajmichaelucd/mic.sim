@@ -1,4 +1,7 @@
-packages <- c("magrittr","dplyr","tidyr","mic.sim","LearnBayes","survival","gridExtra", "data.table")
+Sys.setlocale (locale = "en_US.UTF-8")
+print(sort(c("10", "1:")))
+
+packages <- c("magrittr","dplyr","tidyr","mic.sim", "LearnBayes","survival","gridExtra", "data.table")
 inst <- packages %in% installed.packages()
 if (length(packages[!inst])>0) install.packages(packages[!inst],dependencies = T)
 lapply(packages,require,character.only=TRUE)
@@ -10,19 +13,19 @@ library(dplyr)
 library(tidyr)
 #load_all()
 library(mic.sim)
-library(ggplot2)
+#library(ggplot2)
 library(LearnBayes)
 library(survival)
-library(biglm)
+#library(biglm)
 library(gridExtra)
 library(data.table)
 
 #command line arguments------------
-args <- commandArgs(trailingOnly = TRUE)
+args <- as.numeric(commandArgs(trailingOnly = TRUE))
 iteration_set <- ((10 * args) - 9):(10 * args) #batch size: 10, so set the subtracted term to be "batch size - 1"
 
 #parameters-------
-run_name <- "test_run_1_09282022"
+run_name <- "trend_sim_run_1_10212022"
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
@@ -35,14 +38,14 @@ c("1" = z, "2" = 1- z)}
 {
   case_when(
     c == "1" ~ -1 + 0.1 * t,
-    c == "2" ~ 2.0 + 0 * t, #1, 1.5, 1.75, 1.9, 2, 2.1, 2.2, 2.3
+    c == "2" ~ 2.0 - 0.2 * t, #-.2, -.1, -.05, -.02, .02, .05, .1, .2
     TRUE ~ NaN
   )
 }
 
 t_dist1 = function(n){runif(n, min = 0, max = 5)}
 
-sd_vector = c("1" = 1, "2" = 1.25) #0.5, 0.75, 1, 1.25
+sd_vector = c("1" = 1, "2" = 0.75) #0.5, 0.75, 1, 1.25
 
 low_con = 2^-3
 high_con = 2^2 #errored out when this was 2^3

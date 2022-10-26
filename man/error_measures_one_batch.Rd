@@ -10,6 +10,7 @@ error_measures_one_batch(
   array_name,
   date,
   i,
+  batch_size,
   intercepts,
   trends,
   sigma,

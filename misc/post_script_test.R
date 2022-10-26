@@ -5,6 +5,10 @@ library(purrr)
 library(data.table)
 library(fs)
 library(ggplot2)
+library(stats)
+library(magrittr)
+
+
 
 #number of batches (e.g. 100)
 number_of_batches = 100
@@ -14,7 +18,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/Sim_Results/component_mean_run_6_09272022/"
+location <- "~/Desktop/Sim_Results/component_sd_center_1.5_run_2_09272022"  #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
 
 #two formats i have used:
 #name_date_number
@@ -22,28 +26,28 @@ location <- "~/Desktop/Sim_Results/component_mean_run_6_09272022/"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "component_mean_run_6"
+array_name <- "component_sd_center_1.5_run_2"
 date <- "09272022"
 
-
-
+check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
 
 #target values
-intercepts = c(-1, 2.1)
+intercepts = c(-1, 1.5)
 trends = c(0.1, 0)
-sigma = c(1, 0.5)
+sigma = c(1, 0.75)
 pi = c(0.5, 0.5)
 
 #thresholds
-sigma_tolerance = c(0.25, 40)
+sigma_tolerance = c(0.25, 50)
 pi_tolerance = c(0.05, 0.95)
 intercepts_tolerance = 100
 trends_tolerance = 100
 
 
-array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
+array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, batch_size = batch_size, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
 failure_to_converge_pct <- (array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% summarize(n = n() / (number_of_batches * number_per_batch)))
+failure_to_converge_vector <- array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% pull(iter)
 converge_incorrectly_pct <- (array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & (sigma_error == TRUE | pi_error == TRUE | intercept_error == TRUE | trends_error == TRUE)) %>% group_by(iter) %>% summarise(n = 1 / (number_of_batches * number_per_batch)) %>% summarise(n = sum(n)))
 array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
