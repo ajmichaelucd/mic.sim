@@ -33,7 +33,7 @@ error_measures_one_run_both_directions <- function(individual_run,
 
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
-  if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[2]], sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE"))
+  if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[2]], steps = NaN,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE"))
     } else{
 
 
@@ -62,7 +62,8 @@ forward  <- tibble(
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[5]])
+      mutate(iter = individual_run[[5]],
+             steps = nrow(individual_run[[1]]))
 
 
 reverse  <- tibble(
@@ -84,7 +85,8 @@ reverse  <- tibble(
     tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
     separate(name, sep = "_", into = c("type", "parameter")) %>%
     pivot_wider(names_from = type, values_from = value) %>%
-    mutate(iter = individual_run[[5]])
+    mutate(iter = individual_run[[5]],
+           steps = nrow(individual_run[[1]]))
 
 f_error <- forward %>% summarize(total_error = sum(abs(error)))
 f_error <- f_error$total_error

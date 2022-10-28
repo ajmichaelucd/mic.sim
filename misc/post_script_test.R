@@ -18,7 +18,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/Sim_Results/component_sd_center_1.5_run_2_09272022"  #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
+location <- "~/Desktop/Sim_Results/component_mean_run_7_09272022"  #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
 
 #two formats i have used:
 #name_date_number
@@ -26,16 +26,16 @@ location <- "~/Desktop/Sim_Results/component_sd_center_1.5_run_2_09272022"  #"/V
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "component_sd_center_1.5_run_2"
+array_name <- "component_mean_run_7"
 date <- "09272022"
 
 check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
 
 #target values
-intercepts = c(-1, 1.5)
+intercepts = c(-1, 2.2)
 trends = c(0.1, 0)
-sigma = c(1, 0.75)
+sigma = c(1, 0.5)
 pi = c(0.5, 0.5)
 
 #thresholds
@@ -56,7 +56,11 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_er
             MSE = mean(error^2)
   )
 
+report_failure_types(array_results)
+
 tibble(failed_convergence = failure_to_converge_pct$n, incorrect_convergence = converge_incorrectly_pct$n, total_failure_proportion = failure_to_converge_pct$n + converge_incorrectly_pct$n)
+
+failure_to_converge_vector
 
 results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric)
 
@@ -67,94 +71,119 @@ results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != 
 
 
 
-results_tibble %>%
+c2_intercepts_plot <- results_tibble %>%
   filter(parameter == "intercepts") %>%
   filter(comp == "c2") %>%
 #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
-  ggplot(aes(x = error)) +
+  ggplot(aes(x = est)) +
   geom_histogram( binwidth = 0.05, fill = "darkgreen", color = "black") +
-  geom_vline(aes(xintercept = 0), color = "red") +
+  geom_vline(aes(xintercept = true), color = "red") +
   #scale_x_continuous(limits = c(-3.2, 3.2), oob = scales::squish, breaks = c(-3: 3)
   ggtitle(label = "Component 2 Intercept")
 #+ geom_text(stat='count', aes(label=..count..), vjust = -10)
 
-results_tibble %>%
+c1_intercepts_plot <- results_tibble %>%
   filter(parameter == "intercepts") %>%
   filter(comp == "c1") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
-  ggplot(aes(x = error)) +
+  ggplot(aes(x = est)) +
   geom_histogram( binwidth = 0.05, fill = "darkgreen", color = "black") +
-  geom_vline(aes(xintercept = 0), color = "red") +
+  geom_vline(aes(xintercept = true), color = "red") +
   #scale_x_continuous(limits = c(-3.2, 3.2), oob = scales::squish, breaks = c(-3: 3)
   #) +
   ggtitle(label = "Component 1 Intercept")
 
 
-results_tibble %>%
+c2_trends_plot <- results_tibble %>%
   filter(parameter == "trends") %>%
   filter(comp == "c2") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
-  ggplot(aes(x = error)) +
+  ggplot(aes(x = est)) +
   geom_histogram(
     binwidth = 0.01,
     fill = "darkgreen", color = "black") +
-  geom_vline(aes(xintercept = 0), color = "red") +
+  geom_vline(aes(xintercept = true), color = "red") +
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1))) +
   ggtitle(label = "Component 2 Slope")
 
 
-results_tibble %>%
+c1_trends_plot <- results_tibble %>%
   filter(parameter == "trends") %>%
   filter(comp == "c1") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
-  ggplot(aes(x = error)) +
+  ggplot(aes(x = est)) +
   geom_histogram(
     binwidth = 0.01,
     fill = "darkgreen", color = "black") +
-  geom_vline(aes(xintercept = 0), color = "red") +
+  geom_vline(aes(xintercept = true), color = "red") +
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
   ggtitle(label = "Component 1 Slope")
 
-results_tibble %>%
+c1_sigma_plot <- results_tibble %>%
   filter(parameter == "sigma") %>%
   filter(comp == "c1") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
-  ggplot(aes(x = error)) +
+  ggplot(aes(x = est)) +
   geom_histogram(
     #binwidth = 0.02,
     fill = "darkgreen", color = "black") +
-  geom_vline(aes(xintercept = 0), color = "red") +
+  geom_vline(aes(xintercept = true), color = "red") +
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
   ggtitle(label = "Component 1 Sigma")
 
-results_tibble %>%
+c2_sigma_plot <- results_tibble %>%
   filter(parameter == "sigma") %>%
   filter(comp == "c2") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
-  ggplot(aes(x = error)) +
+  ggplot(aes(x = est)) +
   geom_histogram(
     #binwidth = 0.02,
     fill = "darkgreen", color = "black") +
-  geom_vline(aes(xintercept = 0), color = "red") +
+  geom_vline(aes(xintercept = true), color = "red") +
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
   ggtitle(label = "Component 2 Sigma")
 
-results_tibble %>%
+c1_pi_plot <- results_tibble %>%
   filter(parameter == "pi") %>%
   filter(comp == "c1") %>%
   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
-  ggplot(aes(x = error)) +
+  ggplot(aes(x = est)) +
   geom_histogram(
     #binwidth = 0.02,
     fill = "darkgreen", color = "black") +
-  geom_vline(aes(xintercept = 0), color = "red") +
+  geom_vline(aes(xintercept = true), color = "red") +
   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
-  ggtitle(label = "Component 2 Pi")
+  ggtitle(label = "Component 1 Pi")
+
+# c2_pi_plot <- results_tibble %>%
+#   filter(parameter == "pi") %>%
+#   filter(comp == "c2") %>%
+#   #  mutate(error2 = cut(abs(error), breaks = seq(from = 0, to = 3, by = 0.2))) %>%
+#   ggplot(aes(x = est)) +
+#   geom_histogram(
+#     #binwidth = 0.02,
+#     fill = "darkgreen", color = "black") +
+#   geom_vline(aes(xintercept = true), color = "red") +
+#   #scale_x_continuous(limits = c(-.52, .52), oob = scales::squish, breaks = c(seq(-.5, .5, by = .1)) ) +
+#   ggtitle(label = "Component 2 Pi")
+
+steps_plot <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error") %>% mutate(Error = ifelse(sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE, FALSE, TRUE)) %>%
+  select(iter:Error) %>%
+  ggplot(aes(x = steps)) +
+  geom_histogram(aes(fill = Error)) + ggtitle(label = "Steps")
 
 
 
-
-
+library(cowplot)
+ggdraw() +
+  draw_plot(c1_intercepts_plot, x = 0, y = .75, width = .5, height = .25)  +
+  draw_plot(c2_intercepts_plot, x = 0.5, y = .75, width = .5, height = .25)  +
+  draw_plot(c1_sigma_plot, x = 0, y = .5, width = .5, height = .25)  +
+  draw_plot(c2_sigma_plot, x = 0.5, y = .5, width = .5, height = .25)  +
+  draw_plot(c1_trends_plot, x = 0, y = .25, width = .5, height = .25)  +
+  draw_plot(c2_trends_plot, x = 0.5, y = .25, width = .5, height = .25)  +
+  draw_plot(c1_pi_plot, x = 0, y = .0, width = .5, height = .25)  +
+  draw_plot(steps_plot, x = 0.5, y = .0, width = .5, height = .25)
 
 
 
