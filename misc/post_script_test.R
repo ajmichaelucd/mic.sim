@@ -1,4 +1,5 @@
 #libraries
+load_all()
 library(dplyr)
 library(tidyr)
 library(purrr)
@@ -18,7 +19,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/Sim_Results/component_mean_run_7_09272022"  #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
+location <- "~/Desktop/Sim_Results/component_mean_run_8_09272022"  #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
 
 #two formats i have used:
 #name_date_number
@@ -26,7 +27,7 @@ location <- "~/Desktop/Sim_Results/component_mean_run_7_09272022"  #"/Volumes/BN
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "component_mean_run_7"
+array_name <- "component_mean_run_8"
 date <- "09272022"
 
 check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
@@ -38,6 +39,8 @@ trends = c(0.1, 0)
 sigma = c(1, 0.5)
 pi = c(0.5, 0.5)
 
+nyears = 5
+
 #thresholds
 sigma_tolerance = c(0.25, 50)
 pi_tolerance = c(0.05, 0.95)
@@ -45,10 +48,11 @@ intercepts_tolerance = 100
 trends_tolerance = 100
 
 
-array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, batch_size = batch_size, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
+array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, batch_size = number_per_batch, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
 failure_to_converge_pct <- (array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% summarize(n = n() / (number_of_batches * number_per_batch)))
-failure_to_converge_vector <- array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% pull(iter)
+failure_to_converge_vector <- array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% pull(iter) %>% as.numeric()
 converge_incorrectly_pct <- (array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & (sigma_error == TRUE | pi_error == TRUE | intercept_error == TRUE | trends_error == TRUE)) %>% group_by(iter) %>% summarise(n = 1 / (number_of_batches * number_per_batch)) %>% summarise(n = sum(n)))
+converge_incorrectly_vector <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & (sigma_error == TRUE | pi_error == TRUE | intercept_error == TRUE | trends_error == TRUE)) %>% pull(iter) %>% unique() %>% as.numeric()
 array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
             std_error = sd(est),
@@ -63,10 +67,23 @@ tibble(failed_convergence = failure_to_converge_pct$n, incorrect_convergence = c
 failure_to_converge_vector
 
 results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric)
+#include incorrect, add tags for converge failure/success, and add to plots below
+
 
 #intercepts
 #trends
 #sigma
+
+df2 <- purrr::map(1:number_of_iterations, ~describe_data_set(i = .x, n = n, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, nyears = nyears, converge_incorrectly_vector = converge_incorrectly_vector, failure_to_converge_vector = failure_to_converge_vector))
+df2 %>% rbindlist() %>% tibble() %>%
+  group_by(convergence, comp) %>%
+  summarise(t = mean(t_avg),
+            eps = mean(eps_avg),
+            obs_val = mean(obs_val_avg),
+            obs_val_adj = mean(obs_val_avg_adj),
+            censored_pct = mean(censored_pct)
+
+  )
 
 
 
