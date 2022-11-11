@@ -4,10 +4,21 @@
 \alias{recreate_data_set}
 \title{recreate_data_set}
 \usage{
-recreate_data_set(i, n, intercepts, trends, sigma, pi, nyears)
+recreate_data_set(
+  i,
+  n,
+  intercepts,
+  trends,
+  sigma,
+  pi,
+  nyears,
+  low_con = 2^-3,
+  high_con = 2^2,
+  scale = "log"
+)
 }
 \arguments{
-\item{nyears}{}
+\item{scale}{}
 }
 \description{
 recreate_data_set

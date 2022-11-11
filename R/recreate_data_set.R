@@ -7,12 +7,15 @@
 #' @param sigma
 #' @param pi
 #' @param nyears
+#' @param low_con
+#' @param high_con
+#' @param scale
 #'
 #' @return
 #' @export
 #'
 #' @examples
-recreate_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears){
+recreate_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears, low_con = 2^-3, high_con = 2^2, scale = "log"){
   set.seed(i)
   t_dist1 = function(n)
   {runif(n, min = 0, max = nyears)}
@@ -41,7 +44,7 @@ recreate_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears){
     covariate_effect_vector = covariate_effect_vector,
     low_con = low_con,
     high_con = high_con,
-    scale = "log")
+    scale = scale)
 
   data.sim %>% mutate(iter = i)
 }

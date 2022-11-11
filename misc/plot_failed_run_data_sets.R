@@ -1,4 +1,4 @@
-i = c(10, 22, 2, 7, 1, 3)
+set_numbers = c(10, 22, 2, 7, 1, 3)
 n = 2000
 intercepts = c(-1, 2.3)
 trends = c(0.1, 0)
@@ -12,31 +12,22 @@ low_con = 2^-3
 high_con = 2^2
 scale = "log"
 
-data_sets <- purrr::map(i, ~recreate_data_set(i = .x, n = n, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, nyears = nyears))
+
+recreate_and_plot_data(set_numbers, n, intercepts, trends, sigma, pi, nyears, covariate_list, covariate_effect_vector, low_con, high_con, scale, converge_incorrectly_vector, failure_to_converge_vector)
+
+
+#
+# #map over this function, rbindlist, tibble here
+# data_sets %>% rbindlist() %>% tibble %>%
+#   mutate(time_c = floor(t)) %>%
+#   ggplot() +
+#   xlim(-3, 3.5)+
+#   geom_density_ridges(aes(x = observed_value, y = as.character(iter), fill = as.character(iter))) +
+#   facet_grid(time_c ~ .)
+
+data_sets %>% rbindlist %>% tibble %>% group_by (iter, comp) %>% group_map(~list(lm(observed_value ~ t, data = .))) #add info on iter and comp back in
 
 
 
-library(ggplot2)
 
-#map over this function, rbindlist, tibble here
-data_sets %>% rbindlist() %>% tibble %>%
-  mutate(time_c = floor(t)) %>%
-  ggplot() +
-  xlim(-3, 3.5)+
-  geom_density_ridges(aes(x = observed_value, y = as.character(iter), fill = as.character(iter))) +
-  facet_grid(time_c ~ .)
-
-data_sets %>% rbindlist() %>% tibble %>%
-  mutate(
-         convergence = case_when(
-           iter %in% converge_incorrectly_vector ~ "incorrect",
-           iter %in% failure_to_converge_vector ~ "failure",
-           TRUE ~ "successful"
-         )
-  ) %>%
-  ggplot() +
-  geom_point(aes(x = t, y = observed_value, color = comp), alpha = 0.3) +
-  geom_hline(yintercept = c(-3, 2)) + #change to be variables
-  #add trendlines either w/ggplot or map(lm)
-  facet_wrap(~ iter)
 

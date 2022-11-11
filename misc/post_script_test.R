@@ -10,7 +10,7 @@ library(stats)
 library(magrittr)
 
 
-
+###Parameters to estimate and other simulation info----------------------
 #number of batches (e.g. 100)
 number_of_batches = 100
 #number per batch (e.g. 10)
@@ -34,12 +34,13 @@ check_array_complete(number_of_batches = number_of_batches, format = format, loc
 
 
 #target values
-intercepts = c(-1, 2.2)
+intercepts = c(-1, 2.3)
 trends = c(0.1, 0)
 sigma = c(1, 0.5)
 pi = c(0.5, 0.5)
 
 nyears = 5
+n = 2000
 
 #thresholds
 sigma_tolerance = c(0.25, 50)
@@ -47,7 +48,14 @@ pi_tolerance = c(0.05, 0.95)
 intercepts_tolerance = 100
 trends_tolerance = 100
 
+##extra parameters needed to recreate data sets
+covariate_list <-  NULL
+covariate_effect_vector <- c(0)
+low_con = 2^-3
+high_con = 2^2
+scale = "log"
 
+###Load in data and extract information from it------------
 array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, batch_size = number_per_batch, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
 failure_to_converge_pct <- (array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% summarize(n = n() / (number_of_batches * number_per_batch)))
 failure_to_converge_vector <- array_results %>% rbindlist() %>% tibble() %>% filter(comp == "Error") %>% pull(iter) %>% as.numeric()
@@ -87,6 +95,16 @@ df2 %>% rbindlist() %>% tibble() %>%
 
 
 
+###Plot original data sets for a few iterations------------
+set_numbers = c(10, 22, 2, 7, 1, 3)
+
+
+recreate_and_plot_data(set_numbers = set_numbers, n = n, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, nyears = nyears, covariate_list = covariate_list, covariate_effect_vector = covariate_effect_vector, low_con = low_con, high_con = high_con, scale = scale, converge_incorrectly_vector = converge_incorrectly_vector, failure_to_converge_vector = failure_to_converge_vector)
+
+
+
+
+###Plot parameter estimates-----------
 
 c2_intercepts_plot <- results_tibble %>%
   filter(parameter == "intercepts") %>%
