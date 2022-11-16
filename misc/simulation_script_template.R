@@ -9,8 +9,8 @@ lapply(packages,require,character.only=TRUE)
 library(magrittr)
 library(dplyr)
 library(tidyr)
-load_all()
-#library(mic.sim)
+#load_all()
+library(mic.sim)
 #library(ggplot2)
 library(LearnBayes)
 library(survival)
@@ -27,7 +27,7 @@ iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args) #b
 
 #this set of runs will vary the mean of the upper component and push it closer to the highest tested concentration (2^2)
 
-run_name <- "component_mean_run_1_09272022"
+run_name <- "component_sd_center_2_run_1_11162022"
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
@@ -40,7 +40,7 @@ c("1" = z, "2" = 1- z)}
 {
   case_when(
     c == "1" ~ -1 + 0.1 * t,
-    c == "2" ~ 1 + 0 * t, #1, 1.5, 1.75, 1.9, 2, 2.1, 2.2, 2.3
+    c == "2" ~ 2 + 0 * t,
     TRUE ~ NaN
   )
 }
