@@ -25,7 +25,8 @@ recreate_and_plot_data(set_numbers, n, intercepts, trends, sigma, pi, nyears, co
 #   geom_density_ridges(aes(x = observed_value, y = as.character(iter), fill = as.character(iter))) +
 #   facet_grid(time_c ~ .)
 
-data_sets %>% rbindlist %>% tibble %>% group_by (iter, comp) %>% group_map(~list(lm(observed_value ~ t, data = .))) #add info on iter and comp back in
+data_sets %>% rbindlist %>% tibble %>% group_by (iter, comp) %>% group_modify(~ broom::tidy(lm(observed_value ~ t, data = .x)))
+
 
 
 
