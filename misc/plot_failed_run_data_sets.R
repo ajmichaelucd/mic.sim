@@ -1,3 +1,5 @@
+load_all()
+
 set_numbers = c(10, 22, 2, 7, 1, 3)
 n = 2000
 intercepts = c(-1, 2.3)

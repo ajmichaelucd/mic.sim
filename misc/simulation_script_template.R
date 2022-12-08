@@ -27,7 +27,7 @@ iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args) #b
 
 #this set of runs will vary the mean of the upper component and push it closer to the highest tested concentration (2^2)
 
-run_name <- "component_sd_center_2_run_1_11162022"
+run_name <- "component_sd_center_2_run_1_12022022"
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL

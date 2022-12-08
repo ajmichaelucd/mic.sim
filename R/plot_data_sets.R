@@ -7,7 +7,7 @@
 #' @return
 #' @export
 #'
-#' @importFrom ggplot2 ggplot geom_point xlim aes geom_hline facet_wrap
+#' @importFrom ggplot2 ggplot geom_point xlim aes geom_hline facet_wrap geom_smooth
 #' @importFrom dplyr mutate tibble case_when
 #' @importFrom data.table rbindlist
 #'

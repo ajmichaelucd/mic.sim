@@ -82,14 +82,16 @@ results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != 
 #trends
 #sigma
 
-df2 <- purrr::map(1:number_of_iterations, ~describe_data_set(i = .x, n = n, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, nyears = nyears, converge_incorrectly_vector = converge_incorrectly_vector, failure_to_converge_vector = failure_to_converge_vector))
+df2 <- purrr::map(1:number_of_iterations, ~describe_data_set(i = .x, n = n, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, nyears = nyears, converge_incorrectly_vector = converge_incorrectly_vector, failure_to_converge_vector = failure_to_converge_vector, scale = scale))
 df2 %>% rbindlist() %>% tibble() %>%
   group_by(convergence, comp) %>%
   summarise(t = mean(t_avg),
             eps = mean(eps_avg),
             obs_val = mean(obs_val_avg),
             obs_val_adj = mean(obs_val_avg_adj),
-            censored_pct = mean(censored_pct)
+            censored_pct = mean(censored_pct),
+            intercept = mean(intercepts),
+            trend = mean(trends)
 
   )
 
