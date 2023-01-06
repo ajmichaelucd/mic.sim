@@ -8,6 +8,10 @@ library(fs)
 library(ggplot2)
 library(stats)
 library(magrittr)
+library(readxl)
+library(LearnBayes)
+library(survival)
+library(gridExtra)
 
 
 ###Parameters to estimate and other simulation info----------------------
@@ -19,7 +23,9 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/Sim_Results/component_mean_run_8_09272022"  #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
+location <- "~/Google Drive/My Drive/sim_results/censor_mean_2_sd_0.8_run_16"
+  #"~/Desktop/Sim_Results/component_mean_run_8_09272022"
+  #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
 
 #two formats i have used:
 #name_date_number
@@ -27,20 +33,19 @@ location <- "~/Desktop/Sim_Results/component_mean_run_8_09272022"  #"/Volumes/BN
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "component_mean_run_8"
-date <- "09272022"
+array_name <- "censor_mean_2_sd_0.8_run_16"
+date <- "12192022"
 
-check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
+incomplete <- check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
+
+print(incomplete)
 
 
-#target values
-intercepts = c(-1, 2.3)
-trends = c(0.1, 0)
-sigma = c(1, 0.5)
-pi = c(0.5, 0.5)
+##eventually an ncomp thing here
 
-nyears = 5
-n = 2000
+##get target values from simulation parameter log
+parameter_log <- read_excel("~/Desktop/Sim_Results/simulation_parameter_log.xlsx",
+                            sheet = "Sheet2")
 
 #thresholds
 sigma_tolerance = c(0.25, 50)
@@ -51,9 +56,27 @@ trends_tolerance = 100
 ##extra parameters needed to recreate data sets
 covariate_list <-  NULL
 covariate_effect_vector <- c(0)
-low_con = 2^-3
-high_con = 2^2
 scale = "log"
+
+
+###Grab target values with function
+params <- grab_sim_parameters(parameter_log = parameter_log, array_name = array_name, date = date, id_col = "FULL_NAME")
+print(params)
+#target values
+intercepts = c(params$`C1 Mean`, params$`C2 Mean`)  #c(-1, 2.3)
+trends = c(params$`C1 Trend`, params$`C2 Trend`)  #c(0.1, 0)
+sigma = c(params$`C1 SD`, params$`C2 SD`)  #c(1, 0.5)
+pi = c(params$`C1 Pi`, params$`C2 Pi`)  #c(0.5, 0.5)
+low_con = 2^params$min
+high_con = 2^params$max
+
+nyears = params$years
+n = params$n
+
+##function to run local sims here to fix the incomplete runs
+rerun_incomplete_sets(location = location, incomplete = incomplete, number_per_batch = number_per_batch, array_name = array_name, date = date, covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, n = n, pi = pi, intercepts = intercepts, trends = trends, sigma = sigma, nyears = nyears, low_con = low_con, high_con = high_con)
+##use run_failed_as_support_for_post_script (turn this into a function here)
+check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
 ###Load in data and extract information from it------------
 array_results <- purrr::map(1:number_of_batches, ~error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, batch_size = number_per_batch, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
