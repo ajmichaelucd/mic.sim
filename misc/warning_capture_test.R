@@ -1,16 +1,16 @@
 Sys.setlocale (locale = "en_US.UTF-8")
 print(sort(c("10", "1:")))
 
-packages <- c("magrittr","dplyr","tidyr","mic.sim","LearnBayes","survival","gridExtra", "data.table")
-inst <- packages %in% installed.packages()
-if (length(packages[!inst])>0) install.packages(packages[!inst],dependencies = T)
-lapply(packages,require,character.only=TRUE)
+#packages <- c("magrittr","dplyr","tidyr","mic.sim","LearnBayes","survival","gridExtra", "data.table")
+#inst <- packages %in% installed.packages()
+#if (length(packages[!inst])>0) install.packages(packages[!inst],dependencies = T)
+#lapply(packages,require,character.only=TRUE)
 
 library(magrittr)
 library(dplyr)
 library(tidyr)
-#load_all()
-library(mic.sim)
+load_all()
+#library(mic.sim)
 #library(ggplot2)
 library(LearnBayes)
 library(survival)
@@ -23,11 +23,11 @@ args <- as.numeric(commandArgs(trailingOnly = TRUE))
 
 #parameters-------
 batch_size <- 10
-iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args) #batch size: 10, so set the subtracted term to be "batch size - 1"
+iteration_set <- 7:13 #batch size: 10, so set the subtracted term to be "batch size - 1"
 
 #this set of runs will vary the mean of the upper component and push it closer to the highest tested concentration (2^2)
 
-run_name <- "censor_mean_2_sd_0.8_pi2_0.8_run_13_01032023"
+run_name <- "test_warning_run"
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
@@ -40,14 +40,14 @@ c("1" = z, "2" = 1- z)}
 {
   case_when(
     c == "1" ~ 0 + 0 * t,
-    c == "2" ~ 5.2 + 0 * t,
+    c == "2" ~ 5.0 + 0 * t,
     TRUE ~ NaN
   )
 }
 
 t_dist1 = function(n){runif(n, min = 0, max = 5)}
 
-sd_vector = c("1" = 1.0, "2" = 0.8 ) #0.5, 0.75, 1, 1.25
+sd_vector = c("1" = 1.0, "2" = 1.0 ) #0.5, 0.75, 1, 1.25
 
 low_con = 2^-3
 high_con = 2^4 #errored out when this was 2^3
@@ -94,7 +94,7 @@ results <- purrr::map(
 
 
 file_name <- paste(run_name, args, sep = "_")
-path <- paste0(file_name, ".Rdata")
+path <- paste0("~/Desktop/test_runs", paste0(file_name, ".Rdata"))
 
 save(results, file = path)
 

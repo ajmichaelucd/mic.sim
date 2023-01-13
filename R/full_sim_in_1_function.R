@@ -90,7 +90,9 @@ full_sim_in_1_function <- function(i,
 
   #mem here
 
-  single_model_output = fit_model(visible_data, formula, max_it, ncomp, tol_ll, verbose = verbose, ...)
+  qfit_model = quietly(.f = fit_model)
+
+  single_model_output = qfit_model(visible_data, formula, max_it, ncomp, tol_ll, verbose = verbose, ...)
 
   single_model_output <- append(single_model_output, i)
 

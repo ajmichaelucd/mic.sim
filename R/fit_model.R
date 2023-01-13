@@ -101,18 +101,20 @@ fit_model = function(
     df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
 if(verbose <= 3){
-    model <- survival::survreg(
+    model <- #tryCatch({
+    survival::survreg(
       formula,  ##Make this chunk into an argument of the function
       weights = `P(C=c|y,t)`,
       data = df_temp,
-      dist = "gaussian")
+      dist = "gaussian")#}, warning=function(w) print(k))
 } else{
-  model <- survival::survreg(
+  model <- #tryCatch({
+  survival::survreg(
     formula,  ##Make this chunk into an argument of the function
     weights = `P(C=c|y,t)`,
     data = df_temp,
     dist = "gaussian",
-    debug = 2)
+    debug = 2)#}, warning=function(w) print(k))
     }
 
 
