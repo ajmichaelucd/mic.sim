@@ -106,7 +106,7 @@ for(i in args){local_full_run_function(
 setwd(
   "~/Desktop/Dissertation Project/Chapter 1/mic.sim"
 )
-
+}
 
 }
 

@@ -13,6 +13,7 @@
 report_failure_types <- function(array_results){
   bbb <- array_results %>% rbindlist() %>% tibble() %>% mutate(converge_fail = ifelse(comp == "Error", TRUE, FALSE)) %>%  select(-(comp:error)) %>% distinct()
 
+  value = integer(0)
   iters = nrow(bbb)
 
   converge_fail <- bbb %>% select(converge_fail) %>%  count(converge_fail) %>% filter(converge_fail) %>% pull(n)

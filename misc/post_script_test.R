@@ -1,4 +1,5 @@
 #libraries
+setwd("~/Desktop/Dissertation Project/Chapter 1/mic.sim")
 load_all()
 library(dplyr)
 library(tidyr)
@@ -23,7 +24,8 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Google Drive/My Drive/sim_results/censor_mean_2_sd_0.8_run_16"
+location <- "~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1_pi2_0.8/censor_mean_2_sd_1_pi2_0.8_run_11"
+  #"~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1.6_run_16"
   #"~/Desktop/Sim_Results/component_mean_run_8_09272022"
   #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
 
@@ -33,8 +35,8 @@ location <- "~/Google Drive/My Drive/sim_results/censor_mean_2_sd_0.8_run_16"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "censor_mean_2_sd_0.8_run_16"
-date <- "12192022"
+array_name <- "censor_mean_2_sd_1_pi2_0.8_run_11"
+date <- "01032023"
 
 incomplete <- check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
@@ -99,6 +101,7 @@ failure_to_converge_vector
 
 results_tibble <- array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric)
 #include incorrect, add tags for converge failure/success, and add to plots below
+
 
 
 #intercepts

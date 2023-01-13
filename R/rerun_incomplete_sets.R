@@ -27,7 +27,7 @@
 #'
 #' @examples
 rerun_incomplete_sets <- function(location, incomplete, number_per_batch, array_name, date, covariate_effect_vector, covariate_list, n, pi, intercepts, trends, sigma, nyears, low_con, high_con){
-
+  if(!is.data.frame(incomplete) && incomplete == "All Clear"){print("No reruns needed, skipping to next step")} else{
   Sys.setlocale (locale = "en_US.UTF-8")
   if(!identical(sort(c("10", "1:")), c("1:", "10"))){
     errorCondition("sort error")
@@ -107,6 +107,6 @@ rerun_incomplete_sets <- function(location, incomplete, number_per_batch, array_
   setwd(
     "~/Desktop/Dissertation Project/Chapter 1/mic.sim"
   )
-
+}
 
 }
