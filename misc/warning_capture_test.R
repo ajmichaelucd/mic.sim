@@ -27,30 +27,30 @@ iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args) #b
 
 #this set of runs will vary the mean of the upper component and push it closer to the highest tested concentration (2^2)
 
-run_name <- "component_sd_center_2_run_1_12022022"
+run_name <- "censor_mean_2_sd_0.8_pi2_0.8_run_13_01032023"
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
-n=2000
+n=300
 ncomp = 2
-pi1 = function(t) {z <- 0.5 #changed to 0.5
+pi1 = function(t) {z <- 0.2 #changed to 0.5
 c("1" = z, "2" = 1- z)}
 
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ -1 + 0.1 * t,
-    c == "2" ~ 2 + 0 * t,
+    c == "1" ~ 0 + 0 * t,
+    c == "2" ~ 5.2 + 0 * t,
     TRUE ~ NaN
   )
 }
 
 t_dist1 = function(n){runif(n, min = 0, max = 5)}
 
-sd_vector = c("1" = 1, "2" = 0.5) #0.5, 0.75, 1, 1.25
+sd_vector = c("1" = 1.0, "2" = 0.8 ) #0.5, 0.75, 1, 1.25
 
 low_con = 2^-3
-high_con = 2^2 #errored out when this was 2^3
+high_con = 2^4 #errored out when this was 2^3
   #RUN 1 : 2
   #RUN 2: 3
   #RUN 3: 4
@@ -61,7 +61,6 @@ formula = Surv(time = left_bound,
                time2 = right_bound,
                type = "interval2") ~ 0 + c + strata(c) + t:c
 max_it = 3000
-ncomp = 2
 tol_ll = 1e-6
 
 poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")

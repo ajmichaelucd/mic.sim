@@ -13,11 +13,12 @@ describe_data_set(
   pi,
   nyears,
   converge_incorrectly_vector,
-  failure_to_converge_vector
+  failure_to_converge_vector,
+  scale = "log"
 )
 }
 \arguments{
-\item{failure_to_converge_vector}{}
+\item{scale}{}
 }
 \description{
 describe_data_set

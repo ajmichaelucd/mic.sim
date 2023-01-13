@@ -49,7 +49,7 @@ forward  <- tibble(
       true_intercepts = intercepts,
       est_trends = individual_run[[4]]$mean[a + 2],
       true_trends = trends,
-      est_sigma = individual_run[[4]]$sd[a],
+      est_sigma = c(individual_run[[4]]$sd),
       true_sigma = sigma,
       est_pi = individual_run[[3]]$`P(C = c)`,
       true_pi = pi) %>%
@@ -72,9 +72,9 @@ reverse  <- tibble(
     true_intercepts = intercepts,
     est_trends = individual_run[[4]]$mean[b + 2],
     true_trends = trends,
-    est_sigma = individual_run[[4]]$sd[b],
+    est_sigma = rev(individual_run[[4]]$sd),
     true_sigma = sigma,
-    est_pi = individual_run[[3]]$`P(C = c)`,
+    est_pi = rev(individual_run[[3]]$`P(C = c)`),
     true_pi = pi) %>%
     mutate(
       error_intercepts = true_intercepts - est_intercepts,

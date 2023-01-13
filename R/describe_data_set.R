@@ -9,12 +9,17 @@
 #' @param nyears
 #' @param converge_incorrectly_vector
 #' @param failure_to_converge_vector
+#' @param scale
 #'
 #' @return
 #' @export
 #'
+#' @importFrom dplyr full_join case_when mutate group_by summarise rowwise filter tibble
+#' @importFrom magrittr %>%
+#'
+#'
 #' @examples
-describe_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears, converge_incorrectly_vector, failure_to_converge_vector){
+describe_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears, converge_incorrectly_vector, failure_to_converge_vector, scale = "log"){
   set.seed(i)
   t_dist1 = function(n)
   {runif(n, min = 0, max = nyears)}
@@ -43,9 +48,9 @@ describe_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears, conve
     covariate_effect_vector = covariate_effect_vector,
     low_con = low_con,
     high_con = high_con,
-    scale = "log")
+    scale = scale)
 
-  data.sim %>% mutate(iter = i,
+  summarized_data <- data.sim %>% mutate(iter = i,
                       censored = case_when(indicator == 3 ~ 0,
                                            TRUE ~ 1)) %>%
     #  rowwise() %>%
@@ -64,4 +69,13 @@ describe_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears, conve
              TRUE ~ "successful"
            )
     )
+
+  a <- data.sim %>% filter(comp == 1)
+  b <- data.sim %>% filter(comp == 2)
+  c <- lm(observed_value ~ t, data = a)
+  d <-  lm(observed_value ~ t, data = b)
+  gg <- tibble(comp = as.character(1:2), intercepts = c(c$coefficients[1], d$coefficients[1]), trends = c(c$coefficients[2], d$coefficients[2]))
+
+  full_join(summarized_data, gg, by = 'comp')
+
 }

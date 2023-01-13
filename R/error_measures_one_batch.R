@@ -44,7 +44,7 @@ error_measures_one_batch <- function(location,
   file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
   results_pre <- loadRData(file)
 
-  results <- purrr::map2(1:batch_size, results_pre, ~append(.y, (i*(batch_size - 1) + .x )))
+  results <- purrr::map2(1:batch_size, results_pre, ~append(.y, (batch_size*(i - 1) + .x )))
 
 
   purrr::map(results, ~error_measures_one_run_both_directions(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
