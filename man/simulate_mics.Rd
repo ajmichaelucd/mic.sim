@@ -18,8 +18,8 @@ simulate_mics(
     "2" ~ 3 * t, TRUE ~ NaN)
  },
   sd_vector = c(`1` = 1, `2` = 2),
-  covariate_list,
-  covariate_effect_vector,
+  covariate_list = NULL,
+  covariate_effect_vector = c(0),
   low_con = 2^-4,
   high_con = 2^4,
   tested_concentrations = log2(low_con):log2(high_con),

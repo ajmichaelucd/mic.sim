@@ -1,28 +1,26 @@
 #' Title
 #'
 #' @param visible_data
+#' @param formula
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
-#' @param formula
 #' @param browse_at_end
 #' @param browse_each_step
 #' @param plot_visuals
 #' @param verbose
-#'
-#' @importFrom gridExtra grid.arrange
-#' @importFrom ggplot2 ggplot geom_point
-#' @importFrom survival strata survreg Surv
-#' @importFrom pryr mem_used
+#' @param low_con
+#' @param high_con
 #'
 #' @return
 #' @export
 #'
-fit_model = function(
-    visible_data,
+#' @examples
+fit_model_safety = function(
+    visible_data = prep_sim_data_for_em(),
     formula = Surv(time = left_bound,
                    time2 = right_bound,
-                   type = "interval2") ~ 0 + c + strata(c) + t:c,
+                   type = "interval2") ~ t,
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -31,8 +29,8 @@ fit_model = function(
     plot_visuals = FALSE,
     #silent = FALSE,
     verbose = 3,
-    low_con = 2^-3,
-    high_con = 2^3)
+    low_con = 2^-4,
+    high_con = 2^4)
 #verbose = 0: print nothing
 #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
 #verbose = 2: print run number and iteration number --done
@@ -50,24 +48,23 @@ fit_model = function(
     group_by_all() %>%
     summarise(
       c = as.character(1:2), #split at mean and assign
-     # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+      # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
       .groups = "drop"
     ) %>%
-#     mutate(
-#     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-#                              left_bound > median_y & c == "2" ~ 0.4,
-#                              left_bound <= median_y & c == "1" ~ 0.4,
-#                              left_bound <= median_y & c == "2" ~ 0.6)
-#     ) %>%
+    #     mutate(
+    #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+    #                              left_bound > median_y & c == "2" ~ 0.4,
+    #                              left_bound <= median_y & c == "1" ~ 0.4,
+    #                              left_bound <= median_y & c == "2" ~ 0.6)
+    #     ) %>%
     mutate(
-      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5 ,
-                               left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5,
-                               left_bound == -Inf & c == "1" ~ 0.01,
-                               left_bound == -Inf & c == "2" ~ 0.99)
+      `P(C=c|y,t)` = case_when(right_bound == Inf & c == "1"~ 0.01 ,
+                               right_bound == Inf & c == "2"~ 0.99 ,
+                               right_bound != Inf & c == "1"~ 1 ,
+                               right_bound != Inf & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
+
     ) #%>%
-    #print()
+  #print()
 
 
 
@@ -79,7 +76,7 @@ fit_model = function(
 
   for(i in 1:max_it){
     if(verbose > 1){
-    message("starting iteration number ", i)}
+      message("starting iteration number ", i)}
     if(verbose > 3){
       message("mem used = ")
       print(pryr::mem_used())
@@ -100,21 +97,22 @@ fit_model = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
+    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
+
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
-if(verbose <= 3){
-    model <- survival::survreg(
-      formula,  ##Make this chunk into an argument of the function
-      weights = `P(C=c|y,t)`,
-      data = df_temp,
-      dist = "gaussian")
-} else{
-  model <- survival::survreg(
-    formula,  ##Make this chunk into an argument of the function
-    weights = `P(C=c|y,t)`,
-    data = df_temp,
-    dist = "gaussian",
-    debug = 2)
+    if(verbose <= 3){
+      model <- survival::survreg(
+        formula,  ##Make this chunk into an argument of the function
+        weights = `P(C=c|y,t)`,
+        data = df_temp,
+        dist = "gaussian")
+    } else{
+      model <- survival::survreg(
+        formula,  ##Make this chunk into an argument of the function
+        weights = `P(C=c|y,t)`,
+        data = df_temp,
+        dist = "gaussian",
+        debug = 2)
     }
 
 
@@ -125,10 +123,10 @@ if(verbose <= 3){
     nn <- paste("c", 1:ncomp, sep = "")
 
     ##newmodel2 <- tibble(t(data.frame(split(newmodel$mean, rep_len(nn, length.out = length(newmodel$mean)))))) %>%
-     # rename(comp_mean = 1) %>%
-     # mutate(sd = c(newmodel$sd)) %>%
-     # mutate(names = nn) %>%
-     # relocate(names, .before = everything()) %>% print()
+    # rename(comp_mean = 1) %>%
+    # mutate(sd = c(newmodel$sd)) %>%
+    # mutate(names = nn) %>%
+    # relocate(names, .before = everything()) %>% print()
 
     #Estimate mixing probabilities--------
     pi <- possible_data %>%
@@ -166,40 +164,41 @@ if(verbose <= 3){
     #A. it is going up (with EM algorithm it should always increase)
     #B. if it is not going up by very much, you can stop
     #if conditions are met, use break
-if(plot_visuals == TRUE){
+    if(plot_visuals == TRUE){
 
-    c1_plot <-   possible_data %>%
-      mutate(
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          )
-      ) %>%
-      filter(c == 1) %>%
-      ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
-      geom_point() +
-      geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
-      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
-    print(c1_plot)
-}
+      c1_plot <-   possible_data %>%
+        mutate(
+          mid =
+            case_when(
+              left_bound == -Inf ~ right_bound - 0.5,
+              right_bound == Inf ~ left_bound + 0.5,
+              TRUE ~ (left_bound + right_bound) / 2
+            )
+        ) %>%
+        filter(c == 1) %>%
+        ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
+        geom_point() +
+        geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
+        geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
+      print(c1_plot)
+    }
 
     #Next E step-------------
     possible_data %<>%
       select(-any_of("P(C = c)")) %>%
       left_join(pi, by = "c") %>%
       mutate(
-        `E[Y|t,c]` = predict(model, newdata = possible_data),
-        `sd[Y|t,c]` = model$scale[c],
-       # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
+        `E[Y|t,c]` = if_else( c==1, predict(model, newdata = possible_data), NA_real_),
+        `sd[Y|t,c]` = if_else( c==1, model$scale, NA_real_),
+        # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
 
-        `P(Y|t,c)` =  if_else(
+        `P(Y|t,c)` =  if_else(c== 1,
+          if_else(
           left_bound == right_bound,
           dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
           pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
             pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
-        )
+        ), (right_bound == Inf) %>% as.numeric()) ##possibly add upper concentation as input and change this to right_bound == Inf & left_bound == high_con
       ) %>%
       group_by(obs_id) %>%
       mutate(
@@ -208,8 +207,8 @@ if(plot_visuals == TRUE){
         `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
       ) %>% ungroup()
     if(verbose > 2){
-    print(pi)
-    print(newmodel)
+      print(pi)
+      print(newmodel)
     }
 
     log_likelihood_obs <- possible_data %>%
@@ -221,13 +220,13 @@ if(plot_visuals == TRUE){
     likelihood_documentation[i, 2] <- log_likelihood
 
     if(verbose > 2){
-    message(log_likelihood)
-      }
-#par(mfrow = c(2,1))
-#    plot(
-#      x = likelihood_documentation[1:i,1],
-#      y = likelihood_documentation[1:i,2],
-#      type = "l")
+      message(log_likelihood)
+    }
+    #par(mfrow = c(2,1))
+    #    plot(
+    #      x = likelihood_documentation[1:i,1],
+    #      y = likelihood_documentation[1:i,2],
+    #      type = "l")
 
 
 
@@ -235,7 +234,7 @@ if(plot_visuals == TRUE){
 
 
 
-if(browse_each_step){browser(message("End of step ", i))}
+    if(browse_each_step){browser(message("End of step ", i))}
     if(i != 1)
     {
 
@@ -243,11 +242,11 @@ if(browse_each_step){browser(message("End of step ", i))}
 
       check_ll_2 = check_ll < tol_ll
 
-  #    other_plot <- tibble(likelihood_documentation) %>% ggplot() +
-  #      geom_line(aes(x = likelihood_documentation[,1],
-  #                    y = likelihood_documentation[,2]))
-#
-  #    print(grid.arrange(c1_plot, other_plot, nrow = 1))
+      #    other_plot <- tibble(likelihood_documentation) %>% ggplot() +
+      #      geom_line(aes(x = likelihood_documentation[,1],
+      #                    y = likelihood_documentation[,2]))
+      #
+      #    print(grid.arrange(c1_plot, other_plot, nrow = 1))
 
       #if(check_ll < 0 ){
       #  warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
@@ -258,7 +257,7 @@ if(browse_each_step){browser(message("End of step ", i))}
       if(check_ll_2 & param_checks)
       {
         if(verbose > 0){
-        message("Stopped on combined LL and parameters")}
+          message("Stopped on combined LL and parameters")}
         break
       }
 
@@ -267,7 +266,7 @@ if(browse_each_step){browser(message("End of step ", i))}
 
 
   }
- if(browse_at_end){browser()}
+  if(browse_at_end){browser()}
 
   return(list(likelihood = likelihood_documentation[1:i,], possible_data = possible_data, pi = pi, coefficients_and_sd = newmodel))
 

@@ -5,7 +5,7 @@
 \title{Intermediate function to prepare simulated data for use in EM algorithm}
 \usage{
 prep_sim_data_for_em(
-  data.sim,
+  data.sim = simulate_mics(),
   left_bound_name = "left_bound",
   right_bound_name = "right_bound",
   time = "t",

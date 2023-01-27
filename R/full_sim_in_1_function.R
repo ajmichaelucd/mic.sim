@@ -90,7 +90,7 @@ full_sim_in_1_function <- function(i,
 
   #mem here
 
-  single_model_output = fit_model(visible_data, formula, max_it, ncomp, tol_ll, verbose = verbose, ...)
+  single_model_output = fit_model(visible_data, formula, max_it, ncomp, tol_ll, verbose = verbose, low_con = low_con, high_con = high_con, ...)
 
   single_model_output <- append(single_model_output, i)
 

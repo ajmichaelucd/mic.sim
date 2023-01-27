@@ -60,7 +60,8 @@ describe_data_set <- function(i, n, intercepts, trends, sigma, pi, nyears, conve
                eps_avg = mean(epsilon),
                obs_val_avg = mean(observed_value),
                obs_val_avg_adj = mean(observed_value - (trends[as.numeric(comp)] * t)),
-               censored_pct = sum(censored)/n) %>%
+               censored_pct = sum(censored)/n,
+               pi_pct = n()/ n) %>%
     rowwise() %>%
     mutate(iter = i,
            convergence = case_when(

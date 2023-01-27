@@ -15,7 +15,7 @@
 #'
 #' @examples
 prep_sim_data_for_em <- function(
-    data.sim,
+    data.sim = simulate_mics(),
     left_bound_name = "left_bound",
     right_bound_name = "right_bound",
     time = "t",

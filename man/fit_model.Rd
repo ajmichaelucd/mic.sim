@@ -14,7 +14,9 @@ fit_model(
   browse_at_end = FALSE,
   browse_each_step = FALSE,
   plot_visuals = FALSE,
-  verbose = 3
+  verbose = 3,
+  low_con = 2^-3,
+  high_con = 2^3
 )
 }
 \arguments{
