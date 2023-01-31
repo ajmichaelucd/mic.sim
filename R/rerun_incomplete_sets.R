@@ -15,6 +15,7 @@
 #' @param nyears
 #' @param low_con
 #' @param high_con
+#' @param capture_warnings
 #'
 #' @return
 #' @export
@@ -26,8 +27,24 @@
 #' @importFrom survival Surv survreg
 #'
 #' @examples
-rerun_incomplete_sets <- function(location, incomplete, number_per_batch, array_name, date, covariate_effect_vector, covariate_list, n, pi, intercepts, trends, sigma, nyears, low_con, high_con){
-  if(!is.data.frame(incomplete) && incomplete == "All Clear"){print("No reruns needed, skipping to next step")} else{
+rerun_incomplete_sets <-
+  function(location,
+           incomplete,
+           number_per_batch,
+           array_name,
+           date,
+           covariate_effect_vector,
+           covariate_list,
+           n,
+           pi,
+           intercepts,
+           trends,
+           sigma,
+           nyears,
+           low_con,
+           high_con,
+           capture_warnings = FALSE) {
+    if(!is.data.frame(incomplete) && incomplete == "All Clear"){print("No reruns needed, skipping to next step")} else{
   Sys.setlocale (locale = "en_US.UTF-8")
   if(!identical(sort(c("10", "1:")), c("1:", "10"))){
     errorCondition("sort error")
@@ -81,6 +98,31 @@ rerun_incomplete_sets <- function(location, incomplete, number_per_batch, array_
   ncomp = 2
   tol_ll = 1e-6
 
+  if(capture_warnings == TRUE){
+    for(i in args){modded_local_full_run_function(
+      args = i,
+      batch_size = batch_size,
+      run_name = run_name,
+      n = n,
+      t_dist = t_dist1,
+      pi = pi1,
+      `E[X|T,C]` = `E[X|T,C]`,
+      sd_vector = sd_vector,
+      covariate_list = NULL,
+      covariate_effect_vector = c(0),
+      covariate_names = NULL,
+      low_con = low_con,
+      high_con = high_con,
+      scale = "log",
+      formula = formula,
+      max_it = 3000,
+      ncomp = 2,
+      tol_ll = 1e-6,
+      verbose = 3
+    )
+    }
+  } else{
+
   for(i in args){local_full_run_function(
     args = i,
     batch_size = batch_size,
@@ -103,7 +145,7 @@ rerun_incomplete_sets <- function(location, incomplete, number_per_batch, array_
     verbose = 3
   )
   }
-
+}
   setwd(
     "~/Desktop/Dissertation Project/Chapter 1/mic.sim"
   )

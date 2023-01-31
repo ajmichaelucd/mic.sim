@@ -19,11 +19,12 @@ rerun_incomplete_sets(
   sigma,
   nyears,
   low_con,
-  high_con
+  high_con,
+  capture_warnings = FALSE
 )
 }
 \arguments{
-\item{high_con}{}
+\item{capture_warnings}{}
 }
 \description{
 Title

@@ -188,11 +188,11 @@ modded_local_full_run_function <- function(args,
       verbose = 3
     ))
 
-add_failure_attr <- function(full_results){
-  results <- full_results$result
-  attr(results, "survreg_failure") <- any(stringr::str_detect(full_results$warnings, "Ran out of iterations and did not converge"))
-  results
-}
+#add_failure_attr <- function(full_results){
+#  results <- full_results$result
+#  attr(results, "survreg_failure") <- any(stringr::str_detect(full_results$warnings, "Ran out of iterations and did not converge"))
+#  results
+#}
 
 results <- purrr::map(full_results, ~add_failure_attr(.x))
 

@@ -1,3 +1,5 @@
+#library(sticky)
+
 load("~/Desktop/censor_mean_2_sd_0.8_pi2_0.8_run_16_01032023_1.Rdata")
 
 results[[1]] #survreg failure
@@ -57,16 +59,31 @@ capture_error_measures_one_batch <- function(location,
 ){
   file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
   results_pre <- loadRData(file)
+results_pre <- sticky::sticky(results_pre)
 
-  results <- purrr::map2(1:batch_size, results_pre, ~append(.y, (batch_size*(i - 1) + .x )))
+#attr_print  <- function(run){
+#    print(attr(run, "survreg_failure"))
+#}
+
+attr_append <- function(run){
+  append(run, attr(run, "survreg_failure"))
+}
+results_pre_attr <- map(results_pre, attr_append)
+
+  results <- purrr::map2(1:batch_size, results_pre_attr, ~append(.y, (batch_size*(i - 1) + .x )))
 
   #note results[[3]] failure is not list object
 
-  purrr::map(results, ~error_measures_one_run_both_directions(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
+  purrr::map(results, ~capture_error_measures_one_run_both_directions(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
     data.table::rbindlist()
       ##add attribute read to the error_measures_one_run_both_directions segment
 
 }
+#pick a run
+individual_run <- results[[1]] #survreg failure, converge true
+individual_run <- results[[3]] #converge false
+individual_run <- results[[7]] #survreg success, converge true
+
 
 capture_error_measures_one_run_both_directions <- function(individual_run,
                                                    intercepts,
@@ -80,7 +97,7 @@ capture_error_measures_one_run_both_directions <- function(individual_run,
 
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
-  if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[2]], steps = NaN,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE"))
+  if(length(individual_run) == 3 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[3]], steps = NaN,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE", survreg_failure = individual_run[[2]]))
   } else{
 
 
@@ -149,10 +166,8 @@ capture_error_measures_one_run_both_directions <- function(individual_run,
 
 
     if(f_error < r_error){df <- forward
-    selection = "f"}
-    else if(f_error > r_error){df <- reverse
-    selection = "r"}
-    else{warningCondition("We have ourselves an issue in determining which version has lower error")
+    selection = "f"} else if(f_error > r_error){df <- reverse
+    selection = "r"} else{warningCondition("We have ourselves an issue in determining which version has lower error")
       df <- forward
       #selection = "e"
     }
@@ -175,8 +190,13 @@ capture_error_measures_one_run_both_directions <- function(individual_run,
   if(max(abs(a$est)) >= trends_tolerance){trends_error = TRUE
   } else{trends_error = FALSE}
 
-  df2 <- df %>% mutate(sigma_error = sigma_error, pi_error = pi_error, intercept_error = intercept_error, trends_error = trends_error)
+  df2 <- df %>% mutate(sigma_error = sigma_error, pi_error = pi_error, intercept_error = intercept_error, trends_error = trends_error, survreg_failure = individual_run[[6]])
 
   return(df2)
 
 }
+
+total_batches = 1
+
+array_results <- purrr::map(1:total_batches, ~capture_error_measures_one_batch(location = location, format = format, array_name = array_name, date = date, i = .x, batch_size = number_per_batch, intercepts = intercepts, trends = trends, sigma = sigma, pi = pi, sigma_tolerance = sigma_tolerance, pi_tolerance = pi_tolerance, intercepts_tolerance = intercepts_tolerance, trends_tolerance = trends_tolerance))
+tibble(rbindlist(array_results))
