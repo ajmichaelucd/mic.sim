@@ -38,3 +38,11 @@ function that wraps together all the functions that determine t's distribution,
 pi and its trends, trends in the mean, component draws, epsilon, covariates,
 and censors the data
 }
+\details{
+format for covariate_list: covariate_list = list(c("numeric", "normal", 0, 1), c("categorical", c(0.3, 0.4)), c("numeric", "uniform", 0, 5))
+format for covariate_effect_vector: covariate_effect_vector = c(2, #intercept for all covariates combined
+                                                                10, #slope for covariate_1
+                                                                100, #effect of level b vs a of covariate 2
+                                                                3 #slope for covariate_3
+                                                                )
+}

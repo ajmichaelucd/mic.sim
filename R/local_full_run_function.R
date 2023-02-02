@@ -19,7 +19,7 @@
 #'
 #' @importFrom dplyr tibble mutate inner_join group_by case_when
 #' @importFrom magrittr %>%
-#' @importFrom purrr map as_vector map_chr
+#' @importFrom purrr map as_vector map_chr possibly
 #' @importFrom gridExtra grid.arrange
 #'
 #' @return

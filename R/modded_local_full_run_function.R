@@ -23,7 +23,10 @@
 #' @return
 #' @export
 #'
-#'
+#' @importFrom dplyr tibble mutate inner_join group_by case_when
+#' @importFrom magrittr %>%
+#' @importFrom purrr map as_vector map_chr possibly quietly
+#' @importFrom gridExtra grid.arrange
 #'
 #' @examples
 modded_local_full_run_function <- function(args,
