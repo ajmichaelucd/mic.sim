@@ -42,7 +42,7 @@ capture_error_measures_one_batch <- function(location,
   #    print(attr(run, "survreg_failure"))
   #}
 
-  results_pre_attr <- map(results_pre, attr_append)
+  #results_pre_attr <- map(results_pre, attr_append)
 
   results <- purrr::map2(1:batch_size, results_pre_attr, ~append(.y, (batch_size*(i - 1) + .x )))
 
@@ -54,6 +54,6 @@ capture_error_measures_one_batch <- function(location,
 
 }
 
-attr_append <- function(run){
-  append(run, attr(run, "survreg_failure"))
-}
+#attr_append <- function(run){
+#  append(run, attr(run, "survreg_failure"))
+#}

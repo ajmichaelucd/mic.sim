@@ -16,6 +16,7 @@
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
+#' @param maxiter_survreg
 #' @param verbose
 #'
 #' @return
@@ -56,6 +57,7 @@ full_sim_in_1_function <- function(i,
                                    ncomp = 2,
                                    tol_ll = 1e-6,
                                    #silent = FALSE,
+                                   maxiter_survreg = 30,
                                    verbose = 3,
                                    ...
 ){
@@ -90,7 +92,7 @@ full_sim_in_1_function <- function(i,
 
   #mem here
 
-  single_model_output = fit_model(visible_data, formula, max_it, ncomp, tol_ll, verbose = verbose, low_con = low_con, high_con = high_con, ...)
+  single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, low_con = low_con, high_con = high_con, maxiter_survreg = maxiter_survreg, ...)
 
   single_model_output <- append(single_model_output, i)
 

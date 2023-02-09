@@ -23,6 +23,7 @@ local_full_run_function(
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
+  maxiter_survreg = 30,
   verbose = 3
 )
 }

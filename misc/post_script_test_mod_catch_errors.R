@@ -17,14 +17,14 @@ library(gridExtra)
 
 ###Parameters to estimate and other simulation info----------------------
 #number of batches (e.g. 100)
-number_of_batches = 10
+number_of_batches = 100
 #number per batch (e.g. 10)
 number_per_batch = 10
 #check by putting total number here
-number_of_iterations = 100
+number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1_pi2_0.8/censor_mean_2_sd_1_pi2_0.8_run_9"
+location <- "~/Desktop/feb_2023/gamithromycin_mh_1"
 #"~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1.6_run_16"
 #"~/Desktop/Sim_Results/component_mean_run_8_09272022"
 #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
@@ -35,14 +35,14 @@ location <- "~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1_pi2_0.8/cens
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "censor_mean_2_sd_1_pi2_0.8_run_9"
-date <- "01032023"
+array_name <- "gamithromycin_mh_1"
+date <- "2072023"
 
 
-location <- "~/Desktop/"
-format <- "name_date_number"
-array_name <- "censor_mean_2_sd_0.8_pi2_0.8_run_16"
-date <- "01032023"
+#location <- "~/Desktop/"
+#format <- "name_date_number"
+#array_name <- "censor_mean_2_sd_0.8_pi2_0.8_run_16"
+#date <- "01032023"
 
 incomplete <- check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
@@ -53,13 +53,19 @@ print(incomplete)
 
 ##get target values from simulation parameter log
 parameter_log <- read_excel("~/Desktop/Sim_Results/simulation_parameter_log.xlsx",
-                            sheet = "Sheet2")
+                            sheet = "Sheet3")
 
 #thresholds
-sigma_tolerance = c(0.25, 50)
+sigma_tolerance = c(0.05, 50)
 pi_tolerance = c(0.05, 0.95)
 intercepts_tolerance = 100
 trends_tolerance = 100
+
+max_it = 3000
+ncomp = 2
+tol_ll = 1e-6
+maxiter_survreg = 30
+verbose = 3
 
 ##extra parameters needed to recreate data sets
 covariate_list <-  NULL
@@ -83,7 +89,8 @@ n = params$n
 
 
 ##function to run local sims here to fix the incomplete runs
-rerun_incomplete_sets(location = location, incomplete = incomplete, number_per_batch = number_per_batch, array_name = array_name, date = date, covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, n = n, pi = pi, intercepts = intercepts, trends = trends, sigma = sigma, nyears = nyears, low_con = low_con, high_con = high_con, capture_warnings = TRUE)
+rerun_incomplete_sets(location = location, incomplete = incomplete, number_per_batch = number_per_batch, array_name = array_name, date = date, covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, n = n, pi = pi, intercepts = intercepts, trends = trends, sigma = sigma, nyears = nyears, low_con = low_con, high_con = high_con, max_it = max_it, ncomp = ncomp,
+                      tol_ll = tol_ll, maxiter_survreg = maxiter_survreg, verbose = verbose)
 ##use run_failed_as_support_for_post_script (turn this into a function here)
 check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
@@ -149,18 +156,32 @@ converge_incorrectly_vector <-
           trends_error == TRUE
       )
   ) %>% pull(iter) %>% unique() %>% as.numeric()
-survreg_failure_pct <-
-  array_results  %>% filter(survreg_failure == TRUE) %>% distinct(iter) %>% nrow(.) /
+survreg_failure_last_pct <-
+  array_results  %>% filter(survreg_failure_last == TRUE) %>% distinct(iter) %>% nrow(.) /
   (number_of_batches * number_per_batch)
-survreg_failure_pct <-
-  array_results %>% filter(survreg_failure == TRUE) %>% pull(iter) %>% unique() %>% as.numeric()
+survreg_failure_last_vector <-
+  array_results %>% filter(survreg_failure_last == TRUE) %>% pull(iter) %>% unique() %>% as.numeric()
+
+survreg_failure_any_pct <-
+  array_results  %>% filter(survreg_failure_any == TRUE) %>% distinct(iter) %>% nrow(.) /
+  (number_of_batches * number_per_batch)
+survreg_failure_any_vector <-
+  array_results %>% filter(survreg_failure_any == TRUE) %>% pull(iter) %>% unique() %>% as.numeric()
+
+
+
+
+success_pct <-  array_results  %>% filter(survreg_failure_last == FALSE & incorrect_conv == FALSE & failure_conv == FALSE) %>% distinct(iter) %>% nrow(.) /
+  (number_of_batches * number_per_batch)
+success_vector <-  array_results  %>% filter(survreg_failure_last == FALSE & incorrect_conv == FALSE & failure_conv == FALSE) %>% pull(iter) %>% unique() %>% as.numeric()
+
 
 array_results %>% group_by(iter, survreg_failure, incorrect_conv, failure_conv) %>% summarise(n = 1) %>% group_by(survreg_failure, incorrect_conv, failure_conv) %>% summarize(n = n())
 
 
 
-##ISSUES HERE
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+##Summary for: converged successfully and not extremely incorrectly
+array_results %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
             median_est = median(est),
             bias = mean(error),
@@ -170,7 +191,30 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & sigma_er
   ) %>% left_join(., target_values) %>%
   relocate(true_value, .after = median_est)
 
-array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & incorrect_conv == FALSE & survreg_failure == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+##Summary for: converged successfully, not extremely incorrectly, survreg did not run out of iterations
+array_results %>% filter(comp != "Error" & incorrect_conv == FALSE & survreg_failure == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+  summarize(mean_est = mean(est),
+            median_est = median(est),
+            bias = mean(error),
+            med_bias = median(error),
+            std_error = sd(est),
+            MSE = mean(error^2)
+  ) %>% left_join(., target_values) %>%
+  relocate(true_value, .after = median_est)
+
+##Maybe one here where the survregs fail and one where survreg doesn't?:
+array_results %>% filter(comp != "Error" & survreg_failure == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+  summarize(mean_est = mean(est),
+            median_est = median(est),
+            bias = mean(error),
+            med_bias = median(error),
+            std_error = sd(est),
+            MSE = mean(error^2)
+  ) %>% left_join(., target_values) %>%
+  relocate(true_value, .after = median_est)
+
+
+array_results %>% filter(comp != "Error" & survreg_failure == TRUE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
             median_est = median(est),
             bias = mean(error),
@@ -183,6 +227,15 @@ array_results %>% rbindlist() %>% tibble() %>% filter(comp != "Error" & incorrec
 
 
 
+
+
+###DOES NOT WORK, NEED TO MODIFY SINCE ARRAY RESULTS ISNT A LIST HERE ANY MORE
+##report_failure_types(array_results)
+
+tibble(failed_convergence = failure_to_converge_pct, incorrect_convergence = converge_incorrectly_pct, survreg_failure = survreg_failure_pct,total_failure_proportion = 1 - success_pct)
+
+
+##overlap and separated vectors here maybe?
 
 
 

@@ -9,6 +9,7 @@
 #' @param browse_each_step
 #' @param plot_visuals
 #' @param verbose
+#' @param maxiter_survreg
 #'
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
@@ -32,7 +33,8 @@ fit_model = function(
     #silent = FALSE,
     verbose = 3,
     low_con = 2^-3,
-    high_con = 2^3)
+    high_con = 2^3,
+    maxiter_survreg = 30)
 #verbose = 0: print nothing
 #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
 #verbose = 2: print run number and iteration number --done
@@ -72,7 +74,7 @@ fit_model = function(
 
 
 
-  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 2)
+  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
   likelihood_documentation [,1] <- 1:max_it
 
 
@@ -102,20 +104,22 @@ fit_model = function(
 
     df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
-if(verbose <= 3){
-    model <- survival::survreg(
-      formula,  ##Make this chunk into an argument of the function
-      weights = `P(C=c|y,t)`,
-      data = df_temp,
-      dist = "gaussian")
-} else{
+
+#print("about to survreg")
   model <- survival::survreg(
     formula,  ##Make this chunk into an argument of the function
     weights = `P(C=c|y,t)`,
     data = df_temp,
     dist = "gaussian",
-    debug = 2)
-    }
+    control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+
+
+  if (model$iter == maxiter_survreg){
+    likelihood_documentation[i,3] <- TRUE
+  } else{
+    likelihood_documentation[i,3] <- FALSE
+  }
+    #browser()
 
 
 
@@ -269,6 +273,14 @@ if(browse_each_step){browser(message("End of step ", i))}
   }
  if(browse_at_end){browser()}
 
-  return(list(likelihood = likelihood_documentation[1:i,], possible_data = possible_data, pi = pi, coefficients_and_sd = newmodel))
+  return(
+    list(
+      likelihood = likelihood_documentation[1:i, ],
+      possible_data = possible_data,
+      pi = pi,
+      coefficients_and_sd = newmodel,
+      steps = i
+    )
+  )
 
 }

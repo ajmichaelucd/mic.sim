@@ -15,7 +15,11 @@
 #' @param nyears
 #' @param low_con
 #' @param high_con
-#' @param capture_warnings
+#' @param max_it
+#' @param ncomp
+#' @param tol_ll
+#' @param maxiter_survreg
+#' @param verbose
 #'
 #' @return
 #' @export
@@ -43,7 +47,11 @@ rerun_incomplete_sets <-
            nyears,
            low_con,
            high_con,
-           capture_warnings = FALSE) {
+           max_it = 3000,
+           ncomp = 2,
+           tol_ll = 1e-6,
+           maxiter_survreg = 30,
+           verbose = 3) {
     if(!is.data.frame(incomplete) && incomplete == "All Clear"){print("No reruns needed, skipping to next step")} else{
   Sys.setlocale (locale = "en_US.UTF-8")
   if(!identical(sort(c("10", "1:")), c("1:", "10"))){
@@ -66,7 +74,7 @@ rerun_incomplete_sets <-
   covariate_list <-  covariate_list
   covariate_names <- NULL
   n=n
-  ncomp = 2
+
   pi1 = function(t) {z <- pi[1] #changed to 0.5
   c("1" = z, "2" = 1- z)}
 
@@ -94,34 +102,6 @@ rerun_incomplete_sets <-
   formula = Surv(time = left_bound,
                  time2 = right_bound,
                  type = "interval2") ~ 0 + c + strata(c) + t:c
-  max_it = 3000
-  ncomp = 2
-  tol_ll = 1e-6
-
-  if(capture_warnings == TRUE){
-    for(i in args){modded_local_full_run_function(
-      args = i,
-      batch_size = batch_size,
-      run_name = run_name,
-      n = n,
-      t_dist = t_dist1,
-      pi = pi1,
-      `E[X|T,C]` = `E[X|T,C]`,
-      sd_vector = sd_vector,
-      covariate_list = NULL,
-      covariate_effect_vector = c(0),
-      covariate_names = NULL,
-      low_con = low_con,
-      high_con = high_con,
-      scale = "log",
-      formula = formula,
-      max_it = 3000,
-      ncomp = 2,
-      tol_ll = 1e-6,
-      verbose = 3
-    )
-    }
-  } else{
 
   for(i in args){local_full_run_function(
     args = i,
@@ -139,13 +119,14 @@ rerun_incomplete_sets <-
     high_con = high_con,
     scale = "log",
     formula = formula,
-    max_it = 3000,
-    ncomp = 2,
-    tol_ll = 1e-6,
-    verbose = 3
+    max_it = max_it,
+    ncomp = ncomp,
+    tol_ll = tol_ll,
+    maxiter_survreg = maxiter_survreg,
+    verbose = verbose
   )
   }
-}
+
   setwd(
     "~/Desktop/Dissertation Project/Chapter 1/mic.sim"
   )

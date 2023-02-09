@@ -20,11 +20,15 @@ rerun_incomplete_sets(
   nyears,
   low_con,
   high_con,
-  capture_warnings = FALSE
+  max_it = 3000,
+  ncomp = 2,
+  tol_ll = 1e-06,
+  maxiter_survreg = 30,
+  verbose = 3
 )
 }
 \arguments{
-\item{capture_warnings}{}
+\item{verbose}{}
 }
 \description{
 Title

@@ -15,6 +15,7 @@
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
+#' @param maxiter_survreg
 #' @param verbose
 #'
 #' @importFrom dplyr tibble mutate inner_join group_by case_when
@@ -44,6 +45,7 @@ local_full_run_function <- function(args,
                                   max_it = 3000,
                                   ncomp = 2,
                                   tol_ll = 1e-6,
+                                  maxiter_survreg = 30,
                                   verbose = 3){
   iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args)
 
@@ -69,6 +71,7 @@ local_full_run_function <- function(args,
       max_it = max_it,
       ncomp = ncomp,
       tol_ll = tol_ll,
+      maxiter_survreg = maxiter_survreg,
       verbose = verbose
     ))
 

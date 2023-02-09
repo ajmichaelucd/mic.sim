@@ -16,11 +16,12 @@ fit_model(
   plot_visuals = FALSE,
   verbose = 3,
   low_con = 2^-3,
-  high_con = 2^3
+  high_con = 2^3,
+  maxiter_survreg = 30
 )
 }
 \arguments{
-\item{verbose}{}
+\item{maxiter_survreg}{}
 }
 \description{
 Title
