@@ -10,15 +10,15 @@ capture_error_measures_one_run_both_directions <- function(individual_run,
 
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
-  if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[3]], steps = NaN,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE", survreg_failure_last = TRUE, survreg_failure_any = TRUE, num_it = NA_integer_))
+  if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[2]], steps = NA_integer_,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE", survreg_failure_last = TRUE, survreg_failure_any = TRUE, num_it = NA_integer_))
   } else{
 
 
     #  a <- min_rank(abs(intercepts - individual_run[[4]]$mean[1]))
     #  b <- min_rank(abs(intercepts - individual_run[[4]]$mean[2])) #this just picks which is closer to truth, might want to change to just run both orders and pick afterwards
 
-    sr_any <- as_tibble(individual_run[[1]]$likelihood, .name_repair = "unique") %>% pull(`...3`) %>% as.logical() %>% any()
-    sr_last <- as_tibble(individual_run[[1]]$likelihood, .name_repair = "unique") %>% mutate(sr = as.logical(`...3`)) %>% select(sr) %>% slice_tail(n = 1) %>% pull
+    sr_any <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% pull(`...3`) %>% as.logical() %>% any()
+    sr_last <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% mutate(sr = as.logical(`...3`)) %>% select(sr) %>% slice_tail(n = 1) %>% pull
 
 
     a <- c(1,2)
@@ -43,7 +43,7 @@ capture_error_measures_one_run_both_directions <- function(individual_run,
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[5]],
+      mutate(iter = individual_run[[7]],
              steps = nrow(individual_run[[1]]))
 
 
@@ -66,7 +66,7 @@ capture_error_measures_one_run_both_directions <- function(individual_run,
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[5]],
+      mutate(iter = individual_run[[7]],
              steps = nrow(individual_run[[1]]))
 
     f_error <- forward %>% summarize(total_error = sum(abs(error)))
@@ -115,7 +115,7 @@ capture_error_measures_one_run_both_directions <- function(individual_run,
       trends_error = trends_error,
       survreg_failure_last = sr_last,
       survreg_failure_any = sr_any,
-      num_it = individual_run[[1]]$steps
+      num_it = individual_run$steps
     )
 
   return(df2)

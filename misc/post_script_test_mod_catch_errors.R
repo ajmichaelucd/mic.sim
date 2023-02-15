@@ -24,7 +24,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/feb_2023/gamithromycin_mh_1"
+location <- "~/Desktop/feb_2023/gamithromycin_mh_22"
 #"~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1.6_run_16"
 #"~/Desktop/Sim_Results/component_mean_run_8_09272022"
 #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
@@ -35,8 +35,8 @@ location <- "~/Desktop/feb_2023/gamithromycin_mh_1"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "gamithromycin_mh_1"
-date <- "2072023"
+array_name <- "gamithromycin_mh_22"
+date <- "02082023"
 
 
 #location <- "~/Desktop/"
@@ -176,9 +176,9 @@ success_pct <-  array_results  %>% filter(survreg_failure_last == FALSE & incorr
 success_vector <-  array_results  %>% filter(survreg_failure_last == FALSE & incorrect_conv == FALSE & failure_conv == FALSE) %>% pull(iter) %>% unique() %>% as.numeric()
 
 
-array_results %>% group_by(iter, survreg_failure, incorrect_conv, failure_conv) %>% summarise(n = 1) %>% group_by(survreg_failure, incorrect_conv, failure_conv) %>% summarize(n = n())
+array_results %>% group_by(iter, survreg_failure_last, incorrect_conv, failure_conv) %>% summarise(n = 1) %>% group_by(survreg_failure_last, incorrect_conv, failure_conv) %>% summarize(n = n())
 
-
+array_results %>% group_by(iter, survreg_failure_any, survreg_failure_last) %>% summarise(n = 1) %>% group_by(survreg_failure_any, survreg_failure_last) %>% tally
 
 ##Summary for: converged successfully and not extremely incorrectly
 array_results %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FALSE & intercept_error == FALSE & trends_error == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
@@ -192,7 +192,7 @@ array_results %>% filter(comp != "Error" & sigma_error == FALSE & pi_error == FA
   relocate(true_value, .after = median_est)
 
 ##Summary for: converged successfully, not extremely incorrectly, survreg did not run out of iterations
-array_results %>% filter(comp != "Error" & incorrect_conv == FALSE & survreg_failure == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+array_results %>% filter(comp != "Error" & incorrect_conv == FALSE & survreg_failure_last == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
             median_est = median(est),
             bias = mean(error),
