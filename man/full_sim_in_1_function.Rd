@@ -22,6 +22,7 @@ full_sim_in_1_function(
   covariate_list = NULL,
   covariate_effect_vector = c(0),
   covariate_names = NULL,
+  conc_limits_table = NULL,
   low_con = 2^-4,
   high_con = 2^4,
   scale = "log",

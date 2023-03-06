@@ -23,7 +23,7 @@ simulate_mics(
   low_con = 2^-4,
   high_con = 2^4,
   tested_concentrations = log2(low_con):log2(high_con),
-  scale = "MIC"
+  scale = "log"
 )
 }
 \arguments{

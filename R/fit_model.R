@@ -32,8 +32,8 @@ fit_model = function(
     plot_visuals = FALSE,
     #silent = FALSE,
     verbose = 3,
-    low_con = 2^-3,
-    high_con = 2^3,
+    #low_con = 2^-3,
+    #high_con = 2^3,
     maxiter_survreg = 30)
 #verbose = 0: print nothing
 #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
@@ -272,6 +272,8 @@ if(browse_each_step){browser(message("End of step ", i))}
 
   }
  if(browse_at_end){browser()}
+
+
 
   return(
     list(

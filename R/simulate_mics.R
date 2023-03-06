@@ -46,11 +46,11 @@ simulate_mics <- function(n = 100,
                           },
                           sd_vector = c("1" = 1, "2" = 2),
                            covariate_list = NULL,
-                          covariate_effect_vector = c(0),
+                          covariate_effect_vector = c(0), #effect of level b vs a of covariate 2,
                            low_con = 2^-4,
                            high_con = 2^4,
                            tested_concentrations = log2(low_con):log2(high_con),
-                          scale = "MIC"){
+                          scale = "log"){
 if(is.null(covariate_list)){
   base_data <- draw_epsilon(n, t_dist, pi, `E[X|T,C]`, sd_vector)
   simulated_obs <- base_data %>% mutate(observed_value = epsilon + x)

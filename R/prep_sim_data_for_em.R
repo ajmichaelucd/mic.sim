@@ -28,7 +28,7 @@ truth <- data.sim %>% select("observed_value")
 
 if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
     df <- data.sim %>%
-      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
       mutate(obs_id = 1:n(),
              left_bound = log2(left_bound),
              right_bound = log2(right_bound)) %>%
@@ -39,7 +39,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
   }
   else if (is.null(scale) && attr(data.sim, "scale") == "log"){
     df <- data.sim %>%
-      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
     if(observed_value_choice){
@@ -48,7 +48,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
   }
   else if(scale == "MIC"){
     df <- data.sim %>%
-    select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
+    select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
     mutate(obs_id = 1:n(),
            left_bound = log2(left_bound),
            right_bound = log2(right_bound)) %>%
@@ -59,7 +59,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
 }
 else if (scale == "log"){
   df <- data.sim %>%
-      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name)) %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
   if(observed_value_choice){

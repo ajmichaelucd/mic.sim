@@ -13,7 +13,7 @@ library(readxl)
 library(LearnBayes)
 library(survival)
 library(gridExtra)
-
+library(cowplot)
 
 ###Parameters to estimate and other simulation info----------------------
 #number of batches (e.g. 100)
@@ -203,7 +203,7 @@ array_results %>% filter(comp != "Error" & incorrect_conv == FALSE & survreg_fai
   relocate(true_value, .after = median_est)
 
 ##Maybe one here where the survregs fail and one where survreg doesn't?:
-array_results %>% filter(comp != "Error" & survreg_failure == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+array_results %>% filter(comp != "Error" & survreg_failure_last == FALSE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
             median_est = median(est),
             bias = mean(error),
@@ -214,7 +214,7 @@ array_results %>% filter(comp != "Error" & survreg_failure == FALSE) %>% mutate_
   relocate(true_value, .after = median_est)
 
 
-array_results %>% filter(comp != "Error" & survreg_failure == TRUE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+array_results %>% filter(comp != "Error" & survreg_failure_last == TRUE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
   summarize(mean_est = mean(est),
             median_est = median(est),
             bias = mean(error),
@@ -224,6 +224,133 @@ array_results %>% filter(comp != "Error" & survreg_failure == TRUE) %>% mutate_a
   ) %>% left_join(., target_values) %>%
   relocate(true_value, .after = median_est)
 
+
+###See how they do when the survreg failure is NOT the last step
+array_results %>% filter(comp != "Error" & survreg_failure_last == FALSE & survreg_failure_any == TRUE) %>% mutate_at(c('est', 'true', 'error', 'iter'), as.numeric) %>% group_by(comp, parameter) %>%
+  summarize(mean_est = mean(est),
+            median_est = median(est),
+            bias = mean(error),
+            med_bias = median(error),
+            std_error = sd(est),
+            MSE = mean(error^2)
+  ) %>% left_join(., target_values) %>%
+  relocate(true_value, .after = median_est)
+
+
+filtered_results <- array_results %>% filter(comp != "Error" & survreg_failure_last == FALSE & survreg_failure_any == TRUE)
+
+plot_output <- function(filtered_results){
+  df <- filtered_results %>%
+    mutate_at(c('est', 'true', 'error', 'iter'), as.numeric)
+
+  c1_intercepts_plot <-
+    df %>%
+    filter(parameter == "intercepts") %>%
+    filter(comp == "c1") %>%
+    ggplot() +
+    geom_histogram(aes(x = est),
+    fill = "darkgreen", color = "black") +
+  geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C1 Intercept")
+
+
+  c2_intercepts_plot <-
+    df %>%
+    filter(parameter == "intercepts") %>%
+    filter(comp == "c2") %>%
+  ggplot() +
+      geom_histogram(aes(x = est),
+                     fill = "darkgreen", color = "black") +
+    geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C2 Intercept")
+
+  c1_trends_plot <-
+    df %>%
+    filter(parameter == "trends") %>%
+    filter(comp == "c1") %>%
+    ggplot() +
+    geom_histogram(aes(x = est),
+                   fill = "lightblue", color = "black") +
+    geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C1 Trend")
+
+  c2_trends_plot <-
+    df %>%
+    filter(parameter == "trends") %>%
+    filter(comp == "c2") %>%
+    ggplot() +
+    geom_histogram(aes(x = est),
+                   fill = "lightblue", color = "black") +
+    geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C2 Trend")
+
+  c1_sigma_plot <-
+    df %>%
+    filter(parameter == "sigma") %>%
+    filter(comp == "c1") %>%
+    ggplot() +
+    geom_histogram(aes(x = est),
+                   fill = "darkred", color = "black") +
+    geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C1 Sigma")
+
+  c2_sigma_plot <-
+    df %>%
+    filter(parameter == "sigma") %>%
+    filter(comp == "c2") %>%
+    ggplot() +
+    geom_histogram(aes(x = est),
+                   fill = "darkred", color = "black") +
+    geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C2 Sigma")
+
+  c1_pi_plot <-
+    df %>%
+    filter(parameter == "pi") %>%
+    filter(comp == "c1") %>%
+    ggplot() +
+    geom_histogram(aes(x = est),
+                   fill = "yellow", color = "black") +
+    geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C1 Pi")
+
+  c2_pi_plot <-
+    df %>%
+    filter(parameter == "pi") %>%
+    filter(comp == "c2") %>%
+    ggplot() +
+    geom_histogram(aes(x = est),
+                   fill = "yellow", color = "black") +
+    geom_vline(aes(xintercept = true), color = "red") +
+    ggtitle("C2 Pi")
+
+steps_plot <- df %>%
+  ggplot(aes(x = steps)) +
+    geom_histogram(aes(fill = failure_conv)) + ggtitle(label = "Steps")
+
+ggdraw() +
+  draw_plot(c1_intercepts_plot, x = 0, y = .75, width = .5, height = .25)  +
+  draw_plot(c2_intercepts_plot, x = 0.5, y = .75, width = .5, height = .25)  +
+  draw_plot(c1_sigma_plot, x = 0, y = .5, width = .5, height = .25)  +
+  draw_plot(c2_sigma_plot, x = 0.5, y = .5, width = .5, height = .25)  +
+  draw_plot(c1_trends_plot, x = 0, y = .25, width = .5, height = .25)  +
+  draw_plot(c2_trends_plot, x = 0.5, y = .25, width = .5, height = .25)  +
+  draw_plot(c1_pi_plot, x = 0, y = .0, width = .5, height = .25)  +
+  draw_plot(steps_plot, x = 0.5, y = .0, width = .5, height = .25)
+
+
+}
+
+plot_output(filtered_results)
+
+
+array_results %>% select(iter:failure_conv) %>% unique() %>% group_by(NULL) %>% summarize(sigma_errors = sum(as.logical(sigma_error)) - sum(as.logical(failure_conv)),
+                                                                                          intercept_errors = sum(as.logical(intercept_error)) - sum(as.logical(failure_conv)),
+                                                                                          trend_errors = sum(as.logical(trends_error)) - sum(as.logical(failure_conv)),
+                                                                                          pi_errors = sum(as.logical(pi_error)) - sum(as.logical(failure_conv)),
+                                                                                          survregh_fail_any = sum(as.logical(survreg_failure_any)) - sum(as.logical(failure_conv)),
+                                                                                          survregh_fail_last = sum(as.logical(survreg_failure_last)) - sum(as.logical(failure_conv)),
+                                                                                          conv_fail = sum(as.logical(failure_conv)))
 
 
 
@@ -232,7 +359,7 @@ array_results %>% filter(comp != "Error" & survreg_failure == TRUE) %>% mutate_a
 ###DOES NOT WORK, NEED TO MODIFY SINCE ARRAY RESULTS ISNT A LIST HERE ANY MORE
 ##report_failure_types(array_results)
 
-tibble(failed_convergence = failure_to_converge_pct, incorrect_convergence = converge_incorrectly_pct, survreg_failure = survreg_failure_pct,total_failure_proportion = 1 - success_pct)
+tibble(failed_convergence = failure_to_converge_pct, incorrect_convergence = converge_incorrectly_pct, survreg_failure = survreg_failure_last_pct,total_failure_proportion = 1 - success_pct)
 
 
 ##overlap and separated vectors here maybe?

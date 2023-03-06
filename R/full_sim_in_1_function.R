@@ -47,6 +47,9 @@ full_sim_in_1_function <- function(i,
                                    covariate_list = NULL,
                                    covariate_effect_vector = c(0),
                                    covariate_names = NULL,
+                                   conc_limits_table = NULL, #conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3),
+                                                                                    #c("b", 2^-4, 2^4)), `.name_repair` = "unique"
+                                                                                    #) %>% rename("covariate_2" = 1, "low_cons" = 2, "high_cons" = 3),
                                    low_con = 2^-4,
                                    high_con = 2^4,
                                    scale = "log",
@@ -59,6 +62,7 @@ full_sim_in_1_function <- function(i,
                                    #silent = FALSE,
                                    maxiter_survreg = 30,
                                    verbose = 3,
+
                                    ...
 ){
   set.seed(i)
@@ -74,7 +78,7 @@ full_sim_in_1_function <- function(i,
 
 #mem here
 
-  data.sim <- simulate_mics(
+  data.sim <- simulate_mics_2( #changed to test
     n = n,
     t_dist = t_dist,
     pi = pi,
@@ -82,6 +86,7 @@ full_sim_in_1_function <- function(i,
     sd_vector = sd_vector,
     covariate_list = covariate_list,
     covariate_effect_vector = covariate_effect_vector,
+    conc_limits_table = conc_limits_table,
     low_con = low_con,
     high_con = high_con,
     scale = "log")
@@ -92,9 +97,16 @@ full_sim_in_1_function <- function(i,
 
   #mem here
 
-  single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, low_con = low_con, high_con = high_con, maxiter_survreg = maxiter_survreg, ...)
+  single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+#wrap fit model with possibly() or try()
+
+
+  #evaluate
+  #run fit_model_safely if needed
 
   single_model_output <- append(single_model_output, i)
+
+  #return
 
   return(single_model_output)
 
