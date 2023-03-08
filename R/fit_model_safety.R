@@ -29,8 +29,8 @@ fit_model_safety = function(
     plot_visuals = FALSE,
     #silent = FALSE,
     verbose = 3,
-    low_con = 2^-4,
-    high_con = 2^4,
+    #low_con = 2^-4,
+    #high_con = 2^4,
     maxiter_survreg = 30)
 #verbose = 0: print nothing
 #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
@@ -98,7 +98,7 @@ fit_model_safety = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
+    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)   ###THE C == 1 FILTER BREAKS SURVREG (CAN'T HAVE FORMULA WITH C INVOLVED)
 
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
     #print("about to survreg")
