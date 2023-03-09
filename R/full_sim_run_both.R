@@ -1,0 +1,138 @@
+#' Title
+#'
+#' @param i
+#' @param n
+#' @param t_dist
+#' @param pi
+#' @param `E[X|T,C]`
+#' @param sd_vector
+#' @param covariate_list
+#' @param covariate_effect_vector
+#' @param covariate_names
+#' @param conc_limits_table
+#' @param low_con
+#' @param high_con
+#' @param scale
+#' @param formula
+#' @param max_it
+#' @param ncomp
+#' @param tol_ll
+#' @param maxiter_survreg
+#' @param verbose
+#' @param allow_safety
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+full_sim_run_both <- function(i,
+                       n = 150,
+                       t_dist = function(n){runif(n, min = 0, max = 5)},
+                       pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
+                       c("1" = z, "2" = 1 - z)},
+                       `E[X|T,C]` = function(t, c)
+                       {
+                         case_when(
+                           c == "1" ~ -2 -0.1*t, #3 + t + 2*t^2 - sqrt(t),
+                           c == "2" ~ 2 + 0.2*t,
+                           TRUE ~ NaN
+                         )
+                       },
+                       sd_vector = c("1" = 1, "2" = 2),
+                       covariate_list = NULL,
+                       covariate_effect_vector = c(0),
+                       covariate_names = NULL,
+                       conc_limits_table = NULL, #conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3),
+                       #c("b", 2^-4, 2^4)), `.name_repair` = "unique"
+                       #) %>% rename("covariate_2" = 1, "low_cons" = 2, "high_cons" = 3),
+                       low_con = 2^-4,
+                       high_con = 2^4,
+                       scale = "log",
+                       formula = Surv(time = left_bound,
+                                      time2 = right_bound,
+                                      type = "interval2") ~ 0 + c + strata(c) + t:c,
+                       max_it = 3000,
+                       ncomp = 2,
+                       tol_ll = 1e-6,
+                       #silent = FALSE,
+                       maxiter_survreg = 30,
+                       verbose = 3,
+                       allow_safety = TRUE,
+
+                       ...
+){
+  set.seed(i)
+  if(verbose > 2){
+    message("starting run number", i)}
+  #verbose = 0: print nothing
+  #verbose = 1: print run number
+  #verbose = 2: print run number and iteration number
+  #verbose = 3: print run number, iteration number, and iteration results
+  #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
+
+
+
+  #mem here
+
+  data.sim <- simulate_mics_2( #changed to test
+    n = n,
+    t_dist = t_dist,
+    pi = pi,
+    `E[X|T,C]` = `E[X|T,C]`,
+    sd_vector = sd_vector,
+    covariate_list = covariate_list,
+    covariate_effect_vector = covariate_effect_vector,
+    conc_limits_table = conc_limits_table,
+    low_con = low_con,
+    high_con = high_con,
+    scale = "log")
+
+  #mem here
+
+  visible_data <- prep_sim_data_for_em(data.sim, left_bound_name = "left_bound", right_bound_name = "right_bound", time = "t", covariate_names, scale = scale)
+
+  #mem here
+  poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
+  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+  #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+
+  #wrap fit model with possibly() or try()
+
+  if(length(single_model_output) == 1 && single_model_output == "Error"){
+    fm_fail = "fm_failed"
+  } else{
+    fm_fail = "fm_worked"
+  }
+
+  if(length(single_model_output) == 1 && single_model_output == "Error" & allow_safety == TRUE){
+    formula = Surv(time = left_bound,
+                   time2 = right_bound,
+                   type = "interval2") ~ t
+    poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
+    #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+    single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+    if(length(single_model_output) == 1 && single_model_output == "Error"){
+      fms_fail = "fms_failed"
+    } else{
+      fms_fail = "fms_worked"
+    }
+
+
+  } else{
+    fms_fail = "fms_not_called"
+  }
+
+  #evaluate
+  #run fit_model_safely if needed
+
+  failure_safety_notes <- c(allow_safety, fm_fail, fms_fail)
+
+
+  single_model_output <- append(single_model_output, i)
+  single_model_output <- append(single_model_output, failure_safety_notes)
+  #return
+
+  return(single_model_output)
+
+}

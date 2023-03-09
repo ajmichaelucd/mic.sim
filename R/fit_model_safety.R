@@ -98,7 +98,7 @@ fit_model_safety = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)   ###THE C == 1 FILTER BREAKS SURVREG (CAN'T HAVE FORMULA WITH C INVOLVED)
+    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
 
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
     #print("about to survreg")
