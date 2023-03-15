@@ -111,7 +111,7 @@ full_sim_run_both <- function(i,
                    type = "interval2") ~ t
     poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
     #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
-    single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+    single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
     if(length(single_model_output) == 1 && single_model_output == "Error"){
       fms_fail = "fms_failed"
     } else{

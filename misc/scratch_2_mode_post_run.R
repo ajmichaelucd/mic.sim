@@ -17,14 +17,14 @@ library(cowplot)
 
 ###Parameters to estimate and other simulation info----------------------
 #number of batches (e.g. 100)
-number_of_batches = 100
+number_of_batches = 1200
 #number per batch (e.g. 10)
 number_per_batch = 10
 #check by putting total number here
-number_of_iterations = 1000
+number_of_iterations = 12000
 
 #path to the directory full of the files
-location <- "~/Desktop/mar_2023/safety_test_1"
+location <- "~/Desktop/mar_2023/safety_test_3"
 #"~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1.6_run_16"
 #"~/Desktop/Sim_Results/component_mean_run_8_09272022"
 #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
@@ -35,7 +35,7 @@ location <- "~/Desktop/mar_2023/safety_test_1"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "safety_test_1"
+array_name <- "safety_test_3"
 date <- "03072023"
 
 
@@ -101,7 +101,7 @@ target_values = tibble(intercepts, trends, sigma, pi, comp = c("c1", "c2")) %>%
 array_results <-
   purrr::map(
     1:number_of_batches,
-    ~ capture_error_measures_one_batch(
+    ~ capture_error_measures_one_batch_safety(
       location = location,
       format = format,
       array_name = array_name,
@@ -131,6 +131,14 @@ array_results <-
       TRUE ~ FALSE
     )
   )
+##analyse
+array_results %>% group_by(safety_on, fm, fms_called, fms_worked) %>% tally
+
+
+
+
+
+
 failure_to_converge_pct <-
   array_results  %>% filter(comp == "Error") %>% distinct(iter) %>% nrow(.) /
   (number_of_batches * number_per_batch)
@@ -207,7 +215,8 @@ local_full_run_function_both <- function(args,
       ncomp = ncomp,
       tol_ll = tol_ll,
       maxiter_survreg = maxiter_survreg,
-      verbose = verbose
+      verbose = verbose,
+      allow_safety = TRUE
     ))
 
 
@@ -350,7 +359,7 @@ rerun_incomplete_sets_both <-
 
 
 
-capture_error_measures_one_run_both_directions <- function(individual_run,
+capture_error_measures_one_run_both_directions_safety <- function(individual_run,
                                                            intercepts,
                                                            trends,
                                                            sigma,
@@ -366,8 +375,8 @@ if(individual_run[[x-1]] == "fm_worked"){
 
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
-  if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[2]], steps = NA_integer_,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE", survreg_failure_last = TRUE, survreg_failure_any = TRUE, num_it = NA_integer_))
-  } else{
+ # if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[2]], steps = NA_integer_,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE", survreg_failure_last = TRUE, survreg_failure_any = TRUE, num_it = NA_integer_))
+ # } else{
 
 
     #  a <- min_rank(abs(intercepts - individual_run[[4]]$mean[1]))
@@ -399,7 +408,7 @@ if(individual_run[[x-1]] == "fm_worked"){
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[7]],
+      mutate(iter = individual_run[[x - 3]],
              steps = nrow(individual_run[[1]]))
 
 
@@ -422,7 +431,7 @@ if(individual_run[[x-1]] == "fm_worked"){
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[7]],
+      mutate(iter = individual_run[[x - 3]],
              steps = nrow(individual_run[[1]]))
 
     f_error <- forward %>% summarize(total_error = sum(abs(error)))
@@ -445,7 +454,8 @@ if(individual_run[[x-1]] == "fm_worked"){
       #selection = "e"
     }
 
-  }
+
+    #}
 
   a <- df %>% filter(parameter == "sigma")
   if(max(abs(a$est)) > max(sigma_tolerance) | min(abs(a$est)) < min(sigma_tolerance) ){sigma_error = TRUE
@@ -489,9 +499,140 @@ if(individual_run[[x-1]] == "fm_worked"){
 
 } else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_not_called"){
 
+
+  return(
+    tibble(
+      comp = "Error",
+      parameter = "Error",
+      est = "Error",
+      true = "Error",
+      error = "Error",
+      iter = individual_run[[x - 3]],
+      steps = NA_integer_,
+      sigma_error = "TRUE",
+      pi_error = "TRUE",
+      intercept_error = "TRUE",
+      trends_error = "TRUE",
+      survreg_failure_last = TRUE,
+      survreg_failure_any = TRUE,
+      num_it = NA_integer_,
+      safety_on = individual_run[[x - 2]],
+      fm = individual_run[[x - 1]],
+      fms_called = case_when(
+        individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
+        TRUE ~ FALSE
+      ),
+      fms_worked = case_when(
+        individual_run[[x]] == "fms_worked" ~ TRUE,
+        TRUE ~ FALSE
+      )
+    )
+  )
+
 } else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_worked"){
 
-  } else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_worked"){
+  sr_any <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% pull(`...3`) %>% as.logical() %>% any()
+  sr_last <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% mutate(sr = as.logical(`...3`)) %>% select(sr) %>% slice_tail(n = 1) %>% pull
+
+  ##add an if_else here to choose c1 or c2 and use that to select intercepts, trends, sigma, pi, etc
+
+  df <- tibble(
+    comp = c("c1"),
+    est_intercepts = individual_run[[4]]$mean[1],
+    true_intercepts = intercepts [1],
+    est_trends = individual_run[[4]]$mean[2],
+    true_trends = trends[1],
+    est_sigma = individual_run[[4]]$sd,
+    true_sigma = sigma[1],
+    est_pi = individual_run[[3]]$`P(C = c)`[1],
+    true_pi = pi[1]) %>%
+    mutate(
+      error_intercepts = true_intercepts - est_intercepts,
+      error_trends = true_trends - est_trends,
+      error_sigma = true_sigma - est_sigma,
+      error_pi = true_pi - est_pi
+    ) %>%
+    tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
+    separate(name, sep = "_", into = c("type", "parameter")) %>%
+    pivot_wider(names_from = type, values_from = value) %>%
+    mutate(iter = individual_run[[x - 3]],
+           steps = nrow(individual_run[[1]]))
+
+
+
+  a <- df %>% filter(parameter == "sigma")
+  if((abs(a$est) > max(sigma_tolerance)) | (abs(a$est) < min(sigma_tolerance)) ){sigma_error = TRUE
+  } else{sigma_error = FALSE}
+
+  a <- df %>% filter(parameter == "pi")
+  if(a$est >= max(pi_tolerance) | a$est <= min(pi_tolerance)){pi_error = TRUE
+  } else{pi_error = FALSE}
+
+  a <- df %>% filter(parameter == "intercepts")
+  if(abs(a$est) >= intercepts_tolerance){intercept_error = TRUE
+  } else{intercept_error = FALSE}
+
+  a <- df %>% filter(parameter == "trends")
+  if(abs(a$est) >= trends_tolerance){trends_error = TRUE
+  } else{trends_error = FALSE}
+
+
+
+
+  df2 <-
+    df %>% mutate(
+      sigma_error = sigma_error,
+      pi_error = pi_error,
+      intercept_error = intercept_error,
+      trends_error = trends_error,
+      survreg_failure_last = sr_last,
+      survreg_failure_any = sr_any,
+      num_it = individual_run$steps,
+      safety_on = individual_run[[x - 2]],
+      fm = individual_run[[x - 1]],
+      fms_called = case_when(
+        individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
+        TRUE ~ FALSE
+      ),
+      fms_worked = case_when(
+        individual_run[[x]] == "fms_worked" ~ TRUE,
+        TRUE ~ FALSE
+      )
+    )
+
+  return(df2)
+
+  } else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_failed"){
+
+
+    return(
+      tibble(
+        comp = "Error",
+        parameter = "Error",
+        est = "Error",
+        true = "Error",
+        error = "Error",
+        iter = individual_run[[x - 3]],
+        steps = NA_integer_,
+        sigma_error = "TRUE",
+        pi_error = "TRUE",
+        intercept_error = "TRUE",
+        trends_error = "TRUE",
+        survreg_failure_last = TRUE,
+        survreg_failure_any = TRUE,
+        num_it = NA_integer_,
+        safety_on = individual_run[[x - 2]],
+        fm = individual_run[[x - 1]],
+        fms_called = case_when(
+          individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
+          TRUE ~ FALSE
+        ),
+        fms_worked = case_when(
+          individual_run[[x]] == "fms_worked" ~ TRUE,
+          TRUE ~ FALSE
+        )
+      )
+    )
 
   }
 
@@ -510,6 +651,43 @@ if(individual_run[[x-1]] == "fm_worked"){
 }
 
 
+capture_error_measures_one_batch_safety <- function(location,
+                                             format,
+                                             array_name,
+                                             date,
+                                             i,
+                                             batch_size,
+                                             intercepts,
+                                             trends,
+                                             sigma,
+                                             pi,
+                                             sigma_tolerance = c(.05, 100),
+                                             pi_tolerance = c(.05, .95),
+                                             intercepts_tolerance = 100,
+                                             trends_tolerance = 100
+){
+  file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
+  results <- loadRData(file)
+  # results_pre <- sticky::sticky(results_pre)
 
+  #attr_print  <- function(run){
+  #    print(attr(run, "survreg_failure"))
+  #}
+
+  #results_pre_attr <- map(results_pre, attr_append)
+
+  #results <- purrr::map2(1:batch_size, results_pre, ~append(.y, (batch_size*(i - 1) + .x )))
+
+  #note results[[3]] failure is not list object
+
+  purrr::map(results, ~capture_error_measures_one_run_both_directions_safety(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
+    data.table::rbindlist()
+  ##add attribute read to the error_measures_one_run_both_directions segment
+
+}
+
+#attr_append <- function(run){
+#  append(run, attr(run, "survreg_failure"))
+#}
 
 

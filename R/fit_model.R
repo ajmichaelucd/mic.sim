@@ -185,7 +185,8 @@ if(plot_visuals == TRUE){
       ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
       geom_point() +
       geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
-      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
+      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))+
+      expand_limits(y = c(newmodel$mean[,"c1"], newmodel$mean[,"c2"]))
     print(c1_plot)
 }
 
