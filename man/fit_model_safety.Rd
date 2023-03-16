@@ -18,7 +18,7 @@ fit_model_safety(
 )
 }
 \arguments{
-\item{high_con}{}
+\item{verbose}{}
 }
 \description{
 Title

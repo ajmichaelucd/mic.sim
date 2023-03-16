@@ -62,13 +62,13 @@ fit_model = function(
 #                              left_bound <= median_y & c == "2" ~ 0.6)
 #     ) %>%
     mutate(
-      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5 ,
-                               left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5,
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 ,
+                               left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
                                left_bound == -Inf & c == "1" ~ 0.01,
                                left_bound == -Inf & c == "2" ~ 0.99)
-    ) #%>%
+    ) #%>%  ##this is probably only accurate for scale = "log"
     #print()
 
 

@@ -23,24 +23,25 @@ censor_values <-
     scale = "log"
   )
   {
-    df <-
-      simulated_obs %>% rowwise %>%
-      mutate(tested_concentrations = list(log2(as.numeric(low_con)):log2(as.numeric(high_con)))) %>% mutate(
-        left_bound = sapply(observed_value, function(x)
-          max(tested_concentrations[tested_concentrations < x])),
-        right_bound = sapply(observed_value, function(x)
-          min(tested_concentrations[tested_concentrations >= x])),
-        indicator = dplyr::case_when(
-          is.finite(right_bound) & is.finite(left_bound) ~ 3,
-          is.finite(right_bound) &
-            is.infinite(left_bound) ~ 2,
-          is.infinite(right_bound) &
-            is.finite(left_bound) ~ 0
-        )
-      ) %>%
-      suppressWarnings()
 
 if(scale == "MIC"){
+  df <-
+    simulated_obs %>% rowwise %>%
+    mutate(tested_concentrations = list(log2(as.numeric(low_con)):log2(as.numeric(high_con)))) %>% mutate(
+      left_bound = sapply(observed_value, function(x)
+        max(tested_concentrations[tested_concentrations < x])),
+      right_bound = sapply(observed_value, function(x)
+        min(tested_concentrations[tested_concentrations >= x])),
+      indicator = dplyr::case_when(
+        is.finite(right_bound) & is.finite(left_bound) ~ 3,
+        is.finite(right_bound) &
+          is.infinite(left_bound) ~ 2,
+        is.infinite(right_bound) &
+          is.finite(left_bound) ~ 0
+      )
+    ) %>%
+    suppressWarnings()
+
   df <- df %>%
         mutate(
           left_bound = 2^left_bound,
@@ -51,6 +52,22 @@ if(scale == "MIC"){
     }
 
 else if(scale == "log"){
+  df <-
+    simulated_obs %>% rowwise %>%
+    mutate(tested_concentrations = list(as.numeric(low_con):as.numeric(high_con))) %>% mutate(
+      left_bound = sapply(observed_value, function(x)
+        max(tested_concentrations[tested_concentrations < x])),
+      right_bound = sapply(observed_value, function(x)
+        min(tested_concentrations[tested_concentrations >= x])),
+      indicator = dplyr::case_when(
+        is.finite(right_bound) & is.finite(left_bound) ~ 3,
+        is.finite(right_bound) &
+          is.infinite(left_bound) ~ 2,
+        is.infinite(right_bound) &
+          is.finite(left_bound) ~ 0
+      )
+    ) %>%
+    suppressWarnings()
 
   return(df)
 }

@@ -22,8 +22,8 @@ simulate_mics_2(
   covariate_effect_vector = c(0, 0.2, -1),
   conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3), c("b", 2^-4, 2^4)), .name_repair
     = "unique") \%>\% rename(covariate_2 = 1, low_cons = 2, high_cons = 3),
-  low_con = 2^-4,
-  high_con = 2^4,
+  low_con = -4,
+  high_con = 4,
   scale = "log"
 )
 }

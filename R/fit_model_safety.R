@@ -9,8 +9,6 @@
 #' @param browse_each_step
 #' @param plot_visuals
 #' @param verbose
-#' @param low_con
-#' @param high_con
 #'
 #' @return
 #' @export
@@ -63,7 +61,7 @@ fit_model_safety = function(
                                right_bound == Inf & c == "2"~ 0.99 ,
                                right_bound != Inf & c == "1"~ 1 ,
                                right_bound != Inf & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
-
+ ###Also only works with scale == "log"
     ) #%>%
   #print()
 
