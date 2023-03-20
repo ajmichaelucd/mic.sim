@@ -62,12 +62,19 @@ fit_model = function(
 #                              left_bound <= median_y & c == "2" ~ 0.6)
 #     ) %>%
     mutate(
-      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 ,
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
                                left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
                                left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
                                left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
                                left_bound == -Inf & c == "1" ~ 0.01,
-                               left_bound == -Inf & c == "2" ~ 0.99)
+                               left_bound == -Inf & c == "2" ~ 0.99),
+          mid =
+            case_when(
+              left_bound == -Inf ~ right_bound - 0.5,
+              right_bound == Inf ~ left_bound + 0.5,
+              TRUE ~ (left_bound + right_bound) / 2
+            ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
     ) #%>%  ##this is probably only accurate for scale = "log"
     #print()
 
@@ -173,19 +180,11 @@ fit_model = function(
 if(plot_visuals == TRUE){
 
     c1_plot <-   possible_data %>%
-      mutate(
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          )
-      ) %>%
       filter(c == 1) %>%
       ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
       geom_point() +
-      geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
-      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))+
+      geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], color = "red") +
+      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], color = "violet")+
       expand_limits(y = c(newmodel$mean[,"c1"], newmodel$mean[,"c2"]))
     print(c1_plot)
 }

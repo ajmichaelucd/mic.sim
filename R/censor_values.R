@@ -27,7 +27,7 @@ censor_values <-
 if(scale == "MIC"){
   df <-
     simulated_obs %>% rowwise %>%
-    mutate(tested_concentrations = list(log2(as.numeric(low_con)):log2(as.numeric(high_con)))) %>% mutate(
+    mutate(tested_concentrations = list(log2(as.numeric(low_cons)):log2(as.numeric(high_cons)))) %>% mutate(
       left_bound = sapply(observed_value, function(x)
         max(tested_concentrations[tested_concentrations < x])),
       right_bound = sapply(observed_value, function(x)
@@ -54,7 +54,7 @@ if(scale == "MIC"){
 else if(scale == "log"){
   df <-
     simulated_obs %>% rowwise %>%
-    mutate(tested_concentrations = list(as.numeric(low_con):as.numeric(high_con))) %>% mutate(
+    mutate(tested_concentrations = list(as.numeric(low_cons):as.numeric(high_cons))) %>% mutate(
       left_bound = sapply(observed_value, function(x)
         max(tested_concentrations[tested_concentrations < x])),
       right_bound = sapply(observed_value, function(x)

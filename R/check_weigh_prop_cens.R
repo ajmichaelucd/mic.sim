@@ -22,7 +22,7 @@ check_weigh_prop_cens <- function(df = a, comp = "1", side = "rc", cutoff = 0.9)
         stage1 %>%
           mutate(decision = if_else(
             weighted_prop_right_censored >= cutoff,
-            "Excessive_Censoring",
+            "Excessive Censoring",
             "All Clear"
           )) %>% select(decision)
       }else{tibble(decision = "All Clear")}
@@ -34,7 +34,7 @@ check_weigh_prop_cens <- function(df = a, comp = "1", side = "rc", cutoff = 0.9)
     stage1 %>%
       mutate(decision = if_else(
         weighted_prop_right_censored >= cutoff,
-        "Excessive_Censoring",
+        "Excessive Censoring",
         "All Clear"
       )) %>% select(decision)
      }else{tibble(decision = "All Clear")}

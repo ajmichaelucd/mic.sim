@@ -18,10 +18,10 @@ simulate_mics_2(
     TRUE ~ NaN)
  },
   sd_vector = c(`1` = 1, `2` = 0.7),
-  covariate_list = list(c("numeric", "normal", 0, 1), c("categorical", c(0.3, 0.4))),
-  covariate_effect_vector = c(0, 0.2, -1),
-  conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3), c("b", 2^-4, 2^4)), .name_repair
-    = "unique") \%>\% rename(covariate_2 = 1, low_cons = 2, high_cons = 3),
+  covariate_list = list(c("numeric", "normal", 0, 1), c("categorical", c(0.3, 0.4, 0.3))),
+  covariate_effect_vector = c(0, 0.2, -1, 0.2),
+  conc_limits_table = as_tibble(rbind(c("a", -3, 3), c("b", -4, 4), c("c", -4, 4)),
+    .name_repair = "unique") \%>\% rename(covariate_2 = 1, low_cons = 2, high_cons = 3),
   low_con = -4,
   high_con = 4,
   scale = "log"

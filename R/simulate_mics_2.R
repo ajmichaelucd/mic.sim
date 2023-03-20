@@ -29,12 +29,13 @@ simulate_mics_2 <- function(n = 100,
                               )
                             },
                             sd_vector = c("1" = 1, "2" = 0.7),
-                            covariate_list = list(c("numeric", "normal", 0, 1), c("categorical", c(0.3, 0.4))),
+                            covariate_list = list(c("numeric", "normal", 0, 1), c("categorical", c(0.3, 0.4, 0.3))),
                             covariate_effect_vector = c(0, #intercept for all covariates combined
                                                         0.2, #slope for covariate_1
-                                                        -1), #effect of level b vs a of covariate 2,
-                            conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3),
-                                                                c("b", 2^-4, 2^4)), `.name_repair` = "unique"
+                                                        -1, 0.2), #effect of level b vs a of covariate 2,
+                            conc_limits_table = as_tibble(rbind(c("a", -3, 3),
+                                                                c("b", -4, 4),
+                                                                c("c", -4, 4)),`.name_repair` = "unique"
                             ) %>% rename("covariate_2" = 1, "low_cons" = 2, "high_cons" = 3),
                             low_con = -4,
                             high_con = 4,
@@ -43,11 +44,11 @@ simulate_mics_2 <- function(n = 100,
   if(is.null(covariate_list)){
     base_data <- draw_epsilon(n, t_dist, pi, `E[X|T,C]`, sd_vector)
     simulated_obs <- base_data %>% mutate(observed_value = epsilon + x)
-    simulated_obs <- simulated_obs %>% mutate(low_con = low_con, high_con = high_con)
+    simulated_obs <- simulated_obs %>% mutate(low_cons = low_con, high_cons = high_con)
     censored_obs <- censor_values(simulated_obs, #simulated_obs$observed_value, #low_con, high_con,
                                   #tested_concentrations,
                                   scale)
-    df <- inner_join(simulated_obs, censored_obs) %>% mutate(low_con = as.numeric(low_con), high_con = as.numeric(high_con))
+    df <- inner_join(simulated_obs, censored_obs) %>% mutate(low_con = as.numeric(low_cons), high_con = as.numeric(high_cons))
     attr(df, "scale") <- scale
     return(df)
   } else{

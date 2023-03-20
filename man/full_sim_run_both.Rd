@@ -23,8 +23,8 @@ full_sim_run_both(
   covariate_effect_vector = c(0),
   covariate_names = NULL,
   conc_limits_table = NULL,
-  low_con = 2^-4,
-  high_con = 2^4,
+  low_con = -4,
+  high_con = 4,
   scale = "log",
   formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ 0 + c +
     strata(c) + t:c,
@@ -34,6 +34,7 @@ full_sim_run_both(
   maxiter_survreg = 30,
   verbose = 3,
   allow_safety = TRUE,
+  cutoff = 0.9,
   ...
 )
 }

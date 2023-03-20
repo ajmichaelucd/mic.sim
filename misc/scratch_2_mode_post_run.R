@@ -61,10 +61,6 @@ pi_tolerance = c(0.05, 0.95)
 intercepts_tolerance = 100
 trends_tolerance = 100
 
-max_it = 3000
-ncomp = 2
-tol_ll = 1e-6
-maxiter_survreg = 30
 verbose = 3
 
 ##extra parameters needed to recreate data sets
@@ -86,11 +82,20 @@ high_con = 2^params$max
 
 nyears = params$years
 n = params$n
+scale = params %>% pull(scale)
+
+max_it <- params %>% pull(max_it)
+ncomp <- params %>% pull(ncomp)
+tol_ll <- params %>% pull(tol_ll)
+maxiter_survreg <- params %>% pull(maxiter_survreg)
+allow_safety <- params %>% pull(allow_safety) %>% as.logical()
+cutoff <- params %>% pull(cutoff)
+
 
 
 ##function to run local sims here to fix the incomplete runs
-rerun_incomplete_sets_both(location = location, incomplete = incomplete, number_per_batch = number_per_batch, array_name = array_name, date = date, covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, n = n, pi = pi, intercepts = intercepts, trends = trends, sigma = sigma, nyears = nyears, low_con = low_con, high_con = high_con, max_it = max_it, ncomp = ncomp,
-                      tol_ll = tol_ll, maxiter_survreg = maxiter_survreg, verbose = verbose)
+rerun_incomplete_sets_both(location = location, incomplete = incomplete, number_per_batch = number_per_batch, array_name = array_name, date = date, covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, n = n, pi = pi, intercepts = intercepts, trends = trends, sigma = sigma, nyears = nyears, low_con = low_con, high_con = high_con, scale = scale, max_it = max_it, ncomp = ncomp,
+                      tol_ll = tol_ll, maxiter_survreg = maxiter_survreg, verbose = verbose, allow_safety = allow_safety, cutoff = cutoff)
 ##use run_failed_as_support_for_post_script (turn this into a function here)
 check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
@@ -138,7 +143,7 @@ array_results %>% group_by(safety_on, fm, fms_called, fms_worked) %>% tally
 
 
 
-
+########From here on out needs revision
 failure_to_converge_pct <-
   array_results  %>% filter(comp == "Error") %>% distinct(iter) %>% nrow(.) /
   (number_of_batches * number_per_batch)
@@ -191,13 +196,15 @@ local_full_run_function_both <- function(args,
                                     ncomp = 2,
                                     tol_ll = 1e-6,
                                     maxiter_survreg = 30,
-                                    verbose = 3){
+                                    verbose = 3,
+                                    allow_safety = TRUE,
+                                    cutoff = 0.9){
   iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args)
 
   #run--------
   results <- purrr::map(
     iteration_set,
-    ~ full_sim_run_both(
+    ~ full_sim_run_both_cutoffs(
       .x,
       n = n,
       t_dist = t_dist,
@@ -216,7 +223,8 @@ local_full_run_function_both <- function(args,
       tol_ll = tol_ll,
       maxiter_survreg = maxiter_survreg,
       verbose = verbose,
-      allow_safety = TRUE
+      allow_safety = allow_safety,
+      cutoff = cutoff
     ))
 
 
@@ -249,11 +257,14 @@ rerun_incomplete_sets_both <-
            nyears,
            low_con,
            high_con,
+           scale,
            max_it = 3000,
            ncomp = 2,
            tol_ll = 1e-6,
            maxiter_survreg = 30,
-           verbose = 3) {
+           verbose = 3,
+           allow_safety = TRUE,
+           cutoff = 0.9) {
     if(!is.data.frame(incomplete) && incomplete == "All Clear"){print("No reruns needed, skipping to next step")} else{
       Sys.setlocale (locale = "en_US.UTF-8")
       if(!identical(sort(c("10", "1:")), c("1:", "10"))){
@@ -319,13 +330,15 @@ rerun_incomplete_sets_both <-
         covariate_names = NULL,
         low_con = low_con,
         high_con = high_con,
-        scale = "log",
+        scale = scale,
         formula = formula,
         max_it = max_it,
         ncomp = ncomp,
         tol_ll = tol_ll,
         maxiter_survreg = maxiter_survreg,
-        verbose = verbose
+        verbose = verbose,
+        allow_safety = allow_safety,
+        cutoff = cutoff
       )
       }
 
@@ -371,7 +384,7 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
 
   x <- length(individual_run)
 
-if(individual_run[[x-1]] == "fm_worked"){
+if(individual_run[[x-1]] == "fm_worked" | (individual_run[[x-1]] == "fm_failed_cutoff" & individual_run[[x]] == "fms_not_called")){
 
   if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
@@ -408,7 +421,7 @@ if(individual_run[[x-1]] == "fm_worked"){
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[x - 3]],
+      mutate(iter = individual_run[[x - 4]],
              steps = nrow(individual_run[[1]]))
 
 
@@ -431,7 +444,7 @@ if(individual_run[[x-1]] == "fm_worked"){
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[x - 3]],
+      mutate(iter = individual_run[[x - 4]],
              steps = nrow(individual_run[[1]]))
 
     f_error <- forward %>% summarize(total_error = sum(abs(error)))
@@ -507,7 +520,7 @@ if(individual_run[[x-1]] == "fm_worked"){
       est = "Error",
       true = "Error",
       error = "Error",
-      iter = individual_run[[x - 3]],
+      iter = individual_run[[x - 4]],
       steps = NA_integer_,
       sigma_error = "TRUE",
       pi_error = "TRUE",
@@ -529,7 +542,7 @@ if(individual_run[[x-1]] == "fm_worked"){
     )
   )
 
-} else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_worked"){
+} else if(individual_run[[x-1]] %in% c("fm_failed", "fm_failed_cutoff") & individual_run[[x]] == "fms_worked"){
 
   sr_any <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% pull(`...3`) %>% as.logical() %>% any()
   sr_last <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% mutate(sr = as.logical(`...3`)) %>% select(sr) %>% slice_tail(n = 1) %>% pull
@@ -555,7 +568,7 @@ if(individual_run[[x-1]] == "fm_worked"){
     tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
     separate(name, sep = "_", into = c("type", "parameter")) %>%
     pivot_wider(names_from = type, values_from = value) %>%
-    mutate(iter = individual_run[[x - 3]],
+    mutate(iter = individual_run[[x - 4]],
            steps = nrow(individual_run[[1]]))
 
 
@@ -602,7 +615,7 @@ if(individual_run[[x-1]] == "fm_worked"){
 
   return(df2)
 
-  } else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_failed"){
+  } else if(individual_run[[x-1]] ==  %in% c("fm_failed", "fm_failed_cutoff") & individual_run[[x]] == "fms_failed"){
 
 
     return(
@@ -612,7 +625,7 @@ if(individual_run[[x-1]] == "fm_worked"){
         est = "Error",
         true = "Error",
         error = "Error",
-        iter = individual_run[[x - 3]],
+        iter = individual_run[[x - 4]],
         steps = NA_integer_,
         sigma_error = "TRUE",
         pi_error = "TRUE",
