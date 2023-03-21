@@ -20,15 +20,18 @@ rerun_incomplete_sets(
   nyears,
   low_con,
   high_con,
+  scale,
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
   maxiter_survreg = 30,
-  verbose = 3
+  verbose = 3,
+  allow_safety = TRUE,
+  cutoff = 0.9
 )
 }
 \arguments{
-\item{verbose}{}
+\item{cutoff}{}
 }
 \description{
 Title
