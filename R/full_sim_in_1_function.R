@@ -9,6 +9,7 @@
 #' @param covariate_list
 #' @param covariate_effect_vector
 #' @param covariate_names
+#' @param conc_limits_table
 #' @param low_con
 #' @param high_con
 #' @param scale
@@ -18,6 +19,8 @@
 #' @param tol_ll
 #' @param maxiter_survreg
 #' @param verbose
+#' @param allow_safety
+#' @param cutoff
 #'
 #' @return
 #' @export
@@ -48,10 +51,10 @@ full_sim_in_1_function <- function(i,
                                    covariate_effect_vector = c(0),
                                    covariate_names = NULL,
                                    conc_limits_table = NULL, #conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3),
-                                                                                    #c("b", 2^-4, 2^4)), `.name_repair` = "unique"
-                                                                                    #) %>% rename("covariate_2" = 1, "low_cons" = 2, "high_cons" = 3),
-                                   low_con = 2^-4,
-                                   high_con = 2^4,
+                                   #c("b", 2^-4, 2^4)), `.name_repair` = "unique"
+                                   #) %>% rename("covariate_2" = 1, "low_cons" = 2, "high_cons" = 3),
+                                   low_con = -4,
+                                   high_con = 4,
                                    scale = "log",
                                    formula = Surv(time = left_bound,
                                                   time2 = right_bound,
@@ -62,12 +65,14 @@ full_sim_in_1_function <- function(i,
                                    #silent = FALSE,
                                    maxiter_survreg = 30,
                                    verbose = 3,
+                                   allow_safety = TRUE,
+                                   cutoff = 0.9,
 
                                    ...
 ){
   set.seed(i)
   if(verbose > 2){
-  message("starting run number", i)}
+    message("starting run number", i)}
   #verbose = 0: print nothing
   #verbose = 1: print run number
   #verbose = 2: print run number and iteration number
@@ -76,9 +81,9 @@ full_sim_in_1_function <- function(i,
 
 
 
-#mem here
+  #mem here
 
-  data.sim <- simulate_mics_2( #changed to test
+  data.sim <- simulate_mics( #changed to test
     n = n,
     t_dist = t_dist,
     pi = pi,
@@ -89,23 +94,64 @@ full_sim_in_1_function <- function(i,
     conc_limits_table = conc_limits_table,
     low_con = low_con,
     high_con = high_con,
-    scale = "log")
+    scale = scale)
 
   #mem here
 
   visible_data <- prep_sim_data_for_em(data.sim, left_bound_name = "left_bound", right_bound_name = "right_bound", time = "t", covariate_names, scale = scale)
 
   #mem here
+  poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
+  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+  #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+  if(length(single_model_output) > 1){
 
-  single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
-#wrap fit model with possibly() or try()
+    fm_check <- check_for_excessive_censoring(single_model_output, cutoff)
 
+  }
+
+
+
+
+
+
+
+  #wrap fit model with possibly() or try()
+
+  if(length(single_model_output) == 1 && single_model_output == "Error"){
+    fm_fail = "fm_failed"
+  } else if(fm_check == "Excessive Censoring"){
+    fm_fail = "fm_failed_cutoff"
+  } else{
+    fm_fail = "fm_worked"
+  }
+
+  if(fm_fail %in% c("fm_failed, fm_failed_cutoff") & allow_safety == TRUE){
+    formula = Surv(time = left_bound,
+                   time2 = right_bound,
+                   type = "interval2") ~ t
+    poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
+    #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+    single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+    if(length(single_model_output) == 1 && single_model_output == "Error"){
+      fms_fail = "fms_failed"
+    } else{
+      fms_fail = "fms_worked"
+    }
+
+
+  } else{
+    fms_fail = "fms_not_called"
+  }
 
   #evaluate
   #run fit_model_safely if needed
 
-  single_model_output <- append(single_model_output, i)
+  failure_safety_notes <- c(allow_safety, fm_fail, fms_fail)
 
+
+  single_model_output <- append(single_model_output, i)
+  single_model_output <- append(single_model_output, failure_safety_notes)
   #return
 
   return(single_model_output)

@@ -17,6 +17,8 @@
 #' @param tol_ll
 #' @param maxiter_survreg
 #' @param verbose
+#' @param allow_safety
+#' @param cutoff
 #'
 #' @importFrom dplyr tibble mutate inner_join group_by case_when
 #' @importFrom magrittr %>%
@@ -28,33 +30,33 @@
 #'
 #' @examples
 local_full_run_function <- function(args,
-                                  batch_size = 10,
-                                  run_name,
-                                  n,
-                                  t_dist,
-                                  pi,
-                                  `E[X|T,C]`,
-                                  sd_vector,
-                                  covariate_list = NULL,
-                                  covariate_effect_vector = c(0),
-                                  covariate_names = NULL,
-                                  low_con,
-                                  high_con,
-                                  scale = "log",
-                                  formula,
-                                  max_it = 3000,
-                                  ncomp = 2,
-                                  tol_ll = 1e-6,
-                                  maxiter_survreg = 30,
-                                  verbose = 3){
+                                    batch_size = 10,
+                                    run_name,
+                                    n,
+                                    t_dist,
+                                    pi,
+                                    `E[X|T,C]`,
+                                    sd_vector,
+                                    covariate_list = NULL,
+                                    covariate_effect_vector = c(0),
+                                    covariate_names = NULL,
+                                    low_con,
+                                    high_con,
+                                    scale = "log",
+                                    formula,
+                                    max_it = 3000,
+                                    ncomp = 2,
+                                    tol_ll = 1e-6,
+                                    maxiter_survreg = 30,
+                                    verbose = 3,
+                                    allow_safety = TRUE,
+                                    cutoff = 0.9){
   iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args)
-
-  poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
 
   #run--------
   results <- purrr::map(
     iteration_set,
-    ~ poss_full_sim_in_1_function(
+    ~ full_sim_in_1_function(
       .x,
       n = n,
       t_dist = t_dist,
@@ -72,7 +74,9 @@ local_full_run_function <- function(args,
       ncomp = ncomp,
       tol_ll = tol_ll,
       maxiter_survreg = maxiter_survreg,
-      verbose = verbose
+      verbose = verbose,
+      allow_safety = allow_safety,
+      cutoff = cutoff
     ))
 
 

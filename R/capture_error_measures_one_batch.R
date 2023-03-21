@@ -35,8 +35,8 @@ capture_error_measures_one_batch <- function(location,
                                              trends_tolerance = 100
 ){
   file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
-  results_pre <- loadRData(file)
- # results_pre <- sticky::sticky(results_pre)
+  results <- loadRData(file)
+  # results_pre <- sticky::sticky(results_pre)
 
   #attr_print  <- function(run){
   #    print(attr(run, "survreg_failure"))
@@ -44,11 +44,11 @@ capture_error_measures_one_batch <- function(location,
 
   #results_pre_attr <- map(results_pre, attr_append)
 
-  results <- purrr::map2(1:batch_size, results_pre, ~append(.y, (batch_size*(i - 1) + .x )))
+  #results <- purrr::map2(1:batch_size, results_pre, ~append(.y, (batch_size*(i - 1) + .x )))
 
   #note results[[3]] failure is not list object
 
-  purrr::map(results, ~capture_error_measures_one_run_both_directions(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
+  purrr::map(results, ~capture_error_measures_one_run(.x, intercepts, trends, sigma, pi, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
     data.table::rbindlist()
   ##add attribute read to the error_measures_one_run_both_directions segment
 
@@ -57,3 +57,4 @@ capture_error_measures_one_batch <- function(location,
 #attr_append <- function(run){
 #  append(run, attr(run, "survreg_failure"))
 #}
+
