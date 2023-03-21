@@ -29,7 +29,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom purrr map as_vector map_chr
 #' @importFrom gridExtra grid.arrange
-#' @importFrom
+#' @importFrom survival survreg survreg.control
 #' @importFrom
 #'
 #' @examples

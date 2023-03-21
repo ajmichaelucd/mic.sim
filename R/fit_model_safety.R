@@ -13,6 +13,8 @@
 #' @return
 #' @export
 #'
+#' @importFrom survival survreg.control survreg Surv
+#'
 #' @examples
 fit_model_safety = function(
     visible_data = prep_sim_data_for_em(),
