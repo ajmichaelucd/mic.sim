@@ -13,7 +13,7 @@
 #'
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
-#' @importFrom survival strata survreg Surv
+#' @importFrom survival strata survreg Surv survreg.control
 #' @importFrom pryr mem_used
 #'
 #' @return

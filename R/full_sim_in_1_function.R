@@ -29,7 +29,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom purrr map as_vector map_chr
 #' @importFrom gridExtra grid.arrange
-#' @importFrom
+#' @importFrom survival survreg survreg.control
 #' @importFrom
 #'
 #' @examples
@@ -67,6 +67,7 @@ full_sim_in_1_function <- function(i,
                                    verbose = 3,
                                    allow_safety = TRUE,
                                    cutoff = 0.9,
+                                   fms_only = FALSE,
 
                                    ...
 ){

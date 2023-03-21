@@ -33,7 +33,7 @@ check_weigh_prop_cens <- function(df = a, comp = "1", side = "rc", cutoff = 0.9)
    if(nrow(stage1) > 0){
     stage1 %>%
       mutate(decision = if_else(
-        weighted_prop_right_censored >= cutoff,
+        weighted_prop_left_censored >= cutoff,
         "Excessive Censoring",
         "All Clear"
       )) %>% select(decision)
