@@ -35,6 +35,7 @@ full_sim_in_1_function(
   verbose = 3,
   allow_safety = TRUE,
   cutoff = 0.9,
+  fms_only = FALSE,
   ...
 )
 }

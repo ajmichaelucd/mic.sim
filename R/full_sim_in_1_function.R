@@ -67,6 +67,7 @@ full_sim_in_1_function <- function(i,
                                    verbose = 3,
                                    allow_safety = TRUE,
                                    cutoff = 0.9,
+                                   fms_only = FALSE,
 
                                    ...
 ){
@@ -111,7 +112,9 @@ full_sim_in_1_function <- function(i,
   }
 
 
-
+if(fms_only == TRUE && length(single_model_output) > 1 & fm_check == "All Clear"){
+  single_model_output <- "Pass"
+}
 
 
 
@@ -147,7 +150,7 @@ full_sim_in_1_function <- function(i,
   #evaluate
   #run fit_model_safely if needed
 
-  failure_safety_notes <- c(allow_safety, fm_fail, fms_fail)
+  failure_safety_notes <- c(fms_only, allow_safety, fm_fail, fms_fail)
 
 
   single_model_output <- append(single_model_output, i)

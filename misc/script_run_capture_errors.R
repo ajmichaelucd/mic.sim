@@ -66,6 +66,10 @@ max_it = 3000
 ncomp = 2
 tol_ll = 1e-6
 maxiter_survreg = 30
+verbose = 3
+allow_safety = TRUE
+cutoff = 0.9
+fms_only = TRUE
 
 poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
 #modded_poss_full_sim_in_1_function <- purrr::quietly(full_sim_in_1_function)
@@ -91,7 +95,10 @@ results <- purrr::map(
     ncomp = ncomp,
     tol_ll = tol_ll,
     verbose = 3,
-    maxiter_survreg = maxiter_survreg
+    maxiter_survreg = maxiter_survreg,
+    allow_safety = allow_safety,
+    cutoff = cutoff,
+    fms_only = fms_only
   ))
 
 

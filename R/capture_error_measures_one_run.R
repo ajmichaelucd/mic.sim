@@ -26,7 +26,7 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
 
   x <- length(individual_run)
 
-  if(individual_run[[x-1]] == "fm_worked" | (individual_run[[x-1]] == "fm_failed_cutoff" & individual_run[[x]] == "fms_not_called")){
+  if((individual_run[[x-1]] == "fm_worked" & individual_run[[x-3]] == FALSE) | (individual_run[[x-1]] == "fm_failed_cutoff" & individual_run[[x]] == "fms_not_called")){
 
     if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
 
@@ -137,6 +137,7 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
         survreg_failure_last = sr_last,
         survreg_failure_any = sr_any,
         num_it = individual_run$steps,
+        fms_only = individual_run[[x-3]],
         safety_on = individual_run[[x - 2]],
         fm = individual_run[[x - 1]],
         fms_called = case_when(
@@ -152,7 +153,37 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
     return(df2)
 
 
-  } else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_not_called"){
+  }  else if(individual_run[[x-1]] == "fm_worked" & individual_run[[x-3]] == TRUE){
+    return(
+      tibble(
+        comp = "Pass",
+        parameter = "Pass",
+        est = "Pass",
+        true = "Pass",
+        error = "Pass",
+        iter = individual_run[[x - 4]],
+        steps = NA_integer_,
+        sigma_error = "Pass",
+        pi_error = "FALSE",
+        intercept_error = "FALSE",
+        trends_error = "FALSE",
+        survreg_failure_last = FALSE,
+        survreg_failure_any = FALSE,
+        num_it = NA_integer_,
+        fms_only = individual_run[[x-3]],
+        safety_on = individual_run[[x - 2]],
+        fm = individual_run[[x - 1]],
+        fms_called = case_when(
+          individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
+          TRUE ~ FALSE
+        ),
+        fms_worked = case_when(
+          individual_run[[x]] == "fms_worked" ~ TRUE,
+          TRUE ~ FALSE
+        )
+      )
+    )
+  }else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_not_called"){
 
 
     return(
@@ -171,6 +202,7 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
         survreg_failure_last = TRUE,
         survreg_failure_any = TRUE,
         num_it = NA_integer_,
+        fms_only = individual_run[[x-3]],
         safety_on = individual_run[[x - 2]],
         fm = individual_run[[x - 1]],
         fms_called = case_when(
@@ -243,6 +275,7 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
         survreg_failure_last = sr_last,
         survreg_failure_any = sr_any,
         num_it = individual_run$steps,
+        fms_only = individual_run[[x-3]],
         safety_on = individual_run[[x - 2]],
         fm = individual_run[[x - 1]],
         fms_called = case_when(
@@ -276,6 +309,7 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
         survreg_failure_last = TRUE,
         survreg_failure_any = TRUE,
         num_it = NA_integer_,
+        fms_only = individual_run[[x-3]],
         safety_on = individual_run[[x - 2]],
         fm = individual_run[[x - 1]],
         fms_called = case_when(
