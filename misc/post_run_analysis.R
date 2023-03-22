@@ -24,7 +24,7 @@ number_per_batch = 10
 number_of_iterations = 12000
 
 #path to the directory full of the files
-location <- "~/Desktop/mar_2023/safety_test_3"
+location <- "~/Desktop/mar_2023/safety_test_4"
 #"~/Google Drive/My Drive/sim_results/censor_mean_2_sd_1.6_run_16"
 #"~/Desktop/Sim_Results/component_mean_run_8_09272022"
 #"/Volumes/BN/sim_results_mic.sim/trend_sim_run_9_10212022"
@@ -35,8 +35,8 @@ location <- "~/Desktop/mar_2023/safety_test_3"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "safety_test_3"
-date <- "03072023"
+array_name <- "safety_test_4"
+date <- "03212023"
 
 
 #location <- "~/Desktop/"

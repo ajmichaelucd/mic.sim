@@ -112,7 +112,7 @@ full_sim_in_1_function <- function(i,
   }
 
 
-if(fms_only == TRUE && length(single_model_output) > 1 & fm_check == "All Clear"){
+if(fms_only == TRUE && length(single_model_output) > 1 && fm_check == "All Clear"){
   single_model_output <- "Pass"
 }
 
