@@ -29,30 +29,30 @@ iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args) #b
 
 #this set of runs will vary the mean of the upper component and push it closer to the highest tested concentration (2^2)
 
-run_name <- "gamithromycin_mh_14_02082023"
+run_name <- "safety_test_4_initial_weighting_1_03212023"
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
 n=300
 ncomp = 2
-pi1 = function(t) {z <- 0.5 #changed to 0.5
+pi1 = function(t) {z <- 0.2 #changed to 0.5
 c("1" = z, "2" = 1- z)}
 
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ 0.2 + 0.0 * t,
-    c == "2" ~ 3.5 + 0.0 * t,
+    c == "1" ~ -1.0 - 0.02 * t,
+    c == "2" ~ 4.0 + 0.0 * t,
     TRUE ~ NaN
   )
 }
 
 t_dist1 = function(n){runif(n, min = 0, max = 10)}
 
-sd_vector = c("1" = 0.5, "2" = 0.25) #0.5, 0.75, 1, 1.25
+sd_vector = c("1" = 0.6, "2" = 0.6) #0.5, 0.75, 1, 1.25
 
-low_con = 2^0
-high_con = 2^4 #errored out when this was 2^3
+low_con = -3
+high_con = 1 #errored out when this was 2^3
 #RUN 1 : 2
 #RUN 2: 3
 #RUN 3: 4
@@ -70,6 +70,7 @@ verbose = 3
 allow_safety = TRUE
 cutoff = 0.9
 fms_only = TRUE
+initial_weighting = 1
 
 poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
 #modded_poss_full_sim_in_1_function <- purrr::quietly(full_sim_in_1_function)
@@ -98,7 +99,8 @@ results <- purrr::map(
     maxiter_survreg = maxiter_survreg,
     allow_safety = allow_safety,
     cutoff = cutoff,
-    fms_only = fms_only
+    fms_only = fms_only,
+    initial_weighting = initial_weighting
   ))
 
 

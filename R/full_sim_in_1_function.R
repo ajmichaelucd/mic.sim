@@ -68,6 +68,7 @@ full_sim_in_1_function <- function(i,
                                    allow_safety = TRUE,
                                    cutoff = 0.9,
                                    fms_only = FALSE,
+                                   initial_weighting = 1,
 
                                    ...
 ){
@@ -103,7 +104,7 @@ full_sim_in_1_function <- function(i,
 
   #mem here
   poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
-  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
   #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
   if(length(single_model_output) > 1){
 

@@ -15,7 +15,8 @@ fit_model(
   browse_each_step = FALSE,
   plot_visuals = FALSE,
   verbose = 3,
-  maxiter_survreg = 30
+  maxiter_survreg = 30,
+  initial_weighting = 1
 )
 }
 \arguments{
