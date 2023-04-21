@@ -12,11 +12,13 @@ prep_sim_data_for_em(
   covariate_names = NULL,
   scale = NULL,
   observed_value_choice = FALSE,
-  observed_value_name = "observed_value"
+  observed_value_name = "observed_value",
+  low_con_name = "low_con",
+  high_con_name = "high_con"
 )
 }
 \arguments{
-\item{scale}{}
+\item{high_con_name}{}
 }
 \description{
 Intermediate function to prepare simulated data for use in EM algorithm

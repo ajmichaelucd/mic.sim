@@ -113,10 +113,6 @@ if(initial_weighting == 1){
   ) %>% select(!prelim)
 
 }else if(initial_weighting == 3){
-x = (c(seq(-2, 3, 0.5)) + 2 ) / 5
-x = c(seq(0, 1, 0.1))
-y = pbeta(x, 1, 0.5)
-plot(x, y)
 
 
 
@@ -128,16 +124,16 @@ possible_data <-
   summarise(
     c = as.character(1:2), #split at mean and assign
     .groups = "drop"
-  ) %>% rowwise %>%
+  ) %>% #rowwise %>%
 
   mutate(
-    `P(C=c|y,t)` = case_when(left_bound == -Inf & c == "1" ~ 0.01,
+    `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "1" ~ pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
+                              left_bound != -Inf & right_bound != Inf &c == "2" ~ 1 - pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
+                              left_bound == -Inf & c == "1" ~ 0.01,
                              left_bound == -Inf & c == "2" ~ 0.99,
                              right_bound == Inf & c == "1" ~ 0.99,
                              right_bound == Inf & c == "2" ~ 0.01,
-                             left_bound != -Inf & right_bound != Inf & c == "1" ~ pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
-                             left_bound != -Inf & right_bound != Inf &c == "2" ~ 1 - pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
-                             TRUE ~ "Error in assignment"),
+                            TRUE ~ NaN),
     mid =
       case_when(
         left_bound == -Inf ~ right_bound - 0.5,
@@ -169,7 +165,7 @@ possible_data <-
                                left_bound < median_y  & c == "1" ~ 0.45,
                                left_bound < median_y  & c == "2" ~ 0.55,
                                left_bound == median_y ~ 0.5,
-                               TRUE ~ "Error in assignment"),
+                               TRUE ~ NaN),
       mid =
         case_when(
           left_bound == -Inf ~ right_bound - 0.5,

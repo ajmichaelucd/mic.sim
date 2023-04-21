@@ -6,6 +6,10 @@
 #' @param time
 #' @param covariate_names
 #' @param scale
+#' @param observed_value_choice
+#' @param observed_vale_name
+#' @param low_con_name
+#' @param high_con_name
 #'
 #' @return
 #' @export
@@ -22,13 +26,18 @@ prep_sim_data_for_em <- function(
     covariate_names = NULL,
     scale = NULL,
     observed_value_choice = FALSE,
-    observed_value_name = "observed_value"
+    observed_value_name = "observed_value",
+    low_con_name = "low_con",
+    high_con_name = "high_con"
 ) {
-truth <- data.sim %>% select("observed_value")
+
+if(observed_value_choice){
+truth <- data.sim %>% rename(observed_value = match(paste0(observed_value_name), names(data.sim))) %>% select("observed_value")
+}
 
 if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
     df <- data.sim %>%
-      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con = all_of(low_con_name), high_con = all_of(high_con_name)) %>%
       mutate(obs_id = 1:n(),
              left_bound = log2(left_bound),
              right_bound = log2(right_bound)) %>%
@@ -39,7 +48,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
   }
   else if (is.null(scale) && attr(data.sim, "scale") == "log"){
     df <- data.sim %>%
-      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con = all_of(low_con_name), high_con = all_of(high_con_name)) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
     if(observed_value_choice){
@@ -48,7 +57,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
   }
   else if(scale == "MIC"){
     df <- data.sim %>%
-    select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
+    select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con = all_of(low_con_name), high_con = all_of(high_con_name)) %>%
     mutate(obs_id = 1:n(),
            left_bound = log2(left_bound),
            right_bound = log2(right_bound)) %>%
@@ -59,7 +68,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
 }
 else if (scale == "log"){
   df <- data.sim %>%
-      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con, high_con) %>%
+      select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con = all_of(low_con_name), high_con = all_of(high_con_name)) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
   if(observed_value_choice){
