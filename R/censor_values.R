@@ -25,6 +25,7 @@ censor_values <-
   {
 
 if(scale == "MIC"){
+
   df <-
     simulated_obs %>% rowwise %>%
     mutate(tested_concentrations = list(log2(as.numeric(low_cons)):log2(as.numeric(high_cons)))) %>% mutate(
@@ -52,6 +53,7 @@ if(scale == "MIC"){
     }
 
 else if(scale == "log"){
+
   df <-
     simulated_obs %>% rowwise %>%
     mutate(tested_concentrations = list(as.numeric(low_cons):as.numeric(high_cons))) %>% mutate(
@@ -73,3 +75,7 @@ else if(scale == "log"){
 }
     else{warningCondition(message = "Choose scale: MIC or log")}
   }
+
+
+
+
