@@ -28,10 +28,13 @@ full_sim_in_1_function(
   scale = "log",
   formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ 0 + c +
     strata(c) + t:c,
+  formula2 = c == "2" ~ t,
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
   maxiter_survreg = 30,
+  pi_function = TRUE,
+  pi_link = "logit",
   verbose = 3,
   allow_safety = TRUE,
   cutoff = 0.9,
