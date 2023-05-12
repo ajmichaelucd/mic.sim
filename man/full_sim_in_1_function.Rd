@@ -28,7 +28,7 @@ full_sim_in_1_function(
   scale = "log",
   formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ 0 + c +
     strata(c) + t:c,
-  formula2 = c == "2" ~ t,
+  formula2 = c == "1" ~ t,
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
