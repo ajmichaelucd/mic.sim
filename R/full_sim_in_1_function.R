@@ -14,10 +14,13 @@
 #' @param high_con
 #' @param scale
 #' @param formula
+#' @param formula2
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
 #' @param maxiter_survreg
+#' @param pi_function
+#' @param pi_link
 #' @param verbose
 #' @param allow_safety
 #' @param cutoff
@@ -114,7 +117,7 @@ if(!pi_function){
   single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
   #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
 } else{
-  poss_fit_model_pi <- purrr::possibly(.f = fit_model_pi, otherwise = "Error")
+  poss_fit_model <- purrr::possibly(.f = fit_model_pi, otherwise = "Error")
   single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, formula2 = formula2, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, pi_link = pi_link, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
 
 }
