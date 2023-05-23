@@ -10,7 +10,7 @@ simulate_mics(
      runif(n, min = 0, max = 1)
  },
   pi = function(t) {
-     z <- 0.5 + 0.2 * t
+     z <- 0.5 + 0.002 * t
      c(`1` = z, `2` = 1 - z)
  },
   `E[X|T,C]` = function(t, c) {
