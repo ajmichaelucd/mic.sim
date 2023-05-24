@@ -20,13 +20,18 @@ local_full_run_function(
   high_con,
   scale = "log",
   formula,
+  formula2,
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
   maxiter_survreg = 30,
+  pi_function,
+  pi_link,
   verbose = 3,
   allow_safety = TRUE,
-  cutoff = 0.9
+  cutoff = 0.9,
+  fms_only,
+  initial_weighting = 1
 )
 }
 \arguments{

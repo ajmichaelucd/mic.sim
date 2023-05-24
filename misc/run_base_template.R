@@ -35,8 +35,16 @@ covariate_list <-  NULL
 covariate_names <- NULL
 n=300
 ncomp = 2
-pi1 = function(t) {z <- 0.2 #changed to 0.5
+#pi_truth = "identity"
+
+
+pi1 = function(t) {z <- 0.2 + 0.001 #changed to 0.5
 c("1" = z, "2" = 1- z)}
+
+#pi1 =   function(t) {m <- 0.2 + 0.001 * t   #logit
+#  z <- exp(m) / (1+ exp(m))
+#  c("1" = z, "2" = 1 - z)}
+#
 
 `E[X|T,C]` = function(t, c)
 {

@@ -44,13 +44,18 @@ local_full_run_function <- function(args,
                                     high_con,
                                     scale = "log",
                                     formula,
+                                    formula2,
                                     max_it = 3000,
                                     ncomp = 2,
                                     tol_ll = 1e-6,
                                     maxiter_survreg = 30,
+                                    pi_function,
+                                    pi_link,
                                     verbose = 3,
                                     allow_safety = TRUE,
-                                    cutoff = 0.9){
+                                    cutoff = 0.9,
+                                    fms_only,
+                                    initial_weighting = 1){
   iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args)
 
   #run--------
@@ -66,17 +71,23 @@ local_full_run_function <- function(args,
       covariate_list = covariate_list,
       covariate_effect_vector = covariate_effect_vector,
       covariate_names = NULL,
+      conc_limits_table = NULL,
       low_con = low_con,
       high_con = high_con,
       scale = scale,
       formula = formula,
+      formula2 = formula2,
       max_it = max_it,
       ncomp = ncomp,
       tol_ll = tol_ll,
       maxiter_survreg = maxiter_survreg,
+      pi_function = pi_function,
+      pi_link = pi_link,
       verbose = verbose,
       allow_safety = allow_safety,
-      cutoff = cutoff
+      cutoff = cutoff,
+      fms_only = fms_only,
+      initial_weighting = initial_weighting
     ))
 
 

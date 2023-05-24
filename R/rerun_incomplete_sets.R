@@ -42,13 +42,16 @@ rerun_incomplete_sets <-
            covariate_effect_vector,
            covariate_list,
            n,
-           pi,
+           pi_int,
+           pi_trend,
            intercepts,
            trends,
            sigma,
            nyears,
            low_con,
            high_con,
+           formula,
+           formula2,
            scale,
            max_it = 3000,
            ncomp = 2,
@@ -56,7 +59,12 @@ rerun_incomplete_sets <-
            maxiter_survreg = 30,
            verbose = 3,
            allow_safety = TRUE,
-           cutoff = 0.9) {
+           cutoff = 0.9,
+           fms_only,
+           initial_weighting,
+           pi_function,
+           pi_link,
+           pi_truth){
     if(!is.data.frame(incomplete) && incomplete == "All Clear"){print("No reruns needed, skipping to next step")} else{
       Sys.setlocale (locale = "en_US.UTF-8")
       if(!identical(sort(c("10", "1:")), c("1:", "10"))){
@@ -80,8 +88,13 @@ rerun_incomplete_sets <-
       covariate_names <- NULL
       n=n
 
-      pi1 = function(t) {z <- pi[1] #changed to 0.5
+      pi1 = if(pi_truth == "identity"){function(t) {z <- pi_int + pi_trend * t #changed to 0.5
       c("1" = z, "2" = 1- z)}
+        } else{
+        function(t) {m <- pi_int + pi_trend * t   #logit
+        z <- exp(m) / (1+ exp(m))
+        c("1" = z, "2" = 1 - z)}
+        }
 
       `E[X|T,C]` = function(t, c)
       {
@@ -120,18 +133,24 @@ rerun_incomplete_sets <-
         covariate_list = NULL,
         covariate_effect_vector = c(0),
         covariate_names = NULL,
+        conc_limits_table = NULL,
         low_con = low_con,
         high_con = high_con,
         scale = scale,
         formula = formula,
+        formula2 = formula2,
         max_it = max_it,
         ncomp = ncomp,
         tol_ll = tol_ll,
+        verbose = 3,
         maxiter_survreg = maxiter_survreg,
-        verbose = verbose,
+        pi_function = pi_function,
+        pi_link = pi_link,
         allow_safety = allow_safety,
-        cutoff = cutoff
-      )
+        cutoff = cutoff,
+        fms_only = fms_only,
+        initial_weighting = initial_weighting
+        )
       }
 
       setwd(

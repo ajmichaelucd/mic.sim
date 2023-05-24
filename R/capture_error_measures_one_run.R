@@ -14,17 +14,22 @@
 #' @export
 #'
 #' @examples
-capture_error_measures_one_run_both_directions_safety <- function(individual_run,
+capture_error_measures_one_run <- function(individual_run,
                                                                   intercepts,
                                                                   trends,
                                                                   sigma,
-                                                                  pi,
+                                                                  pi_int,
+                                                                  pi_trend,
                                                                   sigma_tolerance = c(.05, 100),
-                                                                  pi_tolerance = c(.05, .95),
+                                                                  pi_int_tolerance = c(0.0001, .9999),
+                                                                  pi_trend_tolerance = c(-4, 4),
                                                                   intercepts_tolerance = 100,
                                                                   trends_tolerance = 100 ){
 
+  ###WILL BE ISSUES WITH LOW VS HIGH COMPONENT WHEN ONLY ONE COMPONENT ESTIMATED####A
   x <- length(individual_run)
+
+
 
   if((individual_run[[x-1]] == "fm_worked" & individual_run[[x-3]] == FALSE) | (individual_run[[x-1]] == "fm_failed_cutoff" & individual_run[[x]] == "fms_not_called")){
 
@@ -52,15 +57,19 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
       true_trends = trends,
       est_sigma = c(individual_run[[4]]$sd),
       true_sigma = sigma,
-      est_pi = individual_run[[3]]$`P(C = c)`,
-      true_pi = pi) %>%
+      est_pi_int = individual_run[[3]]$`(Intercept)`,
+      true_pi_int = pi_int,
+      est_pi_trend = individual_run[[3]]$t,
+      true_pi_trend = pi_trend
+    ) %>%
       mutate(
         error_intercepts = true_intercepts - est_intercepts,
         error_trends = true_trends - est_trends,
         error_sigma = true_sigma - est_sigma,
-        error_pi = true_pi - est_pi
+        error_pi_int = true_pi_int - est_pi_int,
+        error_pi_trend = true_pi_trend - est_pi_trend
       ) %>%
-      tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
+      tidyr::pivot_longer(cols = est_intercepts:error_pi_trend) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
       mutate(iter = individual_run[[x - 4]],
@@ -75,15 +84,18 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
       true_trends = trends,
       est_sigma = rev(individual_run[[4]]$sd),
       true_sigma = sigma,
-      est_pi = rev(individual_run[[3]]$`P(C = c)`),
-      true_pi = pi) %>%
+      est_pi_int = individual_run[[3]]$`(Intercept)`,
+      true_pi_int = pi_int,
+      est_pi_trend = individual_run[[3]]$t,
+      true_pi_trend = pi_trend) %>%
       mutate(
         error_intercepts = true_intercepts - est_intercepts,
         error_trends = true_trends - est_trends,
         error_sigma = true_sigma - est_sigma,
-        error_pi = true_pi - est_pi
+        error_pi_int = true_pi_int - est_pi_int,
+        error_pi_trend = true_pi_trend - est_pi_trend
       ) %>%
-      tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
+      tidyr::pivot_longer(cols = est_intercepts:error_pi_trend) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
       pivot_wider(names_from = type, values_from = value) %>%
       mutate(iter = individual_run[[x - 4]],
@@ -116,9 +128,13 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
     if(max(abs(a$est)) > max(sigma_tolerance) | min(abs(a$est)) < min(sigma_tolerance) ){sigma_error = TRUE
     } else{sigma_error = FALSE}
 
-    a <- df %>% filter(parameter == "pi")
-    if(max(a$est) >= max(pi_tolerance) | min(a$est) <= min(pi_tolerance)){pi_error = TRUE
-    } else{pi_error = FALSE}
+    a <- df %>% filter(parameter == "pi_int")
+    if(max(a$est) >= max(pi_int_tolerance) | min(a$est) <= min(pi_int_tolerance)){pi_int_error = TRUE
+    } else{pi_int_error = FALSE}
+
+    a <- df %>% filter(parameter == "pi_trend")
+    if(max(a$est) >= max(pi_trend_tolerance) | min(a$est) <= min(pi_trend_tolerance)){pi_trend_error = TRUE
+    } else{pi_trend_error = FALSE}
 
     a <- df %>% filter(parameter == "intercepts")
     if(max(abs(a$est)) >= intercepts_tolerance){intercept_error = TRUE
@@ -131,7 +147,8 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
     df2 <-
       df %>% mutate(
         sigma_error = sigma_error,
-        pi_error = pi_error,
+        pi_int_error = pi_int_error,
+        pi_trend_error = pi_trend_error,
         intercept_error = intercept_error,
         trends_error = trends_error,
         survreg_failure_last = sr_last,
@@ -164,7 +181,8 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
         iter = individual_run[[x - 4]],
         steps = NA_integer_,
         sigma_error = "Pass",
-        pi_error = "FALSE",
+        pi_int_error = "FALSE",
+        pi_trend_error = "FALSE",
         intercept_error = "FALSE",
         trends_error = "FALSE",
         survreg_failure_last = FALSE,
@@ -196,7 +214,8 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
         iter = individual_run[[x - 4]],
         steps = NA_integer_,
         sigma_error = "TRUE",
-        pi_error = "TRUE",
+        pi_int_error = "FALSE",
+        pi_trend_error = "FALSE",
         intercept_error = "TRUE",
         trends_error = "TRUE",
         survreg_failure_last = TRUE,
@@ -231,13 +250,16 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
       true_trends = trends[1],
       est_sigma = individual_run[[4]]$sd,
       true_sigma = sigma[1],
-      est_pi = individual_run[[3]]$`P(C = c)`[1],
-      true_pi = pi[1]) %>%
+      est_pi_int = individual_run[[3]]$`(Intercept)`,
+      true_pi_int = pi_int,
+      est_pi_trend = individual_run[[3]]$t,
+      true_pi_trend = pi_trend) %>%
       mutate(
         error_intercepts = true_intercepts - est_intercepts,
         error_trends = true_trends - est_trends,
         error_sigma = true_sigma - est_sigma,
-        error_pi = true_pi - est_pi
+        error_pi_int = true_pi_int - est_pi_int,
+        error_pi_trend = true_pi_trend - est_pi_trend
       ) %>%
       tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
       separate(name, sep = "_", into = c("type", "parameter")) %>%
@@ -251,9 +273,13 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
     if((abs(a$est) > max(sigma_tolerance)) | (abs(a$est) < min(sigma_tolerance)) ){sigma_error = TRUE
     } else{sigma_error = FALSE}
 
-    a <- df %>% filter(parameter == "pi")
-    if(a$est >= max(pi_tolerance) | a$est <= min(pi_tolerance)){pi_error = TRUE
-    } else{pi_error = FALSE}
+    a <- df %>% filter(parameter == "pi_int")
+    if(a$est >= max(pi_int_tolerance) | a$est <= min(pi_int_tolerance)){pi_int_error = TRUE
+    } else{pi_int_error = FALSE}
+
+    a <- df %>% filter(parameter == "pi_trend")
+    if(a$est >= max(pi_trend_tolerance) | a$est <= min(pi_trend_tolerance)){pi_trend_error = TRUE
+    } else{pi_trend_error = FALSE}
 
     a <- df %>% filter(parameter == "intercepts")
     if(abs(a$est) >= intercepts_tolerance){intercept_error = TRUE
@@ -269,7 +295,8 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
     df2 <-
       df %>% mutate(
         sigma_error = sigma_error,
-        pi_error = pi_error,
+        pi_int_error = pi_int_error,
+        pi_trend_error = pi_trend_error,
         intercept_error = intercept_error,
         trends_error = trends_error,
         survreg_failure_last = sr_last,
@@ -303,7 +330,8 @@ capture_error_measures_one_run_both_directions_safety <- function(individual_run
         iter = individual_run[[x - 4]],
         steps = NA_integer_,
         sigma_error = "TRUE",
-        pi_error = "TRUE",
+        pi_int_error = "TRUE",
+        pi_trend_error = "TRUE",
         intercept_error = "TRUE",
         trends_error = "TRUE",
         survreg_failure_last = TRUE,

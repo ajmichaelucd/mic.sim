@@ -53,7 +53,7 @@ print(incomplete)
 
 ##get target values from simulation parameter log
 parameter_log <- read_excel("~/Desktop/Sim_Results/simulation_parameter_log.xlsx",
-                            sheet = "Sheet4")
+                            sheet = "Sheet5")
 
 #thresholds
 sigma_tolerance = c(0.05, 50)
@@ -76,13 +76,23 @@ print(params)
 intercepts = c(params$`C1 Mean`, params$`C2 Mean`)  #c(-1, 2.3)
 trends = c(params$`C1 Trend`, params$`C2 Trend`)  #c(0.1, 0)
 sigma = c(params$`C1 SD`, params$`C2 SD`)  #c(1, 0.5)
-pi = c(params$`C1 Pi`, params$`C2 Pi`)  #c(0.5, 0.5)
-low_con = 2^params$min
-high_con = 2^params$max
-
+pi_int = c(params$`C1 Pi intercept`)  #c(0.5, 0.5)
+pi_trend = c(params$pi_trend)
+low_con = params$low_con
+high_con = params$high_con
+formula = Surv(time = left_bound,
+               time2 = right_bound,
+               type = "interval2") ~ as.formula(params$formula)
+formula2 = as.formula(params$formula2)
 nyears = params$years
 n = params$n
 scale = params %>% pull(scale)
+
+fms_only <- params %>% pull(fms_only)
+initial_weighting	<- params %>% pull(initial_weighting)
+pi_function	<- params %>% pull(pi_function)
+pi_link	<- params %>% pull(pi_link)
+pi_truth <- params %>% pull(pi_truth)
 
 max_it <- params %>% pull(max_it)
 ncomp <- params %>% pull(ncomp)
@@ -91,11 +101,42 @@ maxiter_survreg <- params %>% pull(maxiter_survreg)
 allow_safety <- params %>% pull(allow_safety) %>% as.logical()
 cutoff <- params %>% pull(cutoff)
 
-
+######IMPLEMENT A CHECK HERE VS FIRST AVAILABLE DATA SET
 
 ##function to run local sims here to fix the incomplete runs
-rerun_incomplete_sets(location = location, incomplete = incomplete, number_per_batch = number_per_batch, array_name = array_name, date = date, covariate_effect_vector = covariate_effect_vector, covariate_list = covariate_list, n = n, pi = pi, intercepts = intercepts, trends = trends, sigma = sigma, nyears = nyears, low_con = low_con, high_con = high_con, scale = scale, max_it = max_it, ncomp = ncomp,
-                           tol_ll = tol_ll, maxiter_survreg = maxiter_survreg, verbose = verbose, allow_safety = allow_safety, cutoff = cutoff)
+rerun_incomplete_sets(
+  location = location,
+  incomplete = incomplete,
+  number_per_batch = number_per_batch,
+  array_name = array_name,
+  date = date,
+  covariate_effect_vector = covariate_effect_vector,
+  covariate_list = covariate_list,
+  n = n,
+  pi_int = pi_int,
+  pi_trend = pi_trend,
+  intercepts = intercepts,
+  trends = trends,
+  sigma = sigma,
+  nyears = nyears,
+  low_con = low_con,
+  high_con = high_con,
+  formula = formula,
+  formula2 = formula2,
+  scale = scale,
+  max_it = max_it,
+  ncomp = ncomp,
+  tol_ll = tol_ll,
+  maxiter_survreg = maxiter_survreg,
+  verbose = verbose,
+  allow_safety = allow_safety,
+  cutoff = cutoff,
+  fms_only = fms_only,
+  initial_weighting  = initial_weighting,
+  pi_function = pi_function,
+  pi_link = pi_link,
+  pi_truth = pi_truth
+)
 ##use run_failed_as_support_for_post_script (turn this into a function here)
 check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
@@ -116,11 +157,13 @@ array_results <-
       intercepts = intercepts,
       trends = trends,
       sigma = sigma,
-      pi = pi,
+      pi_int = pi_int,
+      pi_trend = pi_trend,
       sigma_tolerance = sigma_tolerance,
       pi_tolerance = pi_tolerance,
       intercepts_tolerance = intercepts_tolerance,
-      trends_tolerance = trends_tolerance
+      trends_tolerance = trends_tolerance,
+      number_of_batches = number_of_batches
     )
   ) %>%
   rbindlist() %>% tibble() %>% mutate(

@@ -13,13 +13,16 @@ rerun_incomplete_sets(
   covariate_effect_vector,
   covariate_list,
   n,
-  pi,
+  pi_int,
+  pi_trend,
   intercepts,
   trends,
   sigma,
   nyears,
   low_con,
   high_con,
+  formula,
+  formula2,
   scale,
   max_it = 3000,
   ncomp = 2,
@@ -27,7 +30,12 @@ rerun_incomplete_sets(
   maxiter_survreg = 30,
   verbose = 3,
   allow_safety = TRUE,
-  cutoff = 0.9
+  cutoff = 0.9,
+  fms_only,
+  initial_weighting,
+  pi_function,
+  pi_link,
+  pi_truth
 )
 }
 \arguments{

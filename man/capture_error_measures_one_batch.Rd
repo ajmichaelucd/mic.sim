@@ -14,11 +14,13 @@ capture_error_measures_one_batch(
   intercepts,
   trends,
   sigma,
-  pi,
+  pi_int,
+  pi_trend,
   sigma_tolerance = c(0.05, 100),
   pi_tolerance = c(0.05, 0.95),
   intercepts_tolerance = 100,
-  trends_tolerance = 100
+  trends_tolerance = 100,
+  number_of_batches
 )
 }
 \arguments{
