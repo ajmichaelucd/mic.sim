@@ -14,16 +14,21 @@
 #' @param maxiter_survreg
 #' @param initial_weighting
 #'
+#' @importFrom survival pspline survreg Surv
+#' @importFrom gam gam s
+#' @importFrom splines ns
+#'
 #' @return
 #' @export
 #'
 #' @examples
 fit_model_pi = function(
     visible_data,
+
     formula = Surv(time = left_bound,
                    time2 = right_bound,
-                   type = "interval2") ~ 0 + c + strata(c) + t:c,
-    formula2 = c == "2" ~ t,
+                   type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
+    formula2 = c == "2" ~ s(t),
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -50,11 +55,11 @@ fit_model_pi = function(
   if(initial_weighting == 1){
     possible_data <-
       visible_data %>% #visible data with c for component
-      group_by_all() %>%
-      summarise(
-        c = as.character(1:2), #split at mean and assign
+   #   group_by_all() %>%
+      reframe(.by = everything(),    #implement for other intial weighting options too ##########
+        c = as.character(1:2), #fir a logistic regression on c earlier #########
         # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-        .groups = "drop"
+ #       .groups = "drop"
       ) %>%
       #     mutate(
       #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
@@ -241,21 +246,50 @@ fit_model_pi = function(
 
 
     #print("about to survreg")
-    model <- survival::survreg(
+
+    df_temp %>% filter(c == 1) -> df1
+    df_temp %>% filter(c == 2) -> df2
+    modelsplit_1 <- survival::survreg(
       formula,  ##Make this chunk into an argument of the function
       weights = `P(C=c|y,t)`,
-      data = df_temp,
+      data = df1,
       dist = "gaussian",
       control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+    modelsplit_2 <- survival::survreg(
+      formula,  ##Make this chunk into an argument of the function
+      weights = `P(C=c|y,t)`,
+      data = df2,
+      dist = "gaussian",
+      control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+    #
+    #model <- survival::survreg(
+    #  formula,  ##Make this chunk into an argument of the function
+    #  weights = `P(C=c|y,t)`,
+    #  data = df_temp,
+    #  dist = "gaussian",
+    #  control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
 
 
-    if (model$iter == maxiter_survreg){
+    if (modelsplit_1$iter == maxiter_survreg | modelsplit_2$iter == maxiter_survreg){
       likelihood_documentation[i,3] <- TRUE
     } else{
       likelihood_documentation[i,3] <- FALSE
     }
     #browser()
 
+ #   if(plot_visuals){
+ #     zz <- seq(0, max(visible_data$t), len = 300)
+ #     preds <- predict(binom_model, newdata = data.frame(t = zz), se = TRUE)
+#
+#
+ #     plot(binom_model, se = T, col = "green")
+#
+#
+ #     preds
+ #     tibble(t = zz, spline.predict = predict(binom_model, data.frame(t = zz)))
+ #     ggplot() %>%
+ #       geom_smooth()
+ #   }
 
 
 
@@ -281,12 +315,30 @@ fit_model_pi = function(
     #     c == "2" ~ predict(logit, newdata = tibble(t = possible_data$t), type = "response"),
     #     c == "1" ~ 1 - predict(logit, newdata = tibble(t = possible_data$t), type = "response")
     #   ))
+ #   if(pi_link == "logit"){
+ #     binom_model <- stats::glm(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+ #   } else if(pi_link == "identity"){
+#
+ #     binom_model <- stats::glm(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+ #   } else{ errorCondition("pick logit or identity link function")}
+
     if(pi_link == "logit"){
-      binom_model <- stats::glm(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+      binom_model <- gam::gam(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
     } else if(pi_link == "identity"){
 
-      binom_model <- stats::glm(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+      binom_model <- gam::gam(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
     } else{ errorCondition("pick logit or identity link function")}
+
+
+#    if(plot_visuals = TRUE){
+#      zz <- seq(0, max(visible_data$t), len = 300)
+#      predict(binom_model, data.frame(t = zz))
+#
+#      gam::predict_gam(binom_model) %>% ggplot() %>%
+#        geom_smooth(aes(t, fit))
+#    }
+
+
 
     newbinommodel <- bind_cols(coef(binom_model) %>% t())
 

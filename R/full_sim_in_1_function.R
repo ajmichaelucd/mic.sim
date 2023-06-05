@@ -39,12 +39,12 @@
 full_sim_in_1_function <- function(i,
                                    n = 150,
                                    t_dist = function(n){runif(n, min = 0, max = 5)},
-                                   pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
-                                   #pi = function(t) {m <- 0.6 + 0.03 * t   #logit
-                                   #z <- exp(m) / (1+ exp(m))
-                                   #c("1" = z, "2" = 1 - z)}
-                                   #pi = function(t) {z <- 0.6 + 0.03 * t  ##identity
+                                   #pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
+                                   pi = function(t) {m <- 0.6 + 0.03 * t   #logit
+                                   z <- exp(m) / (1+ exp(m))
                                    c("1" = z, "2" = 1 - z)},
+                                   #pi = function(t) {z <- 0.6 + 0.03 * t  ##identity
+                                   #c("1" = z, "2" = 1 - z)},
                                    `E[X|T,C]` = function(t, c)
                                    {
                                      case_when(
@@ -53,7 +53,7 @@ full_sim_in_1_function <- function(i,
                                        TRUE ~ NaN
                                      )
                                    },
-                                   sd_vector = c("1" = 1, "2" = 2),
+                                   sd_vector = c("1" = 1, "2" = 1),
                                    covariate_list = NULL,
                                    covariate_effect_vector = c(0),
                                    covariate_names = NULL,
@@ -72,7 +72,7 @@ full_sim_in_1_function <- function(i,
                                    tol_ll = 1e-6,
                                    #silent = FALSE,
                                    maxiter_survreg = 30,
-                                   pi_function = TRUE,
+                                   #pi_function = TRUE,
                                    pi_link = "logit",
                                    verbose = 3,
                                    allow_safety = TRUE,
@@ -111,16 +111,16 @@ full_sim_in_1_function <- function(i,
   #mem here
 
   visible_data <- prep_sim_data_for_em(data.sim, left_bound_name = "left_bound", right_bound_name = "right_bound", time = "t", covariate_names, scale = scale)
-if(!pi_function){
-  #mem here
-  poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
-  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
-  #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
-} else{
+#if(!pi_function){
+#  #mem here
+#  poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
+#  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
+#  #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+#} else{
   poss_fit_model <- purrr::possibly(.f = fit_model_pi, otherwise = "Error")
   single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, formula2 = formula2, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, pi_link = pi_link, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
 
-}
+#}
 
 
    if(length(single_model_output) > 1){
@@ -151,14 +151,14 @@ if(fms_only == TRUE && length(single_model_output) > 1 && fm_check == "All Clear
     formula = Surv(time = left_bound,
                    time2 = right_bound,
                    type = "interval2") ~ t
-    if(!pi_function){
-    poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
-    #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
-    single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
-    } else{
+#    if(!pi_function){
+#    poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
+#    #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+#    single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+#    } else{
       poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety_pi, otherwise = "Error")
       single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, formula2 = formula2, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, pi_link = pi_link, verbose = verbose, maxiter_survreg = maxiter_survreg)
-    }
+ #   }
 
     if(length(single_model_output) == 1 && single_model_output == "Error"){
       fms_fail = "fms_failed"
@@ -175,7 +175,8 @@ if(fms_only == TRUE && length(single_model_output) > 1 && fm_check == "All Clear
   #run fit_model_safely if needed
 
   failure_safety_notes <- c(fms_only, allow_safety, fm_fail, fms_fail)
-  pi_info <- c(pi_function, pi_link)
+  pi_info <- c( #pi_function,
+               pi_link)
 
   single_model_output <- append(single_model_output, i)
   single_model_output <- append(single_model_output, pi_info)

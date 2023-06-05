@@ -6,9 +6,9 @@
 \usage{
 fit_model_pi(
   visible_data,
-  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ 0 + c +
-    strata(c) + t:c,
-  formula2 = c == "2" ~ t,
+  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t,
+    df = 0, calc = TRUE),
+  formula2 = c == "2" ~ s(t),
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,

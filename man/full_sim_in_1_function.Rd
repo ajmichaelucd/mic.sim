@@ -11,14 +11,16 @@ full_sim_in_1_function(
      runif(n, min = 0, max = 5)
  },
   pi = function(t) {
-     z <- 0.6
-     c(`1` = z, `2` = 1 - z)
+     m <- 0.6 + 0.03 * t
+     z <- exp(m)/(1 + exp(m))
+     c(`1` =
+    z, `2` = 1 - z)
  },
   `E[X|T,C]` = function(t, c) {
      case_when(c == "1" ~ -2 - 0.1 * t, c == "2" ~ 2 +
     0.2 * t, TRUE ~ NaN)
  },
-  sd_vector = c(`1` = 1, `2` = 2),
+  sd_vector = c(`1` = 1, `2` = 1),
   covariate_list = NULL,
   covariate_effect_vector = c(0),
   covariate_names = NULL,
@@ -33,7 +35,6 @@ full_sim_in_1_function(
   ncomp = 2,
   tol_ll = 1e-06,
   maxiter_survreg = 30,
-  pi_function = TRUE,
   pi_link = "logit",
   verbose = 3,
   allow_safety = TRUE,
