@@ -299,8 +299,8 @@ fit_model_safety_pi = function(
     list(
       likelihood = likelihood_documentation[1:i, ],
       possible_data = possible_data,
-      pi = pi,
-      coefficients_and_sd = newmodel,
+      binom_model = binom_model,
+      newmodel = newmodel,
       steps = i
     )
   )

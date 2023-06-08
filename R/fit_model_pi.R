@@ -57,7 +57,7 @@ fit_model_pi = function(
       visible_data %>% #visible data with c for component
    #   group_by_all() %>%
       reframe(.by = everything(),    #implement for other intial weighting options too ##########
-        c = as.character(1:2), #fir a logistic regression on c earlier #########
+        c = as.character(1:2) #fir a logistic regression on c earlier #########
         # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
  #       .groups = "drop"
       ) %>%
@@ -68,12 +68,12 @@ fit_model_pi = function(
       #                              left_bound <= median_y & c == "2" ~ 0.6)
       #     ) %>%
       mutate(
-        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
-                                 left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
-                                 left_bound == -Inf & c == "1" ~ 0.01,
-                                 left_bound == -Inf & c == "2" ~ 0.99),
+        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                                 left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                                 left_bound == -Inf & c == "2" ~ 0.99,
+                                 left_bound == -Inf & c == "1" ~ 0.01),
         mid =
           case_when(
             left_bound == -Inf ~ right_bound - 0.5,
@@ -94,12 +94,12 @@ fit_model_pi = function(
       ) %>% rowwise %>%
 
       mutate(
-        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
-                                 left_bound > median_y & c == "2" ~ NaN,
-                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5) ,
-                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ NaN,
-                                 left_bound == -Inf & c == "1" ~ 0.01,
-                                 left_bound == -Inf & c == "2" ~ NaN),
+        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
+                                 left_bound > median_y & c == "1" ~ NaN,
+                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5) ,
+                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ NaN,
+                                 left_bound == -Inf & c == "2" ~ 0.01,
+                                 left_bound == -Inf & c == "1" ~ NaN),
         mid =
           case_when(
             left_bound == -Inf ~ right_bound - 0.5,
@@ -111,8 +111,8 @@ fit_model_pi = function(
 
     possible_data <- possible_data %>% select(obs_id, `P(C=c|y,t)`) %>% rename(prelim = `P(C=c|y,t)`) %>% filter(!is.na(prelim)) %>% right_join(., possible_data, by = "obs_id") %>% mutate(
       `P(C=c|y,t)` = case_when(
-        c == "1" ~ prelim,
-        c == "2" ~ 1 - prelim,
+        c == "2" ~ prelim,
+        c == "1" ~ 1 - prelim,
         TRUE ~ NaN
       )
     ) %>% select(!prelim)
@@ -132,12 +132,12 @@ fit_model_pi = function(
       ) %>% #rowwise %>%
 
       mutate(
-        `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "1" ~ pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
-                                  left_bound != -Inf & right_bound != Inf &c == "2" ~ 1 - pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
-                                  left_bound == -Inf & c == "1" ~ 0.01,
-                                  left_bound == -Inf & c == "2" ~ 0.99,
-                                  right_bound == Inf & c == "1" ~ 0.99,
-                                  right_bound == Inf & c == "2" ~ 0.01,
+        `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "2" ~ pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
+                                  left_bound != -Inf & right_bound != Inf &c == "1" ~ 1 - pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
+                                  left_bound == -Inf & c == "2" ~ 0.01,
+                                  left_bound == -Inf & c == "1" ~ 0.99,
+                                  right_bound == Inf & c == "2" ~ 0.99,
+                                  right_bound == Inf & c == "1" ~ 0.01,
                                   TRUE ~ NaN),
         mid =
           case_when(
@@ -165,10 +165,10 @@ fit_model_pi = function(
       ) %>% rowwise %>%
 
       mutate(
-        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.55,
-                                 left_bound > median_y & c == "2" ~ 0.45,
-                                 left_bound < median_y  & c == "1" ~ 0.45,
-                                 left_bound < median_y  & c == "2" ~ 0.55,
+        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ 0.55,
+                                 left_bound > median_y & c == "1" ~ 0.45,
+                                 left_bound < median_y  & c == "2" ~ 0.45,
+                                 left_bound < median_y  & c == "1" ~ 0.55,
                                  left_bound == median_y ~ 0.5,
                                  TRUE ~ NaN),
         mid =
@@ -190,12 +190,12 @@ fit_model_pi = function(
       ) %>%
 
       mutate(
-        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
-                                 left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
-                                 left_bound == -Inf & c == "1" ~ 0.01,
-                                 left_bound == -Inf & c == "2" ~ 0.99),
+        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
+                                 left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
+                                 left_bound == -Inf & c == "2" ~ 0.01,
+                                 left_bound == -Inf & c == "1" ~ 0.99),
         mid =
           case_when(
             left_bound == -Inf ~ right_bound - 0.5,
@@ -391,8 +391,14 @@ fit_model_pi = function(
       #     select(-any_of("P(C = c)")) %>%
       #      left_join(pi, by = "c") %>%
       mutate(
-        `E[Y|t,c]` = predict(model, newdata = possible_data),
-        `sd[Y|t,c]` = model$scale[c],
+        `E[Y|t,c]` = case_when(c == "1" ~ predict(modelsplit_1, newdata = possible_data),
+                               c == "2" ~ predict(modelsplit_2, newdata = possible_data),
+                               TRUE ~ NaN),
+          #predict(model, newdata = possible_data),
+        `sd[Y|t,c]` = case_when(c == "1" ~ modelsplit_1$scale,
+                                c == "2" ~ modelsplit_2$scale,
+                                TRUE ~ NaN),
+          #model$scale[c], #####QUESTION HERE????????????????????????????
         # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
 
         `P(Y|t,c)` =  if_else(
@@ -485,8 +491,8 @@ fit_model_pi = function(
     list(
       likelihood = likelihood_documentation[1:i, ],
       possible_data = possible_data,
-      pi = pi,
-      coefficients_and_sd = newmodel,
+      binom_model = binom_model,
+      newmodel = newmodel,
       steps = i
     )
   )

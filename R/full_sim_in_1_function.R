@@ -42,7 +42,7 @@ full_sim_in_1_function <- function(i,
                                    #pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
                                    pi = function(t) {m <- 0.6 + 0.03 * t   #logit
                                    z <- exp(m) / (1+ exp(m))
-                                   c("1" = z, "2" = 1 - z)},
+                                   c("1" = 1 - z, "2" = z)},
                                    #pi = function(t) {z <- 0.6 + 0.03 * t  ##identity
                                    #c("1" = z, "2" = 1 - z)},
                                    `E[X|T,C]` = function(t, c)

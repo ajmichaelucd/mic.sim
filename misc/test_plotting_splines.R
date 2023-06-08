@@ -120,17 +120,72 @@ rbind(tibble(pred = predict(modelsplit_1, df_pred_1), t = df_pred_1$t, c = df_pr
 tibble(pred = predict(modelsplit_2, df_pred_1), t = df_pred_2$t, c = df_pred_2$c)) %>% ggplot() +
   geom_point(aes(x = t, y = pred, color = c))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ######new plan, fit oracle logit, use those as weights, try to fit the spline models to that, including regression splines since those can be used in an interaction term in survreg!
 
 pi = function(t) {m <- 0.6 + 0.03 * t   #logit
 z <- exp(m) / (1+ exp(m))
-c("1" = z, "2" = 1 - z)}
+c("1" = 1 - z, "2" = z)}
 
+n = 150
+t_dist = function(n){runif(n, min = 0, max = 10)}
+#pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
+#pi = function(t) {z <- 0.6 + 0.03 * t  ##identity
+#c("1" = z, "2" = 1 - z)},
+`E[X|T,C]` = function(t, c)
+{
+  case_when(
+    c == "1" ~ -2 -0.1*t, #3 + t + 2*t^2 - sqrt(t),
+    c == "2" ~ 2 + 0.2*t,
+    TRUE ~ NaN
+  )
+}
+sd_vector = c("1" = 1, "2" = 1)
+covariate_list = NULL
+covariate_effect_vector = c(0)
+covariate_names = NULL
+conc_limits_table = NULL #conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3),
+#c("b", 2^-4, 2^4)), `.name_repair` = "unique"
+#) %>% rename("covariate_2" = 1, "low_cons" = 2, "high_cons" = 3),
+low_con = -4
+high_con = 4
+scale = "log"
+maxiter_survreg = 30
 
+set.seed(100)
 
-
-
-
+data.sim <- simulate_mics( #changed to test
+  n = n,
+  t_dist = t_dist,
+  pi = pi,
+  `E[X|T,C]` = `E[X|T,C]`,
+  sd_vector = sd_vector,
+  covariate_list = covariate_list,
+  covariate_effect_vector = covariate_effect_vector,
+  conc_limits_table = conc_limits_table,
+  low_con = low_con,
+  high_con = high_con,
+  scale = scale)
 
 
 
@@ -142,19 +197,15 @@ median_y = median(visible_data$left_bound)
 
 possible_data <-
   visible_data %>% #visible data with c for component
-  #     mutate(
-  #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-  #                              left_bound > median_y & c == "2" ~ 0.4,
-  #                              left_bound <= median_y & c == "1" ~ 0.4,
-  #                              left_bound <= median_y & c == "2" ~ 0.6)
-  #     ) %>%
+  reframe(.by = everything(),    #implement for other intial weighting options too ##########
+          c = as.character(1:2)) %>%
   mutate(
-    `P(C=c|y,t)` = case_when(left_bound > median_y & comp == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
-                             left_bound > median_y & comp == "2" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
-                             left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
-                             left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
-                             left_bound == -Inf & c == "1" ~ 0.01,
-                             left_bound == -Inf & c == "2" ~ 0.99),
+    `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
+                             left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                             left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                             left_bound <= median_y & left_bound != -Inf & c == "1" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
+                             left_bound == -Inf & c == "2" ~ 0.01,
+                             left_bound == -Inf & c == "1" ~ 0.99),
     mid =
       case_when(
         left_bound == -Inf ~ right_bound - 0.5,
@@ -168,9 +219,21 @@ possible_data <-
 model1 <- gam::gam(comp == "2" ~ s(t), family = binomial(link = "logit"), data = visible_data)
 gam::plot.Gam(model1, se = T, col = "green") #comp == "2" is actually backwards, since we set up the data for 1 to be the low component, but then in making possible data we make 2 the low one (c), so comp == 2 is the same as c == 1. Yes it's fucked i'm gonna fix it
 
+#pi = function(t) {m <- 0.6 + 0.03 * t   #logit
+#z <- exp(m) / (1+ exp(m))
+#c("1" = 1 - z, "2" = z)}
+
+tibble(t = seq(0, 10, length.out = 300), pred = (data.frame(t = seq(0, 10, length.out = 300)) %>% predict(model1, ., type = "response"))) %>%
+  mutate(actual = exp(0.6 + 0.03 * t) / (1+ exp(0.6 + 0.03 * t))) %>%
+ggplot() +
+  geom_point(aes(x = t, y = pred)) +
+  geom_point(aes(x = t, y= actual), color = "red")
+
+
+
 possible_data <- possible_data %>% mutate(
-  oracle_weights = case_when(c == "1" ~ gam::predict.Gam(model1, data.frame(t), type = "response"),
-                             c == "2" ~ 1 - gam::predict.Gam(model1, data.frame(t), type = "response"),
+  oracle_weights = case_when(c == "1" ~ 1 - gam::predict.Gam(model1, data.frame(t), type = "response"),
+                             c == "2" ~ gam::predict.Gam(model1, data.frame(t), type = "response"),
                              TRUE ~ 0)
 )
 
@@ -183,8 +246,8 @@ oracle_newdata <- possible_data %>%
   #      left_join(pi, by = "c") %>%
   mutate(
     `E[Y|t,c]` = case_when(
-      c == "2" ~ -2 -0.1*t, #3 + t + 2*t^2 - sqrt(t),
-      c == "1" ~ 2 + 0.2*t,
+      c == "2" ~ 2 + 0.2*t, #3 + t + 2*t^2 - sqrt(t),
+      c == "1" ~ -2 - 0.1*t,
       TRUE ~ NaN
     ),
     `sd[Y|t,c]` = case_when(
@@ -208,8 +271,8 @@ oracle_newdata <- possible_data %>%
   #    `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
   #  )
   mutate(`P(C=c|t)` = case_when( ########UNSURE ABOUT THIS SECTION
-    c == "2" ~ predict(binom_model, newdata = tibble(t = t), type = "response"), ########UNSURE ABOUT THIS SECTION
-    c == "1" ~ 1 - predict(binom_model, newdata = tibble(t = t), type = "response") ########UNSURE ABOUT THIS SECTION
+    c == "2" ~ predict(model1, newdata = tibble(t = t), type = "response"), ########UNSURE ABOUT THIS SECTION
+    c == "1" ~ 1 - predict(model1, newdata = tibble(t = t), type = "response") ########UNSURE ABOUT THIS SECTION
   )) %>%  ########UNSURE ABOUT THIS SECTION
   mutate(`P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`, ########UNSURE ABOUT THIS SECTION
          `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
@@ -218,7 +281,7 @@ oracle_newdata <- possible_data %>%
 
 
 
-
+verbose = 3
 
 
 formula = Surv(time = left_bound,
@@ -238,7 +301,13 @@ df1 = tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2), c = factor(rep
 tibble(pred.ns = predict(modelns, df1), df1) %>% ggplot() +
   geom_point(aes(x = t, y = pred.ns, color = c))
 
+oracle_newdata
 
+#`E[X|T,C]` = function(t, c)
+#{case_when(
+#    c == "1" ~ -2 -0.1*t, #3 + t + 2*t^2 - sqrt(t),
+#    c == "2" ~ 2 + 0.2*t,
+#    TRUE ~ NaN)}
 
 
 
