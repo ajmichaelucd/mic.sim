@@ -14,7 +14,7 @@
 #' @param maxiter_survreg
 #' @param initial_weighting
 #'
-#' @importFrom survival pspline survreg Surv
+#' @importFrom survival pspline survreg Surv coxph.wtest
 #' @importFrom gam gam s
 #' @importFrom splines ns
 #'
@@ -268,9 +268,10 @@ fit_model_pi = function(
     #  data = df_temp,
     #  dist = "gaussian",
     #  control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+summary(modelsplit_1)
+summary(modelsplit_2)
 
-
-    if (modelsplit_1$iter == maxiter_survreg | modelsplit_2$iter == maxiter_survreg){
+    if (modelsplit_1$iter[1] == maxiter_survreg | modelsplit_2$iter[1] == maxiter_survreg){
       likelihood_documentation[i,3] <- TRUE
     } else{
       likelihood_documentation[i,3] <- FALSE
@@ -293,7 +294,7 @@ fit_model_pi = function(
 
 
 
-    newmodel = bind_cols(mean = coef(model) %>% t(), sd = model$scale %>% t())
+    newmodel = list(modelsplit_1, modelsplit_2)
 
     nn <- paste("c", 1:ncomp, sep = "")
 
@@ -340,7 +341,7 @@ fit_model_pi = function(
 
 
 
-    newbinommodel <- bind_cols(coef(binom_model) %>% t())
+    newbinommodel <- binom_model
 
     pi = newbinommodel
     # newmodel <- c(model$coefficients, sigma(model))
@@ -348,18 +349,36 @@ fit_model_pi = function(
     # newmodel = c(coef(model), `sd(y)`)
 
     if(i != 1){
-      check_model = max(abs(newmodel - oldmodel))
+     # check_model = max(abs(newmodel - oldmodel))
       # check_pi_tibble = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
-      check_pi = max(abs(newbinommodel - oldbinommodel))
+      #check_pi = max(abs(newbinommodel - oldbinommodel))
       #  check_pi = max(abs(check_pi_tibble$pi_dif))
 
+number_coef_1 <- length(modelsplit_1$coefficients) == length(oldmodel[[1]]$coefficients)
+number_coef_2 <- length(modelsplit_2$coefficients) == length(oldmodel[[2]]$coefficients)
 
-      param_checks = check_model < 0.00001 && check_pi < 0.00001
+
+if(number_coef_1 & number_coef_2){
+  mu_coef_diff_1 <-  max(abs(modelsplit_1$coefficients - oldmodel[[1]]$coefficients))
+  mu_coef_diff_2 <-  max(abs(modelsplit_2$coefficients - oldmodel[[2]]$coefficients))
+  mu_coef_diff <- max(mu_coef_diff_1, mu_coef_diff_2) < 0.00001
+  #binom_model$smooth.frame ????
+
+} else{
+  mu_coef_diff <- FALSE
+}
+
+#binom_model$coefficients
+
+#pi_coef_diff <- length(modelsplit_2$coefficients) == length(oldmodel[[2]]$coefficients)
+
+#summary(binom_model)
+      param_checks = mu_coef_diff #&& check_pi < 0.00001
 
 
-      #  if( check_model < 0.00001 && check_pi < 0.00001)
-      #  {message("stopped on coefficients")
-      #    break}
+        if( mu_coef_diff ) # && check_pi < 0.00001)
+        {message("stopped on coefficients")
+          break}
       #
     }
     #marginal_likelihood  #add warning: Chicago style pizza is a casserole

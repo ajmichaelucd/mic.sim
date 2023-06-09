@@ -8,17 +8,17 @@ full_sim_in_1_function(
   i,
   n = 150,
   t_dist = function(n) {
-     runif(n, min = 0, max = 5)
+     runif(n, min = 0, max = 10)
  },
   pi = function(t) {
-     m <- 0.6 + 0.03 * t
-     z <- exp(m)/(1 + exp(m))
-     c(`1` =
-    z, `2` = 1 - z)
+     m <- 0.6 + 0.02 * (t^2) - 0.0015 * (t^3)
+     z <- exp(m)/(1 +
+    exp(m))
+     c(`1` = 1 - z, `2` = z)
  },
   `E[X|T,C]` = function(t, c) {
-     case_when(c == "1" ~ -2 - 0.1 * t, c == "2" ~ 2 +
-    0.2 * t, TRUE ~ NaN)
+     case_when(c == "1" ~ -2 - 0.01 * (t^2), c == "2" ~ 2
+    + 0.2 * t, TRUE ~ NaN)
  },
   sd_vector = c(`1` = 1, `2` = 1),
   covariate_list = NULL,
@@ -30,7 +30,7 @@ full_sim_in_1_function(
   scale = "log",
   formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ 0 + c +
     strata(c) + t:c,
-  formula2 = c == "1" ~ t,
+  formula2 = c == "2" ~ t,
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,

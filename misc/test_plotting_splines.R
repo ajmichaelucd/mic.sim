@@ -288,6 +288,31 @@ formula = Surv(time = left_bound,
                time2 = right_bound,
                type = "interval2") ~ 0 + c + strata(c) + c:ns(t, df = 7)
 
+nobs<- length(unique(oracle_newdata$obs_id))
+assignments <- tibble(obs_id = sample(c(1:nobs), size = nobs, replace = FALSE)) %>% mutate(group = rep(1:10, length.out = nobs))
+oracle_newdata <- oracle_newdata %>% left_join(., assignments)
+
+for(i in 1:10){
+  test <- oracle_newdata %>% filter(group == i)
+  train <- oracle_newdata %>% filter(group != i)
+
+  formula = Surv(time = left_bound,
+                 time2 = right_bound,
+                 type = "interval2") ~ 0 + c + strata(c) + c:ns(t, df = 7)
+
+  modelns <- survival::survreg(
+    formula,  ##Make this chunk into an argument of the function
+    weights = `P(C=c|y,t)`,
+    data = train,
+    dist = "gaussian",
+    control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+
+
+
+}
+
+
+
 modelns <- survival::survreg(
   formula,  ##Make this chunk into an argument of the function
   weights = `P(C=c|y,t)`,
@@ -298,10 +323,49 @@ modelns <- survival::survreg(
 modelns
 
 df1 = tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2), c = factor(rep(1:2, each = 300)))
-tibble(pred.ns = predict(modelns, df1), df1) %>% ggplot() +
-  geom_point(aes(x = t, y = pred.ns, color = c))
+df2 <- tibble(pred.ns = predict(modelns, df1), df1)
 
-oracle_newdata
+ggplot() +
+  geom_point(aes(x = t, y = pred.ns, color = c), data = df2)
+
+
+  df_temp <- oracle_newdata %>% filter(`P(C=c|y,t)` != 0 )
+#possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
+
+  formula_split = Surv(time = left_bound,
+                 time2 = right_bound,
+                 type = "interval2") ~ pspline(t, df = 0, calc = TRUE)
+
+
+#print("about to survreg")
+
+df_temp %>% filter(c == 1) -> df1
+df_temp %>% filter(c == 2) -> df2
+modelsplit_1 <- survival::survreg(
+  formula_split,  ##Make this chunk into an argument of the function
+  weights = `P(C=c|y,t)`,
+  data = df1,
+  dist = "gaussian",
+  control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+modelsplit_2 <- survival::survreg(
+  formula_split,  ##Make this chunk into an argument of the function
+  weights = `P(C=c|y,t)`,
+  data = df2,
+  dist = "gaussian",
+  control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+#
+
+tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2)) %>% mutate(
+                                                                       c1pred = predict(modelsplit_1, tibble(t)),
+                                                                             c2pred = predict(modelsplit_2, tibble(t))) %>%
+ ggplot() +
+  geom_point(aes(x = t, y = c1pred), color = "black") +
+  geom_point(aes(x = t, y = c2pred), color = "black") +
+  geom_point(aes(x = t, y = pred.ns, color = c), data = df2)
+
+
+
+
 
 #`E[X|T,C]` = function(t, c)
 #{case_when(
