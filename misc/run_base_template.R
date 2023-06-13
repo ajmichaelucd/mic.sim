@@ -39,7 +39,7 @@ ncomp = 2
 
 
 pi1 = function(t) {z <- 0.2 + 0.001 #changed to 0.5
-c("1" = z, "2" = 1- z)}
+c("1" = 1 - z, "2" = z)}
 
 #pi1 =   function(t) {m <- 0.2 + 0.001 * t   #logit
 #  z <- exp(m) / (1+ exp(m))
@@ -82,6 +82,7 @@ allow_safety = TRUE
 cutoff = 0.7
 fms_only = FALSE
 initial_weighting = 1
+keep_true_values = TRUE
 
 poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
 #modded_poss_full_sim_in_1_function <- purrr::quietly(full_sim_in_1_function)
@@ -114,7 +115,8 @@ results <- purrr::map(
     allow_safety = allow_safety,
     cutoff = cutoff,
     fms_only = fms_only,
-    initial_weighting = initial_weighting
+    initial_weighting = initial_weighting,
+    keep_true_values = keep_true_values
   ))
 
 

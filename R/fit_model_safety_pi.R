@@ -21,8 +21,8 @@ fit_model_safety_pi = function(
     visible_data = prep_sim_data_for_em(),
     formula = Surv(time = left_bound,
                    time2 = right_bound,
-                   type = "interval2") ~ t,
-    formula2 = c == "2" ~ t,
+                   type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
+    formula2 = c == "2" ~ s(t),
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -114,7 +114,7 @@ fit_model_safety_pi = function(
       control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
 
 
-    if (model$iter == maxiter_survreg){
+    if (model$iter[1] == maxiter_survreg){
       likelihood_documentation[i,3] <- TRUE
     } else{
       likelihood_documentation[i,3] <- FALSE
@@ -124,7 +124,7 @@ fit_model_safety_pi = function(
 
 
 
-    newmodel = bind_cols(mean = coef(model) %>% t(), sd = model$scale %>% t())
+    newmodel = model
 
     nn <- paste("c", 1:ncomp, sep = "")
 
@@ -142,13 +142,14 @@ fit_model_safety_pi = function(
     #     c == "1" ~ 1 - predict(logit, newdata = tibble(t = possible_data$t), type = "response")
     #   ))
     if(pi_link == "logit"){
-      binom_model <- stats::glm(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+   #   binom_model <- stats::glm(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+      binom_model <- gam::gam(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
     } else if(pi_link == "identity"){
 
-      binom_model <- stats::glm(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+      binom_model <- gam::gam(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
     } else{ errorCondition("pick logit or identity link function")}
 
-    newbinommodel <- bind_cols(coef(binom_model) %>% t())
+    newbinommodel <- binom_model
 
     pi = newbinommodel
     #pull(`P(C = c)`, name = c)
@@ -158,13 +159,29 @@ fit_model_safety_pi = function(
     # newmodel = c(coef(model), `sd(y)`)
 
     if(i != 1){
-      check_model = max(abs(newmodel - oldmodel))
-      check_pi_tibble = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
-      check_pi = max(abs(check_pi_tibble$pi_dif))
 
 
-      param_checks = check_model < 0.00001 && check_pi < 0.00001
+      number_coef <- length(model$coefficients) == length(oldmodel$coefficients)
+      if(number_coef){
+      mu_coef_diff <-  max(abs(model$coefficients - oldmodel$coefficients)) < 0.00001
 
+      } else{
+        mu_coef_diff <- FALSE
+      }
+
+      param_checks = mu_coef_diff #&& check_pi < 0.00001
+
+
+      if( mu_coef_diff ) # && check_pi < 0.00001)
+      {message("stopped on coefficients")
+        break}
+     # check_model = max(abs(newmodel - oldmodel))
+     # check_pi_tibble = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
+     # check_pi = max(abs(check_pi_tibble$pi_dif))
+#
+#
+     # param_checks = check_model < 0.00001 && check_pi < 0.00001
+#
 
       #  if( check_model < 0.00001 && check_pi < 0.00001)
       #  {message("stopped on coefficients")
@@ -184,7 +201,7 @@ fit_model_safety_pi = function(
     #B. if it is not going up by very much, you can stop
     #if conditions are met, use break
     if(plot_visuals == TRUE){
-
+##outdated
       c1_plot <-   possible_data %>%
         mutate(
           mid =

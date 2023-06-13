@@ -58,7 +58,10 @@ df_temp <- df_temp %>% mutate(c1t = case_when(
   c2t = case_when(
     c == "2" ~ t,
     TRUE ~ 2.5
-  )
+  ),
+  surv = Surv(time = left_bound,
+              time2 = right_bound,
+              type = "interval2")
 )
 
 formula = Surv(time = left_bound,
@@ -143,7 +146,8 @@ tibble(pred = predict(modelsplit_2, df_pred_1), t = df_pred_2$t, c = df_pred_2$c
 
 ######new plan, fit oracle logit, use those as weights, try to fit the spline models to that, including regression splines since those can be used in an interaction term in survreg!
 
-pi = function(t) {m <- 0.6 + 0.03 * t   #logit
+pi = function(t) {m <- 0.6 + 0.06 * t ^ 2   #logit
+#pi = function(t) {m <- 0.6 + 0.03 * t   #logit
 z <- exp(m) / (1+ exp(m))
 c("1" = 1 - z, "2" = z)}
 
@@ -172,7 +176,7 @@ high_con = 4
 scale = "log"
 maxiter_survreg = 30
 
-set.seed(100)
+set.seed(129)
 
 data.sim <- simulate_mics( #changed to test
   n = n,
@@ -216,20 +220,42 @@ possible_data <-
   ) %>% ungroup()
 
 
-model1 <- gam::gam(comp == "2" ~ s(t), family = binomial(link = "logit"), data = visible_data)
-gam::plot.Gam(model1, se = T, col = "green") #comp == "2" is actually backwards, since we set up the data for 1 to be the low component, but then in making possible data we make 2 the low one (c), so comp == 2 is the same as c == 1. Yes it's fucked i'm gonna fix it
+model_s <- visible_data %>% gam::gam(comp == "2" ~ s(t), family = binomial(link = "logit"), data = .)
+model_lo <- visible_data %>% gam::gam(comp == "2" ~ gam::lo(t), family = binomial(link = "logit"), data = .)
+#model1 <- visible_data %>% loess(comp == "2" ~ t, family = binomial(link = "logit"), data = .)
+gam::plot.Gam(model_s, se = T, col = "green")
+gam::plot.Gam(model_lo, se = T, col = "green")
 
 #pi = function(t) {m <- 0.6 + 0.03 * t   #logit
 #z <- exp(m) / (1+ exp(m))
 #c("1" = 1 - z, "2" = z)}
 
-tibble(t = seq(0, 10, length.out = 300), pred = (data.frame(t = seq(0, 10, length.out = 300)) %>% predict(model1, ., type = "response"))) %>%
-  mutate(actual = exp(0.6 + 0.03 * t) / (1+ exp(0.6 + 0.03 * t))) %>%
-ggplot() +
-  geom_point(aes(x = t, y = pred)) +
-  geom_point(aes(x = t, y= actual), color = "red")
+
+tibble(
+  t = seq(0, 10, length.out = 300),
+  pred_s = (data.frame(t = seq(0, 10, length.out = 300)) %>% predict(model_s, ., type = "response")),
+  pred_lo = (data.frame(t = seq(0, 10, length.out = 300)) %>% predict(model_lo, ., type = "response"))
+) %>%
+  mutate(actual = exp(0.6 + 0.06 * t ^ 2) / (1 + exp(0.6 + 0.06 * t ^ 2))) %>%
+  ggplot() +
+  geom_point(aes(x = t, y = pred_s), col = "black") +
+  geom_point(aes(x = t, y = pred_lo), col = "violet") +
+  geom_point(aes(x = t, y = actual), color = "red") +
+  geom_smooth(aes(x = t, y = (comp == "2") * 1) , data = visible_data, method = "loess") +
+  #  geom_smooth(aes(x = t, y = (comp == "2") * 1) , data = visible_data, method = "gam", formula = y ~ s(x, bs = "cs")) +
+  ggplot2::expand_limits(y = c(0, 1)) +
+  ggplot2::geom_rug(sides = "b",
+                    aes(x = t, y = (comp == "2") * 1),
+                    data = visible_data %>% filter(comp == "1")) +
+  ggplot2::geom_rug(sides = "t",
+                    aes(x = t, y = (comp == "2") * 1),
+                    data = visible_data %>% filter(comp == "2")) +
+  ggplot2::geom_hline(yintercept = mean((visible_data$comp == "2") * 1),
+                      color = "yellow",
+                      alpha = 0.7)
 
 
+model1 <- model_s
 
 possible_data <- possible_data %>% mutate(
   oracle_weights = case_when(c == "1" ~ 1 - gam::predict.Gam(model1, data.frame(t), type = "response"),
@@ -323,10 +349,10 @@ modelns <- survival::survreg(
 modelns
 
 df1 = tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2), c = factor(rep(1:2, each = 300)))
-df2 <- tibble(pred.ns = predict(modelns, df1), df1)
+dfns <- tibble(pred.ns = predict(modelns, df1), df1)
 
 ggplot() +
-  geom_point(aes(x = t, y = pred.ns, color = c), data = df2)
+  geom_point(aes(x = t, y = pred.ns, color = c), data = df2ns)
 
 
   df_temp <- oracle_newdata %>% filter(`P(C=c|y,t)` != 0 )
@@ -338,7 +364,7 @@ ggplot() +
 
 
 #print("about to survreg")
-
+  pred.ns = predict(modelns, df1)
 df_temp %>% filter(c == 1) -> df1
 df_temp %>% filter(c == 2) -> df2
 modelsplit_1 <- survival::survreg(
@@ -355,14 +381,26 @@ modelsplit_2 <- survival::survreg(
   control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
 #
 
-tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2)) %>% mutate(
-                                                                       c1pred = predict(modelsplit_1, tibble(t)),
-                                                                             c2pred = predict(modelsplit_2, tibble(t))) %>%
- ggplot() +
-  geom_point(aes(x = t, y = c1pred), color = "black") +
-  geom_point(aes(x = t, y = c2pred), color = "black") +
-  geom_point(aes(x = t, y = pred.ns, color = c), data = df2)
 
+tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2)) %>%
+  mutate(
+    c1pred = predict(modelsplit_1, tibble(t), se = T)$fit,
+    c1pred_se = predict(modelsplit_1, tibble(t), se = T)$se.fit,
+    c1pred_lb = c1pred - 1.96 * c1pred_se,
+    c1pred_ub = c1pred + 1.96 * c1pred_se,
+    c2pred = predict(modelsplit_2, tibble(t), se = T)$fit,
+    c2pred_se = predict(modelsplit_2, tibble(t), se = T)$se.fit,
+    c2pred_lb = c2pred - 1.96 * c2pred_se,
+    c2pred_ub = c2pred + 1.96 * c2pred_se,
+  ) %>%
+  ggplot() +
+  geom_point(aes(x = t, y = c1pred), color = "black") +
+  ggplot2::geom_ribbon(aes(x = t, ymin = c1pred_lb, ymax = c1pred_ub), alpha = 0.3) +
+  ggplot2::geom_ribbon(aes(x = t, ymin = c2pred_lb, ymax = c2pred_ub), alpha = 0.3) +
+  geom_point(aes(x = t, y = c2pred), color = "black") +
+  geom_point(aes(x = t, y = pred.ns, color = c), data = dfns) +
+  geom_point(aes(x = t, y = -2 - 0.1 * t), color = "violet") +
+  geom_point(aes(x = t, y = 2 + 0.2 * t), color = "violet")
 
 
 
@@ -373,15 +411,15 @@ tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2)) %>% mutate(
 #    c == "2" ~ 2 + 0.2*t,
 #    TRUE ~ NaN)}
 
+#possible_data %>% filter(`P(C=c|y,t)` > 0.01 & ) ??
+
+possible_data %>% filter(c == "1") %>% arrange(t) %>% select(t, `P(C=c|y,t)`, observed_value, comp)
+hist(possible_data$t, breaks = 100)
 
 
 
 
-
-
-
-
-
+oracle_newdata %>% filter(c == "1") %>% arrange(t) %>% select(t, `P(C=c|y,t)`, observed_value, comp) %>% print(n = 40)
 
 
 

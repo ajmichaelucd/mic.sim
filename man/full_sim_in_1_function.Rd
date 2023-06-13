@@ -28,9 +28,9 @@ full_sim_in_1_function(
   low_con = -4,
   high_con = 4,
   scale = "log",
-  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ 0 + c +
-    strata(c) + t:c,
-  formula2 = c == "2" ~ t,
+  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t,
+    df = 0, calc = TRUE),
+  formula2 = c == "2" ~ s(t),
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
@@ -41,6 +41,7 @@ full_sim_in_1_function(
   cutoff = 0.9,
   fms_only = FALSE,
   initial_weighting = 1,
+  keep_true_values = TRUE,
   ...
 )
 }

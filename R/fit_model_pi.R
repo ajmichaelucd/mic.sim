@@ -15,7 +15,7 @@
 #' @param initial_weighting
 #'
 #' @importFrom survival pspline survreg Surv coxph.wtest
-#' @importFrom gam gam s
+#' @importFrom gam gam s lo
 #' @importFrom splines ns
 #'
 #' @return
@@ -28,7 +28,7 @@ fit_model_pi = function(
     formula = Surv(time = left_bound,
                    time2 = right_bound,
                    type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-    formula2 = c == "2" ~ s(t),
+    formula2 = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -41,7 +41,8 @@ fit_model_pi = function(
     #low_con = 2^-3,
     #high_con = 2^3,
     maxiter_survreg = 30,
-    initial_weighting = 1){
+    initial_weighting = 1 #smoothingspline or loess
+    ){
   #verbose = 0: print nothing
   #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
   #verbose = 2: print run number and iteration number --done
@@ -394,7 +395,7 @@ if(number_coef_1 & number_coef_2){
     #B. if it is not going up by very much, you can stop
     #if conditions are met, use break
     if(plot_visuals == TRUE){
-
+##outdated
       c1_plot <-   possible_data %>%
         filter(c == 1) %>%
         ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +

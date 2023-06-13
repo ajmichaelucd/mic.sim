@@ -26,7 +26,7 @@ lines(x = t, y = 0.6 + 0.02 * (t ^ 2) - 0.0015 * (t ^ 3))
 
 pi_f = function(t) {m <- 0.6 + 0.02 * (t ^ 2) - 0.0015 * (t ^ 3)   #logit
 z <- exp(m) / (1+ exp(m))
-c("1" = 1 - z, "2" = z)},
+c("1" = 1 - z, "2" = z)}
 #pi = function(t) {z <- 0.6 + 0.03 * t  ##identity
 #c("1" = z, "2" = 1 - z)},
 `E[X|T,C]` = function(t, c)
@@ -36,5 +36,5 @@ c("1" = 1 - z, "2" = z)},
     c == "2" ~ 2 + 0.2*t,
     TRUE ~ NaN
   )
-},
+}
 sd_vector = c("1" = 1, "2" = 1)

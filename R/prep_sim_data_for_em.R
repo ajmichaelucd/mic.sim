@@ -25,14 +25,19 @@ prep_sim_data_for_em <- function(
     time = "t",
     covariate_names = NULL,
     scale = NULL,
-    observed_value_choice = FALSE,
+    keep_truth = FALSE,
     observed_value_name = "observed_value",
+    comp_name = "comp",
     low_con_name = "low_con",
     high_con_name = "high_con"
 ) {
 
 if(observed_value_choice){
-truth <- data.sim %>% rename(observed_value = match(paste0(observed_value_name), names(data.sim))) %>% select("observed_value")
+truth <- data.sim %>%
+  rename(observed_value = match(paste0(observed_value_name), names(data.sim))) %>%
+  rename(comp = match(paste0(comp_name), names(data.sim))) %>%
+  select("observed_value", "comp")
+
 }
 
 if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
