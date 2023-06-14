@@ -6,7 +6,7 @@
 #' @param time
 #' @param covariate_names
 #' @param scale
-#' @param observed_value_choice
+#' @param keep_truth
 #' @param observed_vale_name
 #' @param low_con_name
 #' @param high_con_name
@@ -32,7 +32,7 @@ prep_sim_data_for_em <- function(
     high_con_name = "high_con"
 ) {
 
-if(observed_value_choice){
+if(keep_truth){
 truth <- data.sim %>%
   rename(observed_value = match(paste0(observed_value_name), names(data.sim))) %>%
   rename(comp = match(paste0(comp_name), names(data.sim))) %>%
@@ -47,7 +47,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
              left_bound = log2(left_bound),
              right_bound = log2(right_bound)) %>%
       relocate(obs_id, .before = everything())
-    if(observed_value_choice){
+    if(keep_truth){
       df <- cbind(df, truth) %>% tibble()
     }
   }
@@ -56,7 +56,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
       select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con = all_of(low_con_name), high_con = all_of(high_con_name)) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
-    if(observed_value_choice){
+    if(keep_truth){
       df <- cbind(df, truth) %>% tibble()
     }
   }
@@ -67,7 +67,7 @@ if(is.null(scale) && attr(data.sim, "scale") == "MIC")  {
            left_bound = log2(left_bound),
            right_bound = log2(right_bound)) %>%
     relocate(obs_id, .before = everything())
-    if(observed_value_choice){
+    if(keep_truth){
       df <- cbind(df, truth) %>% tibble()
     }
 }
@@ -76,7 +76,7 @@ else if (scale == "log"){
       select(all_of(c(covariate_names, time)), left_bound = all_of(left_bound_name), right_bound = all_of(right_bound_name), low_con = all_of(low_con_name), high_con = all_of(high_con_name)) %>%
       mutate(obs_id = 1:n()) %>%
       relocate(obs_id, .before = everything())
-  if(observed_value_choice){
+  if(keep_truth){
     df <- cbind(df, truth) %>% tibble()
   }
   }

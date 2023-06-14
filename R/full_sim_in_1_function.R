@@ -93,57 +93,31 @@ full_sim_in_1_function <- function(i,
 
   settings = list(
     i,
-    n = 150,
-    t_dist = function(n) {
-      runif(n, min = 0, max = 10)
-    },
-    #pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
-    pi = function(t) {
-      m <- 0.6 + 0.02 * (t ^ 2) - 0.0015 * (t ^ 3)   #logit
-      z <- exp(m) / (1 + exp(m))
-      c("1" = 1 - z, "2" = z)
-    },
-    #pi = function(t) {z <- 0.6 + 0.03 * t  ##identity
-    #c("1" = z, "2" = 1 - z)},
-    `E[X|T,C]` = function(t, c)
-    {
-      case_when(c == "1" ~ -2 - 0.01 * (t ^ 2), #3 + t + 2*t^2 - sqrt(t),
-                c == "2" ~ 2 + 0.2 * t,
-                TRUE ~ NaN)
-    },
-    sd_vector = c("1" = 1, "2" = 1),
-    covariate_list = NULL,
-    covariate_effect_vector = c(0),
-    covariate_names = NULL,
-    conc_limits_table = NULL,
-    #conc_limits_table = as_tibble(rbind(c("a", 2^-3, 2^3),
-    #c("b", 2^-4, 2^4)), `.name_repair` = "unique"
-    #) %>% rename("covariate_2" = 1, "low_cons" = 2, "high_cons" = 3),
-    low_con = -4,
-    high_con = 4,
-    scale = "log",
-    #formula = Surv(time = left_bound,
-    #               time2 = right_bound,
-    #               type = "interval2") ~ 0 + c + strata(c) + t:c,
-    #for split use this:
-    formula = Surv(time = left_bound,
-                   time2 = right_bound,
-                   type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-    formula2 = c == "2" ~ s(t),
-    ###if pi is defined as a function where we look at change in membership of group 1, then so should formula2
-    max_it = 3000,
-    ncomp = 2,
-    tol_ll = 1e-6,
-    #silent = FALSE,
-    maxiter_survreg = 30,
-    #pi_function = TRUE,
-    pi_link = "logit",
-    verbose = 3,
-    allow_safety = TRUE,
-    cutoff = 0.9,
-    fms_only = FALSE,
-    initial_weighting = 1,
-    keep_true_values = TRUE
+    n,
+    t_dist,
+    pi,
+    `E[X|T,C]`,
+    sd_vector,
+    covariate_list,
+    covariate_effect_vector ,
+    covariate_names,
+    conc_limits_table,
+    low_con,
+    high_con,
+    scale,
+    formula,
+    formula2,
+    max_it,
+    ncomp,
+    tol_ll,
+    maxiter_survreg,
+    pi_link,
+    verbose,
+    allow_safety,
+    cutoff,
+    fms_only,
+    initial_weighting,
+    keep_true_values
   )
   #verbose = 0: print nothing
   #verbose = 1: print run number
@@ -173,7 +147,7 @@ full_sim_in_1_function <- function(i,
 
   #visible_data <- data.sim %>% mutate(obs_id = 1:n()) %>%
   #  relocate(obs_id, .before = everything())
-  if (keep_true_values) {
+
     visible_data <-
       prep_sim_data_for_em(
         data.sim,
@@ -182,21 +156,11 @@ full_sim_in_1_function <- function(i,
         time = "t",
         covariate_names = covariate_names,
         scale = scale,
-        keep_truth = FALSE,
+        keep_truth = keep_true_values,
         observed_value_name = "observed_value",
         comp_name = "comp"
       )
-  } else{
-    visible_data <-
-      prep_sim_data_for_em(
-        data.sim,
-        left_bound_name = "left_bound",
-        right_bound_name = "right_bound",
-        time = "t",
-        covariate_names = covariate_names,
-        scale = scale
-      )
-  }
+
   #if(!pi_function){
   #  #mem here
   #  poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
