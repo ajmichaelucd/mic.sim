@@ -269,8 +269,8 @@ fit_model_pi = function(
     #  data = df_temp,
     #  dist = "gaussian",
     #  control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
-summary(modelsplit_1)
-summary(modelsplit_2)
+#summary(modelsplit_1)
+#summary(modelsplit_2)
 
     if (modelsplit_1$iter[1] == maxiter_survreg | modelsplit_2$iter[1] == maxiter_survreg){
       likelihood_documentation[i,3] <- TRUE

@@ -19,6 +19,7 @@ library(gridExtra)
 library(data.table)
 library(purrr)
 library(stringr)
+library(gam)
 
 #command line arguments------------
 args <- as.numeric(commandArgs(trailingOnly = TRUE))
@@ -69,8 +70,8 @@ scale = "log"
 
 formula = Surv(time = left_bound,
                time2 = right_bound,
-               type = "interval2") ~ 0 + c + strata(c) + t:c
-formula2 = c == "1" ~ t
+               type = "interval2") ~ pspline(t, df = 0, calc = TRUE)
+formula2 = c == "1" ~ s(t)
 max_it = 3000
 ncomp = 2
 tol_ll = 1e-6
@@ -84,7 +85,7 @@ fms_only = FALSE
 initial_weighting = 1
 keep_true_values = TRUE
 
-poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
+#poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
 #modded_poss_full_sim_in_1_function <- purrr::quietly(full_sim_in_1_function)
 #modded_poss_full_sim_in_1_function <- purrr::quietly(poss_full_sim_in_1_function)
 
