@@ -11,7 +11,7 @@ simulate_mics(
  },
   pi = function(t) {
      z <- 0.5 + 0.002 * t
-     c(`1` = z, `2` = 1 - z)
+     tibble(`1` = z, `2` = 1 - z)
  },
   `E[X|T,C]` = function(t, c) {
      case_when(c == "1" ~ -1 + t, c == "2" ~ 1 + 0.3 * t,

@@ -42,7 +42,7 @@ full_sim_in_1_function <- function(i,
                                    #pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
                                    pi = function(t) {m <- 0.6 + 0.02 * (t ^ 2) - 0.0015 * (t ^ 3)   #logit
                                    z <- exp(m) / (1+ exp(m))
-                                   c("1" = 1 - z, "2" = z)},
+                                   tibble("1" = 1 - z, "2" = z)},
                                    #pi = function(t) {z <- 0.6 + 0.03 * t  ##identity
                                    #c("1" = z, "2" = 1 - z)},
                                    `E[X|T,C]` = function(t, c)
@@ -91,34 +91,37 @@ full_sim_in_1_function <- function(i,
     message("starting run number", i)
   }
 
-  settings = list(
-    i,
-    n,
-    t_dist,
-    pi,
-    `E[X|T,C]`,
-    sd_vector,
-    covariate_list,
-    covariate_effect_vector ,
-    covariate_names,
-    conc_limits_table,
-    low_con,
-    high_con,
-    scale,
-    formula,
-    formula2,
-    max_it,
-    ncomp,
-    tol_ll,
-    maxiter_survreg,
-    pi_link,
-    verbose,
-    allow_safety,
-    cutoff,
-    fms_only,
-    initial_weighting,
-    keep_true_values
-  )
+
+  ##need i = i, n = n, t_dist = t_dist to create named list
+
+  # settings = list( #name all settings, at batch level: create settings and save along with results
+  #   i,
+  #   n,
+  #   t_dist,
+  #   pi,
+  #   `E[X|T,C]`,
+  #   sd_vector,
+  #   covariate_list,
+  #   covariate_effect_vector ,
+  #   covariate_names,
+  #   conc_limits_table,
+  #   low_con,
+  #   high_con,
+  #   scale,
+  #   formula,
+  #   formula2,
+  #   max_it,
+  #   ncomp,
+  #   tol_ll,
+  #   maxiter_survreg,
+  #   pi_link,
+  #   verbose,
+  #   allow_safety,
+  #   cutoff,
+  #   fms_only,
+  #   initial_weighting,
+  #   keep_true_values
+  # )
   #verbose = 0: print nothing
   #verbose = 1: print run number
   #verbose = 2: print run number and iteration number
@@ -252,9 +255,11 @@ full_sim_in_1_function <- function(i,
   #run fit_model_safely if needed
 
   failure_safety_notes <-
-    c(fms_only, allow_safety, fm_fail, fms_fail)
+    c(fms_only = fms_only, allow_safety = allow_safety, fm_fail = fm_fail, fms_fail = fms_fail)
 
-  output <- list(single_model_output, settings, failure_safety_notes)
+  output <- list(single_model_output = single_model_output,
+                 i = i,
+                 failure_safety_notes = failure_safety_notes)
 
 
 

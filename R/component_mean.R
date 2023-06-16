@@ -19,7 +19,7 @@ component_mean = function(
     pi = function(t)
     {
       z <- 0.5 + 0.2 * t
-      c("1" = z, "2" = 1- z)
+      tibble("1" = z, "2" = 1- z)
     },
     `E[X|T,C]` = function(t, c)
     {
@@ -34,7 +34,7 @@ component_mean = function(
   temp =
     tibble(
       t = t_dist(n = n),
-      p = map(t, ~ pi(.x)),
+      p = map(t, ~ pi_grab(.x, pi)),
       comp = gen_comp(p),
       x = `E[X|T,C]`(t, comp)
     )
@@ -49,4 +49,11 @@ gen_comp = function(p)
     prob = .x,
     replace = TRUE
   ))
+}
+
+pi_grab = function(t, pi){  ##will need to be adjusted for more than 2 components
+ c(
+   "1" = pi(t) %>% pull("1"),
+   "2" = pi(t) %>% pull("2")
+ )
 }

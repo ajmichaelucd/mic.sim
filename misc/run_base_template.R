@@ -39,8 +39,11 @@ ncomp = 2
 #pi_truth = "identity"
 
 
-pi1 = function(t) {z <- 0.2 + 0.001 #changed to 0.5
-c("1" = 1 - z, "2" = z)}
+pi1 = function(t) {
+  m <- 0.5 + 0.1 * t - 0.03 * t^2 + 0.0015 * t^3
+  z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+  tibble("1" = 1 - z, "2" = z)
+}
 
 #pi1 =   function(t) {m <- 0.2 + 0.001 * t   #logit
 #  z <- exp(m) / (1+ exp(m))
@@ -120,7 +123,36 @@ results <- purrr::map(
     keep_true_values = keep_true_values
   ))
 
-
+list(
+  results,
+  settings = list( #name all settings, at batch level: create settings and save along with results
+    iteration_set = iteration_set,
+    n = n,
+    t_dist = t_dist,
+    pi = pi,
+    `E[X|T,C]` = `E[X|T,C]`,
+    sd_vector = sd_vector,
+    covariate_list = covariate_list,
+    covariate_effect_vector = covariate_effect_vector,
+    covariate_names = covariate_names,
+    conc_limits_table = conc_limits_table,
+    low_con = low_con,
+    high_con = high_con,
+    scale = scale,
+    formula = formula,
+    formula2 = formula2,
+    max_it = max_it,
+    ncomp = ncomp,
+    tol_ll = tol_ll,
+    maxiter_survreg = maxiter_survreg,
+    pi_link = pi_link,
+    verbose = verbose,
+    allow_safety = allow_safety,
+    cutoff = cutoff,
+    fms_only = fms_only,
+    initial_weighting = initial_weighting,
+    keep_true_values = keep_true_values
+  ))
 
 ##add a save here
 #results <- purrr::map(full_results, ~add_failure_attr(.x))

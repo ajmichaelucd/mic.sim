@@ -14,7 +14,7 @@ full_sim_in_1_function(
      m <- 0.6 + 0.02 * (t^2) - 0.0015 * (t^3)
      z <- exp(m)/(1 +
     exp(m))
-     c(`1` = 1 - z, `2` = z)
+     tibble(`1` = 1 - z, `2` = z)
  },
   `E[X|T,C]` = function(t, c) {
      case_when(c == "1" ~ -2 - 0.01 * (t^2), c == "2" ~ 2
