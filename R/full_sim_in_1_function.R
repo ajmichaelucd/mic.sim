@@ -87,7 +87,7 @@ full_sim_in_1_function <- function(i,
                                    ...
 ){
   set.seed(i)
-  if (verbose > 2) {
+  if (verbose >= 2) {
     message("starting run number", i)
   }
 
@@ -183,7 +183,6 @@ full_sim_in_1_function <- function(i,
     verbose = verbose,
     maxiter_survreg = maxiter_survreg,
     initial_weighting = initial_weighting,
-    verbose = verbose
   )
 
   #}
@@ -237,7 +236,6 @@ full_sim_in_1_function <- function(i,
       pi_link = pi_link,
       verbose = verbose,
       maxiter_survreg = maxiter_survreg,
-      verbose = verbose
     )
     #   }
 
