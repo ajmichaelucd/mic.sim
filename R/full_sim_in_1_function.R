@@ -182,7 +182,8 @@ full_sim_in_1_function <- function(i,
     pi_link = pi_link,
     verbose = verbose,
     maxiter_survreg = maxiter_survreg,
-    initial_weighting = initial_weighting
+    initial_weighting = initial_weighting,
+    verbose = verbose
   )
 
   #}
@@ -235,7 +236,8 @@ full_sim_in_1_function <- function(i,
       tol_ll = tol_ll,
       pi_link = pi_link,
       verbose = verbose,
-      maxiter_survreg = maxiter_survreg
+      maxiter_survreg = maxiter_survreg,
+      verbose = verbose
     )
     #   }
 

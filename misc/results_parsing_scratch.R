@@ -2,7 +2,7 @@ file  <- gen_path_sim(location = location, format = format, array_name = array_n
 
 file <- "~/Desktop/june_2023/run_form2_loess_1_06132023_1.Rdata"
 
-results <- loadRData(file)
+batch_results <- loadRData(file)
 
 
 
@@ -14,8 +14,8 @@ results <- loadRData(file)
 #  paste0(paste0(a, b), "*") %>% print()
 #}
 
-purrr::map(results, ~capture_error_measures_one_run(.x, intercepts, trends, sigma, pi_int, pi_trend, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
-  data.table::rbindlist()
+#purrr::map(results, ~capture_error_measures_one_run(.x, intercepts, trends, sigma, pi_int, pi_trend, sigma_tolerance, pi_tolerance, intercepts_tolerance, trends_tolerance)) %>%
+#  data.table::rbindlist()
 ##add
 
 results %>% View
@@ -65,9 +65,10 @@ results[[7]][[3]][4] #fms_fail
 
 
 
-pi_plotting <- function(t){results[[7]][[2]][[4]](t)[2]}
+
 pi_plotting <- function(t){pi1(t)}
-t = 1:15
+
+predict(binom_model, data.frame = t, type = "response")
 
 
 results[[7]][[1]]$possible_data %>% filter(comp == c) %>%
@@ -79,8 +80,9 @@ results[[7]][[1]]$possible_data %>% filter(comp == c) %>%
          resid = (c == "2") * 1 - pi_hat ) %>%
   ggplot() +
     geom_point(aes(x = t, y = pi_hat, color = "Fitted Model")) +
+    geom_function(fun = function(t){predict(results[[7]][[1]]$binom_model, data.frame(t), type = "response")}, aes(color = "Fitted Model")) +
  #   geom_point(aes(x = t, y = pi_dgm, color = "Data Generating Mechanism")) +
-  ggplot2::geom_function(fun = function(t){pi1(t) %>% pull("2")}, aes(color = "Data Generating Mechanism")) +
+  ggplot2::geom_function(fun = function(t){results[[7]][[2]][[4]] %>% pull("2")}, aes(color = "Data Generating Mechanism")) +
     geom_smooth(aes(x = t, y = (c == "2") * 1))
 
 mu1 <- function(t){predict(results[[7]][[1]]$newmodel[[1]], data.frame(t = t))}

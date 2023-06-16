@@ -93,7 +93,7 @@ keep_true_values = TRUE
 #modded_poss_full_sim_in_1_function <- purrr::quietly(poss_full_sim_in_1_function)
 
 #run--------
-results <- purrr::map(
+model_results <- purrr::map(
   iteration_set,
   ~ full_sim_in_1_function(
     .x,
@@ -123,8 +123,8 @@ results <- purrr::map(
     keep_true_values = keep_true_values
   ))
 
-list(
-  results,
+results <- list(
+  model_results = model_results,
   settings = list( #name all settings, at batch level: create settings and save along with results
     iteration_set = iteration_set,
     n = n,
