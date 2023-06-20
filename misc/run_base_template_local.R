@@ -1,7 +1,7 @@
-Sys.setlocale (locale = "en_US.UTF-8")
-print(sort(c("10", "1:")))
 
-packages <- c("magrittr","dplyr","tidyr","mic.sim","LearnBayes","survival","gridExtra", "data.table")
+remotes::install_github("ajmichaelucd/mic.sim", ref = "add_splines")
+
+packages <- c("magrittr","dplyr","tidyr","LearnBayes","survival","gridExtra", "data.table", "purrr", "stringr", "gam")
 inst <- packages %in% installed.packages()
 if (length(packages[!inst])>0) install.packages(packages[!inst],dependencies = T)
 lapply(packages,require,character.only=TRUE)
@@ -22,15 +22,18 @@ library(stringr)
 library(gam)
 
 #command line arguments------------
-args <- as.numeric(commandArgs(trailingOnly = TRUE))
+
+##SELECT SEED HERE
+
+args <- as.numeric(1)
 
 #parameters-------
-batch_size <- 10
+batch_size <- 2
 iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args) #batch size: 10, so set the subtracted term to be "batch size - 1"
 
 #this set of runs will vary the mean of the upper component and push it closer to the highest tested concentration (2^2)
 
-run_name <- "safety_test_cutoff_check_1_04112023"
+run_name <- "local_test_run_1_04112023"
 covariate_effect_vector <- c(0) #0 at start is intercept, then add in the desired coefficients for the covariates
 covariate_list <-  NULL
 covariate_names <- NULL
@@ -53,8 +56,8 @@ pi1 = function(t) {
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ -1.0 - 0.02 * t,
-    c == "2" ~ 4.0 + 0.0 * t,
+    c == "1" ~ -1.0 - 0.02 * t ^ 2,
+    c == "2" ~ 2.0 + 0.005 * t ^ 2,
     TRUE ~ NaN
   )
 }
@@ -64,7 +67,7 @@ t_dist1 = function(n){runif(n, min = 0, max = 15)}
 sd_vector = c("1" = 0.6, "2" = 0.6) #0.5, 0.75, 1, 1.25
 
 low_con = -3
-high_con = 1 #errored out when this was 2^3
+high_con = 3 #errored out when this was 2^3
 #RUN 1 : 2
 #RUN 2: 3
 #RUN 3: 4
@@ -74,7 +77,7 @@ scale = "log"
 formula = Surv(time = left_bound,
                time2 = right_bound,
                type = "interval2") ~ pspline(t, df = 0, calc = TRUE)
-formula2 = c == "1" ~ s(t)
+formula2 = c == "2" ~ s(t)
 max_it = 3000
 ncomp = 2
 tol_ll = 1e-6
@@ -129,7 +132,7 @@ results <- list(
     iteration_set = iteration_set,
     n = n,
     t_dist = t_dist1,
-    pi = pi1,
+    pi = pi,
     `E[X|T,C]` = `E[X|T,C]`,
     sd_vector = sd_vector,
     covariate_list = covariate_list,

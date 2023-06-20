@@ -113,13 +113,15 @@ results[[7]][[1]]$possible_data %>% filter(comp == c) %>%
     ) #rename observed data to underlying values
   ) %>%
   ggplot() +
-  geom_point(aes(x = t, y = mu_dgm, color = c)) + #make as line: geom_function
-  ggplot2::geom_function(fun = mu1, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
-  ggplot2::geom_function(fun = mu2, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+  #geom_point(aes(x = t, y = mu_dgm, color = c)) + #make as line: geom_function
+  geom_function(fun = function(t){results[[7]][[2]][[5]](t, c = 1)}, aes(color = "Component 1 Mu", linetype = "Data Generating Mechanism"), size = 0.9) +
+geom_function(fun = function(t){results[[7]][[2]][[5]](t, c = 2)}, aes(color = "Component 2 Mu", linetype = "Data Generating Mechanism"), size = 0.9) +
+  ggplot2::geom_function(fun = mu1, aes(color = "Component 1 Mu", linetype = "Fitted Model"), size = 0.9) +
+  ggplot2::geom_function(fun = mu2, aes(color = "Component 2 Mu", linetype = "Fitted Model"), size = 0.9) +
  # geom_point(aes(x = t, y = mu_hat, color = c), fill = "black", shape = 21) + #geom_function
   geom_point(aes(x = t, y = observed_value, color = c, fill = predicted_comp), alpha = 0.3, shape = 21) + #
-  geom_smooth(aes(x = t, y = observed_value), data = . %>% filter(c == "1")) +
-  geom_smooth(aes(x = t, y = observed_value), data = . %>% filter(c == "2")) +
+  geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "1")) +
+  geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "2")) +
   geom_hline(yintercept = results[[7]][[2]][11] %>% unlist) +
   geom_hline(yintercept = results[[7]][[2]][12] %>% unlist)
 
@@ -144,7 +146,7 @@ width = (t_max - t_min)/100000
 
 area_calc <-
   tibble(t) %>%
-  reframe(.by = everything(),    #implement for other intial weighting options too ##########
+  reframe(.by = everything(),    #implement for other initial weighting options too ##########
           c = as.character(1:2)) %>%
   mutate(
     mu_hat = case_when(
@@ -182,3 +184,5 @@ results[[7]][[1]]$possible_data %>% filter(comp == c) %>%
 
 predict(results[[7]][[1]]$newmodel[[1]], data.frame(t = t), se = TRUE)$se.fit
 #use geom_ribbon for ymin and ymax geom_function for mu_hat (for each half of model)
+
+
