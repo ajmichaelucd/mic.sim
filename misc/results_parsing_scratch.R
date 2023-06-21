@@ -1,6 +1,6 @@
 file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = i)
 
-file <- "~/Desktop/june_2023/run_form2_loess_1_06132023_1.Rdata"
+file <- "~/Desktop/june_2023/test_script_spline_06202023_2.Rdata"
 
 batch_results <- loadRData(file)
 
@@ -18,18 +18,23 @@ batch_results <- loadRData(file)
 #  data.table::rbindlist()
 ##add
 
-results %>% View
+batch_results %>% View
 
-results[[1]] #Error
-results[[7]] #worked
-results[[7]][[1]]$likelihood
-results[[7]][[1]]$possible_data
-results[[7]][[1]]$binom_model
-results[[7]][[1]]$newmodel[[1]]
-results[[7]][[1]]$newmodel[[2]]
-results[[7]][[1]]$steps
-results[[7]][[2]]
-  #1: i
+results <- batch_results$model_results[[1]]
+parameters <- batch_results$settings
+
+#results$single_model_output$likelihood
+#
+#results[[1]] #Error
+#results #worked
+#results$single_model_output$likelihood
+#results$single_model_output$possible_data
+#results$single_model_output$binom_model
+#results$single_model_output$newmodel[[1]]
+#results$single_model_output$newmodel[[2]]
+#results$single_model_output$steps
+#parameters$t_dist
+#  #1: i
   #2: n
   #3: t_dist
   #4: pi
@@ -57,48 +62,55 @@ results[[7]][[2]]
   #26: keep_true_value
 
 
-results[[7]][[3]][1] #fms_only
-results[[7]][[3]][2] #allow_safety
-results[[7]][[3]][3] #fm_fail
-results[[7]][[3]][4] #fms_fail
 
+#pi_plotting <- function(t){parameters$pi(t)}
 
+#results$single_model_output$binom_model
 
+#predict(results$single_model_output$binom_model, data.frame = t, type = "response")
+#results$single_model_output$possible_data
+#parameters$pi(t) %>% pull(2)
 
-
-pi_plotting <- function(t){pi1(t)}
-
-predict(binom_model, data.frame = t, type = "response")
-
-
-results[[7]][[1]]$possible_data %>% filter(comp == c) %>%
-  mutate(pi_hat = predict(results[[7]][[1]]$binom_model, data.frame(t = t), type = "response")) %>%
+results$single_model_output$possible_data %>% filter(comp == c) %>%
+  mutate(pi_hat = predict(results$single_model_output$binom_model, data.frame(t = t), type = "response")) %>%
   rowwise %>%
-  mutate(pi_dgm = results[[7]][[2]][[4]](t)[2]) %>%
+  mutate(pi_dgm = parameters$pi(t) %>% pull(2)) %>%
   ungroup %>%
   mutate(false_resid = pi_dgm - pi_hat,
          resid = (c == "2") * 1 - pi_hat ) %>%
   ggplot() +
-    geom_point(aes(x = t, y = pi_hat, color = "Fitted Model")) +
-    geom_function(fun = function(t){predict(results[[7]][[1]]$binom_model, data.frame(t), type = "response")}, aes(color = "Fitted Model")) +
+  #  geom_point(aes(x = t, y = pi_hat, color = "Fitted Model")) +
+    geom_function(fun = function(t){predict(results$single_model_output$binom_model, data.frame(t), type = "response")}, aes(color = "Fitted Model")) +
  #   geom_point(aes(x = t, y = pi_dgm, color = "Data Generating Mechanism")) +
-  ggplot2::geom_function(fun = function(t){results[[7]][[2]][[4]] %>% pull("2")}, aes(color = "Data Generating Mechanism")) +
+  ggplot2::geom_function(fun = function(t){parameters$pi(t) %>% pull(2)}, aes(color = "Data Generating Mechanism")) +
     geom_smooth(aes(x = t, y = (c == "2") * 1))
 
-mu1 <- function(t){predict(results[[7]][[1]]$newmodel[[1]], data.frame(t = t))}
-mu2 <- function(t){predict(results[[7]][[1]]$newmodel[[2]], data.frame(t = t))}
+#####ADD RUG TO PI PLOT
+
+#results$single_model_output$newmodel
 
 
-results[[7]][[1]]$possible_data %>% filter(comp == c) %>%
-  mutate(mu_dgm = results[[7]][[2]][[5]](t = t, c = c)) %>%
+#mu1 <- function(t){predict(results$single_model_output$newmodel[[1]], data.frame(t = t))}
+#mu2 <- function(t){predict(results$single_model_output$newmodel[[2]], data.frame(t = t))}
+
+
+
+mu.se <- function(t, c, z){predict(results$single_model_output$newmodel[[c]], data.frame(t = t)) + z * predict(results$single_model_output$newmodel[[c]], data.frame(t = t), se = TRUE)$se.fit}
+
+
+
+
+
+results$single_model_output$possible_data %>% filter(comp == c) %>%
+  mutate(mu_dgm = parameters$`E[X|T,C]`(t = t, c = c)) %>%
   mutate(mu_hat = case_when(
-    c == "1" ~ predict(results[[7]][[1]]$newmodel[[1]], data.frame(t = t)),
-    c == "2" ~ predict(results[[7]][[1]]$newmodel[[2]], data.frame(t = t)),
+    c == "1" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t)),
+    c == "2" ~ predict(results$single_model_output$newmodel[[2]], data.frame(t = t)),
     TRUE ~ NaN
   ),
   mu_hat_se = case_when(
-    c == "1" ~ predict(results[[7]][[1]]$newmodel[[1]], data.frame(t = t), se = TRUE)$se.fit,
-    c == "2" ~ predict(results[[7]][[1]]$newmodel[[2]], data.frame(t = t), se = TRUE)$se.fit,
+    c == "1" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t), se = TRUE)$se.fit,
+    c == "2" ~ predict(results$single_model_output$newmodel[[2]], data.frame(t = t), se = TRUE)$se.fit,
     TRUE ~ NaN
   )) %>%
   mutate(resid = observed_value - mu_hat,
@@ -114,18 +126,53 @@ results[[7]][[1]]$possible_data %>% filter(comp == c) %>%
   ) %>%
   ggplot() +
   #geom_point(aes(x = t, y = mu_dgm, color = c)) + #make as line: geom_function
-  geom_function(fun = function(t){results[[7]][[2]][[5]](t, c = 1)}, aes(color = "Component 1 Mu", linetype = "Data Generating Mechanism"), size = 0.9) +
-geom_function(fun = function(t){results[[7]][[2]][[5]](t, c = 2)}, aes(color = "Component 2 Mu", linetype = "Data Generating Mechanism"), size = 0.9) +
-  ggplot2::geom_function(fun = mu1, aes(color = "Component 1 Mu", linetype = "Fitted Model"), size = 0.9) +
-  ggplot2::geom_function(fun = mu2, aes(color = "Component 2 Mu", linetype = "Fitted Model"), size = 0.9) +
+  geom_function(fun = function(t){parameters$`E[X|T,C]`(t, c = 1)}, aes(color = "Component 1 Mu", linetype = "Data Generating Mechanism"), size = 0.9) +
+geom_function(fun = function(t){parameters$`E[X|T,C]`(t, c = 2)}, aes(color = "Component 2 Mu", linetype = "Data Generating Mechanism"), size = 0.9) +
+  geom_function(fun = function(t){predict(results$single_model_output$newmodel[[1]], data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model"), size = 0.9) +
+  geom_function(fun = function(t){predict(results$single_model_output$newmodel[[2]], data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model"), size = 0.9) +
  # geom_point(aes(x = t, y = mu_hat, color = c), fill = "black", shape = 21) + #geom_function
   geom_point(aes(x = t, y = observed_value, color = c, fill = predicted_comp), alpha = 0.3, shape = 21) + #
-  geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "1")) +
-  geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "2")) +
-  geom_hline(yintercept = results[[7]][[2]][11] %>% unlist) +
-  geom_hline(yintercept = results[[7]][[2]][12] %>% unlist)
+ # geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "1")) +
+ # geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "2")) +
+  geom_hline(yintercept = parameters$low_con %>% unlist) +
+  geom_hline(yintercept = parameters$high_con %>% unlist) +
+  geom_function(fun = function(t){mu.se(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+  geom_function(fun = function(t){mu.se(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+  geom_function(fun = function(t){mu.se(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+  geom_function(fun = function(t){mu.se(t, c = 2, z = -1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6)
 
-#add confidence interval fot fitted model
+
+
+
+
+####Create notes on when dgm escapes SE bounds
+
+##Plotting for data sets when EM for fit_model fails/errors out
+
+
+
+
+##performance vs oracle model if true values kept?
+
+model_s <- visible_data %>% gam::gam(comp == "2" ~ s(t), family = binomial(link = "logit"), data = .)
+model_lo <- visible_data %>% gam::gam(comp == "2" ~ gam::lo(t), family = binomial(link = "logit"), data = .)
+
+model_fitted_bin <- model_s
+
+possible_data %>% mutate(
+  model_weights = case_when(c == "1" ~ 1 - gam::predict.Gam(model_fitted_bin, data.frame(t), type = "response"),
+                            c == "2" ~ gam::predict.Gam(model_fitted_bin, data.frame(t), type = "response"),
+                            TRUE ~ 0)
+)
+
+
+
+
+
+
+
+
+
 
 results[[7]][[1]]$binom_model %>% summary
 results[[7]][[1]]$newmodel[[1]]$scale

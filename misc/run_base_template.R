@@ -81,7 +81,7 @@ tol_ll = 1e-6
 maxiter_survreg = 30
 pi_function = TRUE
 pi_link = "identity"
-verbose = 3
+verbose = 2
 allow_safety = TRUE
 cutoff = 0.7
 fms_only = FALSE
@@ -112,7 +112,7 @@ model_results <- purrr::map(
     max_it = max_it,
     ncomp = ncomp,
     tol_ll = tol_ll,
-    verbose = 3,
+    verbose = verbose,
     maxiter_survreg = maxiter_survreg,
     pi_function = pi_function,
     pi_link = pi_link,

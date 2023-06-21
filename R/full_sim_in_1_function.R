@@ -191,13 +191,14 @@ full_sim_in_1_function <- function(i,
   if (length(single_model_output) > 1) {
     fm_check <-
       check_for_excessive_censoring(single_model_output, cutoff)
-
+if(verbose > 1){print("fit_model converged")}
   }
 
 
   if (fms_only == TRUE &&
       length(single_model_output) > 1 && fm_check == "All Clear") {
     single_model_output <- "Pass"
+    if(verbose > 1){print("fit_model_converged within excessive censoring boundaries")}
   }
 
 
@@ -208,14 +209,18 @@ full_sim_in_1_function <- function(i,
   if (length(single_model_output) == 1 &&
       single_model_output == "Error") {
     fm_fail = "fm_failed"
+    if(verbose > 1){print("fit_model failed to converge")}
   } else if (fm_check == "Excessive Censoring") {
     fm_fail = "fm_failed_cutoff"
+    if(verbose > 1){print("fit_model converged but violated excessive censoring cutoff")}
   } else{
     fm_fail = "fm_worked"
+    if(verbose > 1){print("fit_model converged within excessive censoring boundaries")}
   }
 
   if (fm_fail %in% c("fm_failed, fm_failed_cutoff") &
       allow_safety == TRUE) {
+    if(verbose > 1){print("running fit_model_safety")}
     formula = Surv(time = left_bound,
                    time2 = right_bound,
                    type = "interval2") ~ pspline(t, df = 0, calc = TRUE)  ####FIX FOR MORE COMPLEX MODELS
@@ -242,8 +247,10 @@ full_sim_in_1_function <- function(i,
     if (length(single_model_output) == 1 &&
         single_model_output == "Error") {
       fms_fail = "fms_failed"
+      if(verbose > 1){print("fit_model_safety failed to converge")}
     } else{
       fms_fail = "fms_worked"
+      if(verbose > 1){print("fit_model_safety converged")}
     }
 
 
