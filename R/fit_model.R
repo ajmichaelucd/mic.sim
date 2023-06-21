@@ -9,10 +9,11 @@
 #' @param browse_each_step
 #' @param plot_visuals
 #' @param verbose
+#' @param maxiter_survreg
 #'
 #' @importFrom gridExtra grid.arrange
 #' @importFrom ggplot2 ggplot geom_point
-#' @importFrom survival strata survreg Surv
+#' @importFrom survival strata survreg Surv survreg.control
 #' @importFrom pryr mem_used
 #'
 #' @return
@@ -31,8 +32,10 @@ fit_model = function(
     plot_visuals = FALSE,
     #silent = FALSE,
     verbose = 3,
-    low_con = 2^-3,
-    high_con = 2^3)
+    #low_con = 2^-3,
+    #high_con = 2^3,
+    maxiter_survreg = 30,
+    initial_weighting = 1)
 #verbose = 0: print nothing
 #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
 #verbose = 2: print run number and iteration number --done
@@ -44,7 +47,7 @@ fit_model = function(
 
   median_y = median(visible_data$left_bound)
   #first E step-----
-
+if(initial_weighting == 1){
   possible_data <-
     visible_data %>% #visible data with c for component
     group_by_all() %>%
@@ -60,19 +63,146 @@ fit_model = function(
 #                              left_bound <= median_y & c == "2" ~ 0.6)
 #     ) %>%
     mutate(
-      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5 ,
-                               left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (log2(high_con) - median_y)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - log2(low_con) + 1)) * 0.5) + 0.5,
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
+                               left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
                                left_bound == -Inf & c == "1" ~ 0.01,
-                               left_bound == -Inf & c == "2" ~ 0.99)
-    ) #%>%
+                               left_bound == -Inf & c == "2" ~ 0.99),
+          mid =
+            case_when(
+              left_bound == -Inf ~ right_bound - 0.5,
+              right_bound == Inf ~ left_bound + 0.5,
+              TRUE ~ (left_bound + right_bound) / 2
+            ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% ungroup() #%>%  ##this is probably only accurate for scale = "log"
     #print()
 
+} else if(initial_weighting == 2){
+  possible_data <-
+    visible_data %>% #visible data with c for component
+    group_by_all() %>%
+    summarise(
+      c = as.character(1:2), #split at mean and assign
+      .groups = "drop"
+    ) %>% rowwise %>%
+
+    mutate(
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
+                               left_bound > median_y & c == "2" ~ NaN,
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5) ,
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ NaN,
+                               left_bound == -Inf & c == "1" ~ 0.01,
+                               left_bound == -Inf & c == "2" ~ NaN),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% ungroup
+
+  possible_data <- possible_data %>% select(obs_id, `P(C=c|y,t)`) %>% rename(prelim = `P(C=c|y,t)`) %>% filter(!is.na(prelim)) %>% right_join(., possible_data, by = "obs_id") %>% mutate(
+    `P(C=c|y,t)` = case_when(
+      c == "1" ~ prelim,
+      c == "2" ~ 1 - prelim,
+      TRUE ~ NaN
+    )
+  ) %>% select(!prelim)
+
+}else if(initial_weighting == 3){
 
 
 
-  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 2)
+
+
+possible_data <-
+  visible_data %>% #visible data with c for component
+  group_by_all() %>%
+  summarise(
+    c = as.character(1:2), #split at mean and assign
+    .groups = "drop"
+  ) %>% #rowwise %>%
+
+  mutate(
+    `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "1" ~ pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
+                              left_bound != -Inf & right_bound != Inf &c == "2" ~ 1 - pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
+                              left_bound == -Inf & c == "1" ~ 0.01,
+                             left_bound == -Inf & c == "2" ~ 0.99,
+                             right_bound == Inf & c == "1" ~ 0.99,
+                             right_bound == Inf & c == "2" ~ 0.01,
+                            TRUE ~ NaN),
+    mid =
+      case_when(
+        left_bound == -Inf ~ right_bound - 0.5,
+        right_bound == Inf ~ left_bound + 0.5,
+        TRUE ~ (left_bound + right_bound) / 2
+      ),
+    rc = ifelse(right_bound == Inf, TRUE, FALSE)
+  ) %>% ungroup
+
+#cases:
+##left_bound -Inf c ==1, c==2
+##right_bound Inf, c==1, c==2
+##else
+
+
+} else if(initial_weighting == 4){
+
+  possible_data <-
+    visible_data %>% #visible data with c for component
+    group_by_all() %>%
+    summarise(
+      c = as.character(1:2), #split at mean and assign
+      .groups = "drop"
+    ) %>% rowwise %>%
+
+    mutate(
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.55,
+                               left_bound > median_y & c == "2" ~ 0.45,
+                               left_bound < median_y  & c == "1" ~ 0.45,
+                               left_bound < median_y  & c == "2" ~ 0.55,
+                               left_bound == median_y ~ 0.5,
+                               TRUE ~ NaN),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% ungroup
+
+}else{warningCondition("Select a weight between 1 and 4 please, defaulting to 1")
+  possible_data <-
+    visible_data %>% #visible data with c for component
+    group_by_all() %>%
+    summarise(
+      c = as.character(1:2), #split at mean and assign
+      .groups = "drop"
+    ) %>%
+
+    mutate(
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
+                               left_bound > median_y & c == "2" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
+                               left_bound == -Inf & c == "1" ~ 0.01,
+                               left_bound == -Inf & c == "2" ~ 0.99),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    )
+}
+
+
+  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
   likelihood_documentation [,1] <- 1:max_it
 
 
@@ -102,20 +232,22 @@ fit_model = function(
 
     df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
-if(verbose <= 3){
-    model <- survival::survreg(
-      formula,  ##Make this chunk into an argument of the function
-      weights = `P(C=c|y,t)`,
-      data = df_temp,
-      dist = "gaussian")
-} else{
+
+#print("about to survreg")
   model <- survival::survreg(
     formula,  ##Make this chunk into an argument of the function
     weights = `P(C=c|y,t)`,
     data = df_temp,
     dist = "gaussian",
-    debug = 2)
-    }
+    control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+
+
+  if (model$iter == maxiter_survreg){
+    likelihood_documentation[i,3] <- TRUE
+  } else{
+    likelihood_documentation[i,3] <- FALSE
+  }
+    #browser()
 
 
 
@@ -169,19 +301,12 @@ if(verbose <= 3){
 if(plot_visuals == TRUE){
 
     c1_plot <-   possible_data %>%
-      mutate(
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          )
-      ) %>%
       filter(c == 1) %>%
       ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
       geom_point() +
-      geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
-      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
+      geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], color = "red") +
+      geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], color = "violet")+
+      expand_limits(y = c(newmodel$mean[,"c1"], newmodel$mean[,"c2"]))
     print(c1_plot)
 }
 
@@ -269,6 +394,16 @@ if(browse_each_step){browser(message("End of step ", i))}
   }
  if(browse_at_end){browser()}
 
-  return(list(likelihood = likelihood_documentation[1:i,], possible_data = possible_data, pi = pi, coefficients_and_sd = newmodel))
+
+
+  return(
+    list(
+      likelihood = likelihood_documentation[1:i, ],
+      possible_data = possible_data,
+      pi = pi,
+      coefficients_and_sd = newmodel,
+      steps = i
+    )
+  )
 
 }

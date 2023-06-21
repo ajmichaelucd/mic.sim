@@ -8,34 +8,45 @@ full_sim_in_1_function(
   i,
   n = 150,
   t_dist = function(n) {
-     runif(n, min = 0, max = 5)
+     runif(n, min = 0, max = 10)
  },
   pi = function(t) {
-     z <- 0.6
-     c(`1` = z, `2` = 1 - z)
+     m <- 0.6 + 0.02 * (t^2) - 0.0015 * (t^3)
+     z <- exp(m)/(1 +
+    exp(m))
+     tibble(`1` = 1 - z, `2` = z)
  },
   `E[X|T,C]` = function(t, c) {
-     case_when(c == "1" ~ -2 - 0.1 * t, c == "2" ~ 2 +
-    0.2 * t, TRUE ~ NaN)
+     case_when(c == "1" ~ -2 - 0.01 * (t^2), c == "2" ~ 2
+    + 0.2 * t, TRUE ~ NaN)
  },
-  sd_vector = c(`1` = 1, `2` = 2),
+  sd_vector = c(`1` = 1, `2` = 1),
   covariate_list = NULL,
   covariate_effect_vector = c(0),
   covariate_names = NULL,
-  low_con = 2^-4,
-  high_con = 2^4,
+  conc_limits_table = NULL,
+  low_con = -4,
+  high_con = 4,
   scale = "log",
-  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ 0 + c +
-    strata(c) + t:c,
+  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t,
+    df = 0, calc = TRUE),
+  formula2 = c == "2" ~ s(t),
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
+  maxiter_survreg = 30,
+  pi_link = "logit",
   verbose = 3,
+  allow_safety = TRUE,
+  cutoff = 0.9,
+  fms_only = FALSE,
+  initial_weighting = 1,
+  keep_true_values = TRUE,
   ...
 )
 }
 \arguments{
-\item{verbose}{}
+\item{cutoff}{}
 }
 \description{
 full_sim_in_1_function

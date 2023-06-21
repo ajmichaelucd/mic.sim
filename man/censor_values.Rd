@@ -4,13 +4,7 @@
 \alias{censor_values}
 \title{censor_values}
 \usage{
-censor_values(
-  observed_value,
-  low_con = 2^-4,
-  high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con),
-  scale = "MIC"
-)
+censor_values(simulated_obs, scale = "log")
 }
 \arguments{
 \item{scale}{}

@@ -15,7 +15,6 @@ Imports:
     purrr,
     dplyr,
     magrittr,
-    smoothSurv,
     broom,
     readr,
     survival,

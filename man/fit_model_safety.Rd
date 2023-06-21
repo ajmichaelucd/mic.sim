@@ -14,12 +14,11 @@ fit_model_safety(
   browse_each_step = FALSE,
   plot_visuals = FALSE,
   verbose = 3,
-  low_con = 2^-4,
-  high_con = 2^4
+  maxiter_survreg = 30
 )
 }
 \arguments{
-\item{high_con}{}
+\item{verbose}{}
 }
 \description{
 Title

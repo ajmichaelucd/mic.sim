@@ -18,7 +18,7 @@
 draw_epsilon <- function(n = 100,
                                  t_dist = function(n){runif(n, min = 0, max = 1)},
                                  pi = function(t) {z <- 0.5 + 0.2 * t
-                                 c("1" = z, "2" = 1- z)},
+                                 tibble("1" = z, "2" = 1- z)},
                          `E[X|T,C]` = function(t, c)
                          {
                            case_when(

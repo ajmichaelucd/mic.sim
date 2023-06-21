@@ -10,20 +10,21 @@ simulate_mics(
      runif(n, min = 0, max = 1)
  },
   pi = function(t) {
-     z <- 0.5 + 0.2 * t
-     c(`1` = z, `2` = 1 - z)
+     z <- 0.5 + 0.002 * t
+     tibble(`1` = z, `2` = 1 - z)
  },
   `E[X|T,C]` = function(t, c) {
-     case_when(c == "1" ~ 3 + t + 2 * t^2 - sqrt(t), c ==
-    "2" ~ 3 * t, TRUE ~ NaN)
+     case_when(c == "1" ~ -1 + t, c == "2" ~ 1 + 0.3 * t,
+    TRUE ~ NaN)
  },
-  sd_vector = c(`1` = 1, `2` = 2),
-  covariate_list = NULL,
-  covariate_effect_vector = c(0),
-  low_con = 2^-4,
-  high_con = 2^4,
-  tested_concentrations = log2(low_con):log2(high_con),
-  scale = "MIC"
+  sd_vector = c(`1` = 1, `2` = 0.7),
+  covariate_list = list(c("numeric", "normal", 0, 1), c("categorical", c(0.3, 0.4, 0.3))),
+  covariate_effect_vector = c(0, 0.2, -1, 0.2),
+  conc_limits_table = as_tibble(rbind(c("a", -3, 3), c("b", -4, 4), c("c", -4, 4)),
+    .name_repair = "unique") \%>\% rename(covariate_2 = 1, low_cons = 2, high_cons = 3),
+  low_con = -4,
+  high_con = 4,
+  scale = "log"
 )
 }
 \arguments{

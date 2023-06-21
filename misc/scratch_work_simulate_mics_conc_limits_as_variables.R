@@ -1,4 +1,4 @@
-simulate_mics_2 <- function(n = 100,
+simulate_mics_X <- function(n = 100,
                           t_dist = function(n){runif(n, min = 0, max = 1)},
                           pi = function(t) {z <- 0.5
                           c("1" = z, "2" = 1- z)},
