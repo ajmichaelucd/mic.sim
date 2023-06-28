@@ -214,3 +214,17 @@ converge_incorrectly_vector <-
   ) %>% pull(iter) %>% unique() %>% as.numeric()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -3,7 +3,7 @@
 #' Get a weighted sum of the proportion of censored observations in each component from possible data
 #'
 #' @param df
-#' @param comp
+#' @param comp_i
 #' @param side
 #' @param cutoff
 #'
@@ -11,10 +11,10 @@
 #' @export
 #'
 #' @examples
-check_weigh_prop_cens <- function(df = a, comp = "1", side = "rc", cutoff = 0.9){
+check_weigh_prop_cens <- function(df = a, comp_i = "2", side = "rc", cutoff = 0.9){
   if(side == "rc"){
     stage1 <- df %>%
-      filter(c == comp) %>%
+      filter(c == comp_i) %>%
       group_by(rc) %>% summarise(p = sum(`P(C=c|y,t)`)) %>%
       mutate(tot = sum(p)) %>%
       mutate(weighted_prop_right_censored = p / tot) %>% filter(rc)
@@ -28,7 +28,7 @@ check_weigh_prop_cens <- function(df = a, comp = "1", side = "rc", cutoff = 0.9)
       }else{tibble(decision = "All Clear")}
   } else if(side == "lc"){
     stage1 <- df %>%
-      filter(c == comp) %>%
+      filter(c == comp_i) %>%
       group_by(lc) %>% summarise(p = sum(`P(C=c|y,t)`)) %>% mutate(tot = sum(p)) %>% mutate(weighted_prop_left_censored = p / tot) %>% filter(lc)
    if(nrow(stage1) > 0){
     stage1 %>%
