@@ -20,7 +20,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/june_2023/run_form2_loess_2"
+location <- "~/Desktop/june_2023/run_form2_loess_1"
 
 
 #two formats i have used:
@@ -29,7 +29,7 @@ location <- "~/Desktop/june_2023/run_form2_loess_2"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "run_form2_loess_2"
+array_name <- "run_form2_loess_1"
 date <- "06132023"
 
 incomplete <- check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
@@ -71,7 +71,6 @@ capture_error_measures_one_batch_2.0 <- function(location,
                                              array_name,
                                              date,
                                              i,
-                                             batch_size,
                                              number_of_batches
 ){
 ###Load in a batch--------------------------
@@ -102,13 +101,13 @@ capture_error_measures_one_batch_2.0 <- function(location,
 
 }
 
-capture_error_measures_one_run_2.0(results, settings){
+capture_error_measures_one_run_2.0 <- function(results, settings){
   #first: Error? If so note this and pass this to end
     #If not, are we looking at the findings of fit_model_pi or fit_model_safety_pi
       #function for fit_model_pi results
         ###first identify wt vs nonwt
       #function for fit_model_safety_pi results
-}
+
 
 
 #work on fit_model_pi results-----------------
@@ -605,11 +604,30 @@ cbind(scenario, mu_resid, pi_resid, comp_scales, censoring_levels) %>%
            pull(cross)) %>%
   mutate(iteration = results$i) %>%
   select(iteration, flip, cross, everything()) %>%
-  tibble(., mu_area, pi_area)
+  tibble(., mu_area, pi_area) %>%
+  return()
 
 
 
-results$failure_safety_notes
+}
 
+array_results <-
+  purrr::map(
+    1:number_of_batches,
+    ~ capture_error_measures_one_batch_2.0(
+      location = location,
+      format = format,
+      array_name = array_name,
+      date = date,
+      i = .x,
+      number_of_batches = number_of_batches
+    )
+  ) %>%
+  rbindlist() %>% tibble()
+
+
+array_results %>% group_by(flip) %>% summarise(n = n())
+
+save(array_results, file = "~/Desktop/june_2023/run_form2_loess_1_06132023.Rdata")
 
 
