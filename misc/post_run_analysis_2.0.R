@@ -677,6 +677,8 @@ array_results <-
   ) %>%
   rbindlist() %>% tibble()
 
+capture_error_measures_one_batch()
+capture_error_measures_one_run()
 
 array_results %>% group_by(cross) %>% summarise(n = n())
 

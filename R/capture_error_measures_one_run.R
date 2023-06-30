@@ -66,7 +66,7 @@ capture_error_measures_one_run <- function(results, settings){
       low_con = settings$low_con,
       high_con = settings$high_con,
       scale = settings$scale
-    )
+    ) %>% suppressMessages()
     visible_data <-
       prep_sim_data_for_em(
         data.sim,
@@ -303,13 +303,15 @@ capture_error_measures_one_run <- function(results, settings){
              pull(flip_decision),
            cross = directionality %>%
              pull(cross),
-           steps = results$single_model_output$steps) %>%
+           steps = ifelse(
+             length(results$single_model_output) == 1,
+              NaN,
+              results$single_model_output$steps
+           )) %>%
     mutate(iteration = results$i) %>%
     select(iteration, flip, cross, steps, everything()) %>%
     tibble(., mu_area, pi_area) %>%
     return()
-
-
 
 }
 
