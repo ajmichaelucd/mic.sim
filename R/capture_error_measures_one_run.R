@@ -21,7 +21,7 @@ capture_error_measures_one_run <- function(results, settings){
   ###first identify wt vs nonwt
   #function for fit_model_safety_pi results
 
-
+#print(results$i)
 
   #work on fit_model_pi results-----------------
 
@@ -251,13 +251,13 @@ capture_error_measures_one_run <- function(results, settings){
 
   if (length(results$single_model_output) > 1) {
     censoring_levels <- cbind(
-      censoring_post_info(possible_data, setting, comparison = "model_weighted") %>%
+      censoring_post_info(possible_data, settings, comparison = "model_weighted") %>%
         pivot_wider(
           names_from = c(comp, censor),
           values_from = weighted_prop_model,
           names_prefix = "model_cens_"
         ),
-      censoring_post_info(possible_data, setting, comparison = "true_pct") %>%
+      censoring_post_info(possible_data, settings, comparison = "true_pct") %>%
         pivot_wider(
           names_from = c(comp, censor),
           values_from = weighted_prop_true,
@@ -274,7 +274,7 @@ capture_error_measures_one_run <- function(results, settings){
         model_cens_2_interval = NaN,
         model_cens_2_left = NaN,
         model_cens_2_right = NaN,
-        censoring_post_info(possible_data, setting, comparison = "true_pct") %>%
+        censoring_post_info(possible_data, settings, comparison = "true_pct") %>%
           pivot_wider(
             names_from = c(comp, censor),
             values_from = weighted_prop_true,
@@ -531,7 +531,7 @@ calculate_pi_area <- function(results, settings, directionality) {
 }
 
 censoring_post_info <-
-  function(possible_data, setting, comparison = "model_weighted") {
+  function(possible_data, settings, comparison = "model_weighted") {
     df <- possible_data %>%
       mutate(
         censor =
