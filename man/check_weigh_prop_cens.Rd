@@ -4,7 +4,7 @@
 \alias{check_weigh_prop_cens}
 \title{Title}
 \usage{
-check_weigh_prop_cens(df = a, comp = "1", side = "rc", cutoff = 0.9)
+check_weigh_prop_cens(df = a, comp_i = "2", side = "rc", cutoff = 0.9)
 }
 \arguments{
 \item{cutoff}{}
