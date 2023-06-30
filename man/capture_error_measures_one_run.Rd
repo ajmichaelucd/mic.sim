@@ -4,22 +4,10 @@
 \alias{capture_error_measures_one_run}
 \title{Title}
 \usage{
-capture_error_measures_one_run(
-  individual_run,
-  intercepts,
-  trends,
-  sigma,
-  pi_int,
-  pi_trend,
-  sigma_tolerance = c(0.05, 100),
-  pi_int_tolerance = c(1e-04, 0.9999),
-  pi_trend_tolerance = c(-4, 4),
-  intercepts_tolerance = 100,
-  trends_tolerance = 100
-)
+capture_error_measures_one_run(results, settings)
 }
 \arguments{
-\item{trends_tolerance}{}
+\item{settings}{}
 }
 \description{
 Title
