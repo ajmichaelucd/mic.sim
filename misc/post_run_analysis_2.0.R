@@ -289,7 +289,7 @@ if ((results$failure_safety_notes["fm_fail"] == "fm_worked" &
 ###MU Resid-------
 if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
     !(results$failure_safety_notes["fms_only"] %>% as.logical())) {
-  mu_resid <-
+  mu_resid_comp <-
     possible_data %>% filter(c == comp) %>%
     mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
     mutate(mu_hat = case_when(
@@ -304,6 +304,35 @@ if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
       mu_false_resid_sq = mean((mu_dgm - mu_hat) ^ 2),
       mu_bias = mean(mu_dgm - mu_hat)
     )  ###RUN AGAIN WITHOUT .by
+  mu_resid_both <-
+    possible_data %>% filter(c == comp) %>%
+    mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
+    mutate(mu_hat = case_when(
+      c == "1" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t)),
+      c == "2" ~ predict(results$single_model_output$newmodel[[2]], data.frame(t = t)),
+      TRUE ~ NaN
+    )) %>%
+    mutate(resid = observed_value - mu_hat,
+           false_resid = mu_dgm - mu_hat) %>%
+    summarize(
+              mu_resid_sq = mean((resid) ^ 2),
+              mu_false_resid_sq = mean((mu_dgm - mu_hat) ^ 2),
+              mu_bias = mean(mu_dgm - mu_hat)
+    ) %>%
+    mutate(comp = "both")
+  rbind(mu_resid_comp, mu_resid_both) %>%
+    pivot_wider(names_from = comp, values_from = mu_resid_sq:mu_bias) %>%
+  select(mu_resid_sq_1,
+         mu_resid_sq_2,
+         mu_resid_sq_both,
+         mu_false_resid_sq_1,
+         mu_false_resid_sq_2,
+         mu_false_resid_sq_both,
+         mu_bias_1,
+         mu_bias_2,
+         mu_bias_both
+         ) -> mu_resid
+
 } else if (results$failure_safety_notes["fms_fail"] == "fms_worked") {
   mu_resid <-
     possible_data %>% filter(`P(C=c|y,t)` >= 0.5) %>%  ##Check, should it be the prediction for the predicted component? If we do this, need a way to resolve the exact 0.5s
@@ -317,15 +346,27 @@ if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
                false_resid = mu_dgm - mu_hat) %>%    ###SHOULD I GROUP BY COMP OR C?
         summarise(
           #######NOT SURE WHAT TO DO HERE
-          mu_resid_sq = sum((resid) ^ 2),
-          mu_false_resid_sq = sum((mu_dgm - mu_hat) ^ 2),
-          mu_bias = sum(mu_dgm - mu_hat)
+          mu_resid_sq_1 = mean((resid) ^ 2),
+          mu_resid_sq_2 = NaN,
+          mu_resid_sq_both = NaN,
+          mu_false_resid_sq_1 = mean((mu_dgm - mu_hat) ^ 2),
+          mu_false_resid_sq_2 = NaN,
+          mu_false_resid_sq_both = NaN,
+          mu_bias_1 = mean(mu_dgm - mu_hat),
+          mu_bias_2 = NaN,
+          mu_bias_both = NaN
         )
 } else{
   mu_resid <- tibble(
-    mu_resid_sq = NaN,
-    mu_false_resid_sq = NaN,
-    mu_bias = NaN
+    mu_resid_sq_1 = NaN,
+    mu_resid_sq_2 = NaN,
+    mu_resid_sq_both = NaN,
+    mu_false_resid_sq_1 = NaN,
+    mu_false_resid_sq_2 = NaN,
+    mu_false_resid_sq_both = NaN,
+    mu_bias_1 = NaN,
+    mu_bias_2 = NaN,
+    mu_bias_both = NaN
   )
 }
 
@@ -365,7 +406,7 @@ comp_scales <- scale_select(results, directionality)
 
 ###Time for area calculation stuff
 
-
+###CREATE VERSIONS OF THESE WITH THE INTEGRATE FUNCTION
 
 calculate_mu_area <- function(results, settings, directionality) {
   if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
@@ -610,9 +651,10 @@ cbind(scenario, mu_resid, pi_resid, comp_scales, censoring_levels) %>%
   mutate(flip = directionality %>%
            pull(flip_decision),
          cross = directionality %>%
-           pull(cross)) %>%
+           pull(cross),
+         steps = results$single_model_output$steps) %>%
   mutate(iteration = results$i) %>%
-  select(iteration, flip, cross, everything()) %>%
+  select(iteration, flip, cross, steps, everything()) %>%
   tibble(., mu_area, pi_area) %>%
   return()
 
@@ -637,7 +679,9 @@ array_results <-
 
 array_results %>% group_by(cross) %>% summarise(n = n())
 
-load("~/Desktop/june_2023/analysis/run_form2_loess_2_06132023.Rdata")
+#batch_results<- loadRData("~/Desktop/june_2023/run_form2_loess_2/run_form2_loess_2_06132023_1.Rdata")
+#results <- batch_results$model_results[[2]]
+#results <- batch_results$model_results[[3]]
 
 
 
@@ -645,7 +689,6 @@ load("~/Desktop/june_2023/analysis/run_form2_loess_2_06132023.Rdata")
 
 
 
-
-save(array_results, file = "~/Desktop/june_2023/run_form2_spline_2_06132023.Rdata")
+save(array_results, file = "~/Desktop/june_2023/run_form2_spline_2_06132023_results.Rdata")
 
 
