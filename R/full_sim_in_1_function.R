@@ -218,7 +218,7 @@ if(verbose > 1){print("fit_model converged")}
     if(verbose > 1){print("fit_model converged within excessive censoring boundaries")}
   }
 
-  if (fm_fail %in% c("fm_failed, fm_failed_cutoff") &
+  if (fm_fail %in% c("fm_failed", "fm_failed_cutoff") &
       allow_safety == TRUE) {
     if(verbose > 1){print("running fit_model_safety")}
     formula = Surv(time = left_bound,
