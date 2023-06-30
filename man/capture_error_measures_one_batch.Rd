@@ -10,21 +10,11 @@ capture_error_measures_one_batch(
   array_name,
   date,
   i,
-  batch_size,
-  intercepts,
-  trends,
-  sigma,
-  pi_int,
-  pi_trend,
-  sigma_tolerance = c(0.05, 100),
-  pi_tolerance = c(0.05, 0.95),
-  intercepts_tolerance = 100,
-  trends_tolerance = 100,
   number_of_batches
 )
 }
 \arguments{
-\item{trends_tolerance}{}
+\item{number_of_batches}{}
 }
 \description{
 Title

@@ -1,368 +1,570 @@
 #' Title
 #'
-#' @param individual_run
-#' @param intercepts
-#' @param trends
-#' @param sigma
-#' @param pi
-#' @param sigma_tolerance
-#' @param pi_tolerance
-#' @param intercepts_tolerance
-#' @param trends_tolerance
+#' @param results
+#' @param settings
 #'
 #' @return
 #' @export
 #'
+#' @importFrom tidyr complete
+#' @importFrom magrittr %>%
+#' @importFrom dplyr case_when mutate reframe filter summarise summarize group_by select rename ungroup
+#' @importFrom tidyselect everything
+#' @importFrom tibble tibble
+#' @importFrom stats predict
+#'
 #' @examples
-capture_error_measures_one_run <- function(individual_run,
-                                                                  intercepts,
-                                                                  trends,
-                                                                  sigma,
-                                                                  pi_int,
-                                                                  pi_trend,
-                                                                  sigma_tolerance = c(.05, 100),
-                                                                  pi_int_tolerance = c(0.0001, .9999),
-                                                                  pi_trend_tolerance = c(-4, 4),
-                                                                  intercepts_tolerance = 100,
-                                                                  trends_tolerance = 100 ){
-
-  ###WILL BE ISSUES WITH LOW VS HIGH COMPONENT WHEN ONLY ONE COMPONENT ESTIMATED####A
-  x <- length(individual_run)
+capture_error_measures_one_run <- function(results, settings){
+  #first: Error? If so note this and pass this to end
+  #If not, are we looking at the findings of fit_model_pi or fit_model_safety_pi
+  #function for fit_model_pi results
+  ###first identify wt vs nonwt
+  #function for fit_model_safety_pi results
 
 
 
-  if((individual_run[[x-1]] == "fm_worked" & individual_run[[x-3]] == FALSE) | (individual_run[[x-1]] == "fm_failed_cutoff" & individual_run[[x]] == "fms_not_called")){
-
-    if(tail(intercepts, 1) < head(intercepts, 1)){ errorCondition("Incorrect order of intercepts parameter, please start with lower one first")}
-
-    # if(length(individual_run) == 2 && individual_run[[1]] == "Error"){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = individual_run[[2]], steps = NA_integer_,sigma_error = "TRUE", pi_error = "TRUE", intercept_error = "TRUE", trends_error = "TRUE", survreg_failure_last = TRUE, survreg_failure_any = TRUE, num_it = NA_integer_))
-    # } else{
+  #work on fit_model_pi results-----------------
 
 
-    #  a <- min_rank(abs(intercepts - individual_run[[4]]$mean[1]))
-    #  b <- min_rank(abs(intercepts - individual_run[[4]]$mean[2])) #this just picks which is closer to truth, might want to change to just run both orders and pick afterwards
-
-    sr_any <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% pull(`...3`) %>% as.logical() %>% any()
-    sr_last <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% mutate(sr = as.logical(`...3`)) %>% select(sr) %>% slice_tail(n = 1) %>% pull
 
 
-    a <- c(1,2)
-    b <- c(2,1)
-
-    forward  <- tibble(
-      comp = c("c1", "c2"),
-      est_intercepts = individual_run[[4]]$mean[a],
-      true_intercepts = intercepts,
-      est_trends = individual_run[[4]]$mean[a + 2],
-      true_trends = trends,
-      est_sigma = c(individual_run[[4]]$sd),
-      true_sigma = sigma,
-      est_pi_int = individual_run[[3]]$`(Intercept)`,
-      true_pi_int = pi_int,
-      est_pi_trend = individual_run[[3]]$t,
-      true_pi_trend = pi_trend
-    ) %>%
-      mutate(
-        error_intercepts = true_intercepts - est_intercepts,
-        error_trends = true_trends - est_trends,
-        error_sigma = true_sigma - est_sigma,
-        error_pi_int = true_pi_int - est_pi_int,
-        error_pi_trend = true_pi_trend - est_pi_trend
-      ) %>%
-      tidyr::pivot_longer(cols = est_intercepts:error_pi_trend) %>%
-      separate(name, sep = "_", into = c("type", "parameter")) %>%
-      pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[x - 4]],
-             steps = nrow(individual_run[[1]]))
+  ##check directionality-----------
 
 
-    reverse  <- tibble(
-      comp = c("c1", "c2"),
-      est_intercepts = individual_run[[4]]$mean[b],
-      true_intercepts = intercepts,
-      est_trends = individual_run[[4]]$mean[b + 2],
-      true_trends = trends,
-      est_sigma = rev(individual_run[[4]]$sd),
-      true_sigma = sigma,
-      est_pi_int = individual_run[[3]]$`(Intercept)`,
-      true_pi_int = pi_int,
-      est_pi_trend = individual_run[[3]]$t,
-      true_pi_trend = pi_trend) %>%
-      mutate(
-        error_intercepts = true_intercepts - est_intercepts,
-        error_trends = true_trends - est_trends,
-        error_sigma = true_sigma - est_sigma,
-        error_pi_int = true_pi_int - est_pi_int,
-        error_pi_trend = true_pi_trend - est_pi_trend
-      ) %>%
-      tidyr::pivot_longer(cols = est_intercepts:error_pi_trend) %>%
-      separate(name, sep = "_", into = c("type", "parameter")) %>%
-      pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[x - 4]],
-             steps = nrow(individual_run[[1]]))
-
-    f_error <- forward %>% summarize(total_error = sum(abs(error)))
-    f_error <- f_error$total_error
-    r_error <- reverse %>% summarize(total_error = sum(abs(error)))
-    r_error <- r_error$total_error
-
-    # if(min(c(f_error, r_error)) > error_threshold){return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}
-    #
-    #     if(f_error < r_error){return(forward)}
-    #     else if(f_error > r_error){return(reverse)}
-    #     else{warningCondition("We have ourselves an issue in determining which version has lower error")
-    #       return(tibble(comp = "Error", parameter = "Error", est = "Error", true = "Error", error = "Error", iter = "Error"))}
+  if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
+      !(results$failure_safety_notes["fms_only"] %>% as.logical())) {
 
 
-    if(f_error < r_error){df <- forward
-    selection = "f"} else if(f_error > r_error){df <- reverse
-    selection = "r"} else{warningCondition("We have ourselves an issue in determining which version has lower error")
-      df <- forward
-      #selection = "e"
-    }
+    directionality <- check_directionality(results, settings)
 
+  } else{
+    directionality = tibble(flip_decision = "not applicable", cross = "not applicable")
+  }
 
-    #}
+  ##summary stats-------------
+  if (directionality$flip_decision == "flip") {
+    possible_data <-
+      results$single_model_output$possible_data %>% rename("original_c" = c) %>% mutate(c = case_when(original_c == "1" ~ "2",
+                                                                                                      original_c == "2" ~ "1",
+                                                                                                      TRUE ~ "Error"))
 
-    a <- df %>% filter(parameter == "sigma")
-    if(max(abs(a$est)) > max(sigma_tolerance) | min(abs(a$est)) < min(sigma_tolerance) ){sigma_error = TRUE
-    } else{sigma_error = FALSE}
+  } else if (length(results$single_model_output) > 1) {
+    possible_data <- results$single_model_output$possible_data
 
-    a <- df %>% filter(parameter == "pi_int")
-    if(max(a$est) >= max(pi_int_tolerance) | min(a$est) <= min(pi_int_tolerance)){pi_int_error = TRUE
-    } else{pi_int_error = FALSE}
-
-    a <- df %>% filter(parameter == "pi_trend")
-    if(max(a$est) >= max(pi_trend_tolerance) | min(a$est) <= min(pi_trend_tolerance)){pi_trend_error = TRUE
-    } else{pi_trend_error = FALSE}
-
-    a <- df %>% filter(parameter == "intercepts")
-    if(max(abs(a$est)) >= intercepts_tolerance){intercept_error = TRUE
-    } else{intercept_error = FALSE}
-
-    a <- df %>% filter(parameter == "trends")
-    if(max(abs(a$est)) >= trends_tolerance){trends_error = TRUE
-    } else{trends_error = FALSE}
-
-    df2 <-
-      df %>% mutate(
-        sigma_error = sigma_error,
-        pi_int_error = pi_int_error,
-        pi_trend_error = pi_trend_error,
-        intercept_error = intercept_error,
-        trends_error = trends_error,
-        survreg_failure_last = sr_last,
-        survreg_failure_any = sr_any,
-        num_it = individual_run$steps,
-        fms_only = individual_run[[x-3]],
-        safety_on = individual_run[[x - 2]],
-        fm = individual_run[[x - 1]],
-        fms_called = case_when(
-          individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
-          TRUE ~ FALSE
-        ),
-        fms_worked = case_when(
-          individual_run[[x]] == "fms_worked" ~ TRUE,
-          TRUE ~ FALSE
-        )
+  } else{
+    ###remake data set here
+    set.seed(results$i)
+    data.sim <- simulate_mics(
+      n = settings$n,
+      t_dist = settings$t_dist,
+      pi = settings$pi,
+      `E[X|T,C]` = settings$`E[X|T,C]`,
+      sd_vector = settings$sd_vector,
+      covariate_list = settings$covariate_list,
+      covariate_effect_vector = settings$covariate_effect_vector,
+      conc_limits_table = settings$conc_limits_table,
+      low_con = settings$low_con,
+      high_con = settings$high_con,
+      scale = settings$scale
+    ) %>% suppressMessages()
+    visible_data <-
+      prep_sim_data_for_em(
+        data.sim,
+        left_bound_name = "left_bound",
+        right_bound_name = "right_bound",
+        time = "t",
+        covariate_names = settings$covariate_names,
+        scale = settings$scale,
+        keep_truth = settings$keep_true_values,
+        observed_value_name = "observed_value",
+        comp_name = "comp"
       )
 
-    return(df2)
-
-
-  }  else if(individual_run[[x-1]] == "fm_worked" & individual_run[[x-3]] == TRUE){
-    return(
-      tibble(
-        comp = "Pass",
-        parameter = "Pass",
-        est = "Pass",
-        true = "Pass",
-        error = "Pass",
-        iter = individual_run[[x - 4]],
-        steps = NA_integer_,
-        sigma_error = "Pass",
-        pi_int_error = "FALSE",
-        pi_trend_error = "FALSE",
-        intercept_error = "FALSE",
-        trends_error = "FALSE",
-        survreg_failure_last = FALSE,
-        survreg_failure_any = FALSE,
-        num_it = NA_integer_,
-        fms_only = individual_run[[x-3]],
-        safety_on = individual_run[[x - 2]],
-        fm = individual_run[[x - 1]],
-        fms_called = case_when(
-          individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
-          TRUE ~ FALSE
-        ),
-        fms_worked = case_when(
-          individual_run[[x]] == "fms_worked" ~ TRUE,
-          TRUE ~ FALSE
-        )
+    possible_data <-
+      visible_data %>% #visible data with c for component
+      #   group_by_all() %>%
+      reframe(.by = everything(),
+              c = as.character(1:2)
       )
-    )
-  }else if(individual_run[[x-1]] == "fm_failed" & individual_run[[x]] == "fms_not_called"){
-
-
-    return(
-      tibble(
-        comp = "Error",
-        parameter = "Error",
-        est = "Error",
-        true = "Error",
-        error = "Error",
-        iter = individual_run[[x - 4]],
-        steps = NA_integer_,
-        sigma_error = "TRUE",
-        pi_int_error = "FALSE",
-        pi_trend_error = "FALSE",
-        intercept_error = "TRUE",
-        trends_error = "TRUE",
-        survreg_failure_last = TRUE,
-        survreg_failure_any = TRUE,
-        num_it = NA_integer_,
-        fms_only = individual_run[[x-3]],
-        safety_on = individual_run[[x - 2]],
-        fm = individual_run[[x - 1]],
-        fms_called = case_when(
-          individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
-          TRUE ~ FALSE
-        ),
-        fms_worked = case_when(
-          individual_run[[x]] == "fms_worked" ~ TRUE,
-          TRUE ~ FALSE
-        )
-      )
-    )
-
-  } else if(individual_run[[x-1]] %in% c("fm_failed", "fm_failed_cutoff") & individual_run[[x]] == "fms_worked"){
-
-    sr_any <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% pull(`...3`) %>% as.logical() %>% any()
-    sr_last <- as_tibble(individual_run$likelihood, .name_repair = "unique") %>% mutate(sr = as.logical(`...3`)) %>% select(sr) %>% slice_tail(n = 1) %>% pull
-
-    ##add an if_else here to choose c1 or c2 and use that to select intercepts, trends, sigma, pi, etc
-
-    df <- tibble(
-      comp = c("c1"),
-      est_intercepts = individual_run[[4]]$mean[1],
-      true_intercepts = intercepts [1],
-      est_trends = individual_run[[4]]$mean[2],
-      true_trends = trends[1],
-      est_sigma = individual_run[[4]]$sd,
-      true_sigma = sigma[1],
-      est_pi_int = individual_run[[3]]$`(Intercept)`,
-      true_pi_int = pi_int,
-      est_pi_trend = individual_run[[3]]$t,
-      true_pi_trend = pi_trend) %>%
-      mutate(
-        error_intercepts = true_intercepts - est_intercepts,
-        error_trends = true_trends - est_trends,
-        error_sigma = true_sigma - est_sigma,
-        error_pi_int = true_pi_int - est_pi_int,
-        error_pi_trend = true_pi_trend - est_pi_trend
-      ) %>%
-      tidyr::pivot_longer(cols = est_intercepts:error_pi) %>%
-      separate(name, sep = "_", into = c("type", "parameter")) %>%
-      pivot_wider(names_from = type, values_from = value) %>%
-      mutate(iter = individual_run[[x - 4]],
-             steps = nrow(individual_run[[1]]))
-
-
-
-    a <- df %>% filter(parameter == "sigma")
-    if((abs(a$est) > max(sigma_tolerance)) | (abs(a$est) < min(sigma_tolerance)) ){sigma_error = TRUE
-    } else{sigma_error = FALSE}
-
-    a <- df %>% filter(parameter == "pi_int")
-    if(a$est >= max(pi_int_tolerance) | a$est <= min(pi_int_tolerance)){pi_int_error = TRUE
-    } else{pi_int_error = FALSE}
-
-    a <- df %>% filter(parameter == "pi_trend")
-    if(a$est >= max(pi_trend_tolerance) | a$est <= min(pi_trend_tolerance)){pi_trend_error = TRUE
-    } else{pi_trend_error = FALSE}
-
-    a <- df %>% filter(parameter == "intercepts")
-    if(abs(a$est) >= intercepts_tolerance){intercept_error = TRUE
-    } else{intercept_error = FALSE}
-
-    a <- df %>% filter(parameter == "trends")
-    if(abs(a$est) >= trends_tolerance){trends_error = TRUE
-    } else{trends_error = FALSE}
-
-
-
-
-    df2 <-
-      df %>% mutate(
-        sigma_error = sigma_error,
-        pi_int_error = pi_int_error,
-        pi_trend_error = pi_trend_error,
-        intercept_error = intercept_error,
-        trends_error = trends_error,
-        survreg_failure_last = sr_last,
-        survreg_failure_any = sr_any,
-        num_it = individual_run$steps,
-        fms_only = individual_run[[x-3]],
-        safety_on = individual_run[[x - 2]],
-        fm = individual_run[[x - 1]],
-        fms_called = case_when(
-          individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
-          TRUE ~ FALSE
-        ),
-        fms_worked = case_when(
-          individual_run[[x]] == "fms_worked" ~ TRUE,
-          TRUE ~ FALSE
-        )
-      )
-
-    return(df2)
-
-  } else if(individual_run[[x-1]]  %in% c("fm_failed", "fm_failed_cutoff") & individual_run[[x]] == "fms_failed"){
-
-
-    return(
-      tibble(
-        comp = "Error",
-        parameter = "Error",
-        est = "Error",
-        true = "Error",
-        error = "Error",
-        iter = individual_run[[x - 4]],
-        steps = NA_integer_,
-        sigma_error = "TRUE",
-        pi_int_error = "TRUE",
-        pi_trend_error = "TRUE",
-        intercept_error = "TRUE",
-        trends_error = "TRUE",
-        survreg_failure_last = TRUE,
-        survreg_failure_any = TRUE,
-        num_it = NA_integer_,
-        fms_only = individual_run[[x-3]],
-        safety_on = individual_run[[x - 2]],
-        fm = individual_run[[x - 1]],
-        fms_called = case_when(
-          individual_run[[x]] %in% c("fms_worked", "fms_failed") ~ TRUE,
-          TRUE ~ FALSE
-        ),
-        fms_worked = case_when(
-          individual_run[[x]] == "fms_worked" ~ TRUE,
-          TRUE ~ FALSE
-        )
-      )
-    )
-
   }
 
 
 
+  ####PI Resid----------
+  if ((results$failure_safety_notes["fm_fail"] == "fm_worked" &
+       !(results$failure_safety_notes["fms_only"] %>% as.logical())) |
+      results$failure_safety_notes["fms_fail"] == "fms_worked") {
+    pi_resid <-
+      possible_data %>% filter(c == "2") %>% select(obs_id, t, comp) %>%
+      mutate(pi_hat =
+               case_when(
+                 directionality %>% pull(flip_decision) == "flip" ~ 1 - (
+                   predict(
+                     results$single_model_output$binom_model,
+                     data.frame(t = t),
+                     type = "response"
+                   )
+                 ),
+                 TRUE  ~ predict(
+                   results$single_model_output$binom_model,
+                   data.frame(t = t),
+                   type = "response"
+                 )
+               )) %>%
+      rowwise %>%
+      mutate(pi_dgm = settings$pi(t) %>% pull(2)) %>%
+      ungroup %>%
+      mutate(false_resid = pi_dgm - pi_hat,
+             resid = (comp == "2") * 1 - pi_hat) %>%
+      summarise(
+        #######NOT SURE WHAT TO DO HERE
+        pi_resid_abs = mean(abs(resid)),
+        pi_resid_sq = mean((resid) ^ 2),
+        pi_false_resid_sq = mean((pi_dgm - pi_hat) ^ 2),
+        pi_bias = mean(pi_dgm - pi_hat)
+      )
+  } else{
+    pi_resid <-
+      tibble(
+        pi_resid_abs = NaN,
+        pi_resid_sq = NaN,
+        pi_false_resid_sq = NaN,
+        pi_bias = NaN
+      )
+  }
+
+
+  ###MU Resid-------
+  if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
+      !(results$failure_safety_notes["fms_only"] %>% as.logical())) {
+    mu_resid_comp <-
+      possible_data %>% filter(c == comp) %>%
+      mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
+      mutate(mu_hat = case_when(
+        c == "1" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t)),
+        c == "2" ~ predict(results$single_model_output$newmodel[[2]], data.frame(t = t)),
+        TRUE ~ NaN
+      )) %>%
+      mutate(resid = observed_value - mu_hat,
+             false_resid = mu_dgm - mu_hat) %>%
+      summarize(.by = comp,
+                mu_resid_sq = mean((resid) ^ 2),
+                mu_false_resid_sq = mean((mu_dgm - mu_hat) ^ 2),
+                mu_bias = mean(mu_dgm - mu_hat)
+      )  ###RUN AGAIN WITHOUT .by
+    mu_resid_both <-
+      possible_data %>% filter(c == comp) %>%
+      mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
+      mutate(mu_hat = case_when(
+        c == "1" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t)),
+        c == "2" ~ predict(results$single_model_output$newmodel[[2]], data.frame(t = t)),
+        TRUE ~ NaN
+      )) %>%
+      mutate(resid = observed_value - mu_hat,
+             false_resid = mu_dgm - mu_hat) %>%
+      summarize(
+        mu_resid_sq = mean((resid) ^ 2),
+        mu_false_resid_sq = mean((mu_dgm - mu_hat) ^ 2),
+        mu_bias = mean(mu_dgm - mu_hat)
+      ) %>%
+      mutate(comp = "both")
+    rbind(mu_resid_comp, mu_resid_both) %>%
+      pivot_wider(names_from = comp, values_from = mu_resid_sq:mu_bias) %>%
+      select(mu_resid_sq_1,
+             mu_resid_sq_2,
+             mu_resid_sq_both,
+             mu_false_resid_sq_1,
+             mu_false_resid_sq_2,
+             mu_false_resid_sq_both,
+             mu_bias_1,
+             mu_bias_2,
+             mu_bias_both
+      ) -> mu_resid
+
+  } else if (results$failure_safety_notes["fms_fail"] == "fms_worked") {
+    mu_resid <-
+      possible_data %>% filter(`P(C=c|y,t)` >= 0.5) %>%  ##Check, should it be the prediction for the predicted component? If we do this, need a way to resolve the exact 0.5s
+      ##Other idea is to weight the residuals by `P(C=c|y,t)` instead of only choosing one
+      ##Or do comp == c, so if the WT component gets pushed up, we know that is wrong and get huge residuals
+      mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
+      mutate(
+        mu_hat = predict(results$single_model_output$newmodel, data.frame(t = t))) %>%  ###Should i filter after this to just get wt ones? but are we filtering by comp == 1 or c == 1) %>%
+      filter(comp == 1) %>% #####QUESTIONABLE DECISION HERE
+      mutate(resid = observed_value - mu_hat,
+             false_resid = mu_dgm - mu_hat) %>%    ###SHOULD I GROUP BY COMP OR C?
+      summarise(
+        #######NOT SURE WHAT TO DO HERE
+        mu_resid_sq_1 = mean((resid) ^ 2),
+        mu_resid_sq_2 = NaN,
+        mu_resid_sq_both = NaN,
+        mu_false_resid_sq_1 = mean((mu_dgm - mu_hat) ^ 2),
+        mu_false_resid_sq_2 = NaN,
+        mu_false_resid_sq_both = NaN,
+        mu_bias_1 = mean(mu_dgm - mu_hat),
+        mu_bias_2 = NaN,
+        mu_bias_both = NaN
+      )
+  } else{
+    mu_resid <- tibble(
+      mu_resid_sq_1 = NaN,
+      mu_resid_sq_2 = NaN,
+      mu_resid_sq_both = NaN,
+      mu_false_resid_sq_1 = NaN,
+      mu_false_resid_sq_2 = NaN,
+      mu_false_resid_sq_both = NaN,
+      mu_bias_1 = NaN,
+      mu_bias_2 = NaN,
+      mu_bias_both = NaN
+    )
+  }
+
+
+
+  comp_scales <- scale_select(results, directionality)
+
+  ###Time for area calculation stuff
+
+  ###CREATE VERSIONS OF THESE WITH THE INTEGRATE FUNCTION
+
+
+
+  mu_area <- calculate_mu_area(results, settings, directionality)
 
 
 
 
+  ##NEEDS FLIP COMPATIBILITY
+
+  pi_area <- calculate_pi_area(results, settings, directionality)
 
 
 
+  ##censoring info
+  ##get settings also, grab scale so log has -inf and mic has 0 for left bound for left censored
 
 
+  # full_join(
+  #   censoring_post_info(possible_data, setting, comparison = "model_weighted"),
+  #   censoring_post_info(possible_data, setting, comparison = "true_pct"),
+  #   by = c("comp", "censor")
+  # )
+
+  if (length(results$single_model_output) > 1) {
+    censoring_levels <- cbind(
+      censoring_post_info(possible_data, setting, comparison = "model_weighted") %>%
+        pivot_wider(
+          names_from = c(comp, censor),
+          values_from = weighted_prop_model,
+          names_prefix = "model_cens_"
+        ),
+      censoring_post_info(possible_data, setting, comparison = "true_pct") %>%
+        pivot_wider(
+          names_from = c(comp, censor),
+          values_from = weighted_prop_true,
+          names_prefix = "true_cens_"
+        )
+    ) %>% tibble() %>%
+      suppressMessages()
+  } else{
+    censoring_levels <-
+      tibble(
+        model_cens_1_interval = NaN,
+        model_cens_1_left = NaN,
+        model_cens_1_right = NaN,
+        model_cens_2_interval = NaN,
+        model_cens_2_left = NaN,
+        model_cens_2_right = NaN,
+        censoring_post_info(possible_data, setting, comparison = "true_pct") %>%
+          pivot_wider(
+            names_from = c(comp, censor),
+            values_from = weighted_prop_true,
+            names_prefix = "true_cens_"
+          )
+      )
+  }
+
+  scenario <- case_when(
+    (
+      results$failure_safety_notes["fm_fail"] == "fm_worked" &
+        !(results$failure_safety_notes["fms_only"] %>% as.logical())
+    ) ~ "fm",
+    results$failure_safety_notes["fms_fail"] == "fms_worked" ~ "fms",
+    results$failure_safety_notes["fms_fail"] == "fms_failed" ~ "fms_failed",
+    (results$failure_safety_notes["fm_fail"] %in% c("fm_failed", "fm_failed_cutoff")) &  results$failure_safety_notes["fms_fail"] == "fms_not_allowed" & !(results$failure_safety_notes["allow_safety"] %>% as.logical()) ~ "fm_failed, no fms",
+    results$failure_safety_notes["fm_fail"] == "fm_worked" & (results$failure_safety_notes["fms_only"] %>% as.logical()) ~ "fm_worked, not saved",
+    TRUE ~ "other"
+
+  )
+
+  ##Bind output into a single tibble (could do 1 row or multiple rows, just add i)
+  cbind(scenario, mu_resid, pi_resid, comp_scales, censoring_levels) %>%
+    tibble %>%
+    mutate(flip = directionality %>%
+             pull(flip_decision),
+           cross = directionality %>%
+             pull(cross),
+           steps = ifelse(
+             length(results$single_model_output) == 1,
+              NaN,
+              results$single_model_output$steps
+           )) %>%
+    mutate(iteration = results$i) %>%
+    select(iteration, flip, cross, steps, everything()) %>%
+    tibble(., mu_area, pi_area) %>%
+    return()
 
 }
+
+get_t_min_max <- function(settings){
+  m <- functionBody(settings$t_dist) %>% as.character() %>% stringr::str_match(., "min =\\s*(.*?)\\s*, max =")
+
+  t_min <- m[2,2] %>% as.numeric()
+
+
+  g <- functionBody(settings$t_dist) %>% as.character() %>% stringr::str_split(., pattern = "max =", simplify = TRUE) %>% as.matrix() #%>% parse_number()
+
+  t_max <- g[2,2] %>% parse_number()
+
+  tibble(t_min, t_max) %>% return()
+}
+
+check_directionality <-
+  function(results = results,
+           settings = settings) {
+    df <-
+      tibble(t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 1000
+      )) %>%
+      mutate(
+        c1 = predict(results$single_model_output$newmodel[[1]], newdata = tibble(t)),
+        c2 = predict(results$single_model_output$newmodel[[2]], newdata = tibble(t)),
+        flip = case_when(c1 > c2 ~ "flip",
+                         c2 > c1 ~ "no flip",
+                         c2 == c1 ~ "equal",
+                         TRUE ~ NA)
+      ) %>%
+      group_by(flip) %>%
+      summarise(n = n())
+
+    if (nrow(df) == 1) {
+      flip_decision <- df %>% pull(flip)
+      cross <- "no cross"
+      directionality <- df %>%
+        pivot_wider(names_from = flip, values_from = n) %>%
+        mutate(flip_decision = flip_decision,
+               cross = cross)
+
+    } else{
+      directionality <-
+        df %>%
+        pivot_wider(names_from = flip, values_from = n) %>%
+        mutate(
+          flip_decision = case_when(
+            flip > `no flip` ~ "flip",
+            flip <= `no flip` ~ "no flip",
+            TRUE ~ "Error"
+          ),
+          cross = "cross"
+        )
+    }
+    return(directionality)
+  }
+
+
+scale_select <- function(results, directionality) {
+  if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
+      !(results$failure_safety_notes["fms_only"] %>% as.logical())) {
+    if (directionality %>% pull(flip_decision) == "no flip") {
+      tibble(
+        c1_scale = results$single_model_output$newmodel[[1]]$scale,
+        c2_scale = results$single_model_output$newmodel[[2]]$scale
+      ) %>% return()
+    } else{
+      tibble(
+        c1_scale = results$single_model_output$newmodel[[2]]$scale,
+        c2_scale = results$single_model_output$newmodel[[1]]$scale
+      ) %>% return()
+    }
+  } else if (results$failure_safety_notes["fms_fail"] == "fms_worked") {
+    tibble(c1_scale = results$single_model_output$newmodel$scale,
+           c2_scale = NaN) %>% return()
+  } else{
+    scale_select <- tibble(c1_scale = NaN,
+                           c2_scale = NaN)
+  }
+}
+
+calculate_mu_area <- function(results, settings, directionality) {
+  if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
+      !(results$failure_safety_notes["fms_only"] %>% as.logical())) {
+    tibble(
+      t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 100000
+      ),
+      width = (
+        get_t_min_max(settings = settings) %>% pull(t_max) - get_t_min_max(settings = settings) %>% pull(t_min)
+      ) / 100000
+    ) %>%
+      reframe(.by = everything(),    #implement for other initial weighting options too ##########
+              c = as.character(1:2)) %>%
+      mutate(
+        mu_hat = case_when(
+          (directionality %>% pull(flip_decision) == "no flip") &
+            c == "1" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t)),
+          (directionality %>% pull(flip_decision) == "no flip") &
+            c == "2" ~ predict(results$single_model_output$newmodel[[2]], data.frame(t = t)),
+          (directionality %>% pull(flip_decision) == "flip") &
+            c == "1" ~ predict(results$single_model_output$newmodel[[2]], data.frame(t = t)),
+          (directionality %>% pull(flip_decision) == "flip") &
+            c == "2" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t)),
+          TRUE ~ NaN
+        ),
+        mu_dgm = settings$`E[X|T,C]`(t = t, c = c),
+        diff = mu_dgm - mu_hat,
+        area = abs(diff) * width
+      ) %>%
+      group_by(c) %>%
+      summarise(
+        total_area = sum(area),
+        avg_diff = mean(diff),
+        med_diff = median(diff)
+      ) %>%
+      pivot_wider(
+        names_from = c,
+        names_prefix = "c",
+        values_from = total_area:med_diff
+      ) %>% return()
+  } else if (results$failure_safety_notes["fms_fail"] == "fms_worked") {
+    tibble(
+      t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 100000
+      ),
+      width = (
+        get_t_min_max(settings = settings) %>% pull(t_max) - get_t_min_max(settings = settings) %>% pull(t_min)
+      ) / 100000
+    ) %>%
+      reframe(.by = everything(),    #implement for other initial weighting options too ##########
+              c = as.character(1:2)) %>%
+      mutate(
+        mu_hat = case_when(
+          c == "1" ~ predict(results$single_model_output$newmodel, data.frame(t = t)),
+          c == "2" ~ NaN,
+          TRUE ~ NaN
+        ),
+        mu_dgm = settings$`E[X|T,C]`(t = t, c = c),
+        diff = mu_dgm - mu_hat,
+        area = abs(diff) * width
+      ) %>%
+      group_by(c) %>%
+      summarise(
+        total_area = sum(area),
+        avg_diff = mean(diff),
+        med_diff = median(diff)
+      ) %>%
+      pivot_wider(
+        names_from = c,
+        names_prefix = "c",
+        values_from = total_area:med_diff
+      ) %>% return()
+  } else{
+    tibble(
+      total_area_c1 = NaN,
+      total_area_c2 = NaN,
+      avg_diff_c1 = NaN,
+      avg_diff_c2 = NaN,
+      med_diff_c1 = NaN,
+      med_diff_c2 = NaN
+    ) %>% return()
+  }
+
+}
+
+calculate_pi_area <- function(results, settings, directionality) {
+  if ((results$failure_safety_notes["fm_fail"] == "fm_worked" &
+       !(results$failure_safety_notes["fms_only"] %>% as.logical())) |
+      results$failure_safety_notes["fms_fail"] == "fms_worked") {
+    tibble(
+      t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 100000
+      ),
+      width = (
+        get_t_min_max(settings = settings) %>% pull(t_max) - get_t_min_max(settings = settings) %>% pull(t_min)
+      ) / 100000
+    ) %>%
+      mutate(
+        pi_hat =
+          case_when(
+            directionality %>% pull(flip_decision) == "flip" ~ 1 - predict(
+              results$single_model_output$binom_model,
+              data.frame(t = t),
+              type = "response"
+            ),
+            TRUE ~ predict(
+              results$single_model_output$binom_model,
+              data.frame(t = t),
+              type = "response"
+            )
+          ),
+        pi_dgm = settings$pi(t) %>% pull("2"),
+        diff = pi_dgm - pi_hat,
+        area = abs(diff) * width
+      ) %>%
+      summarise(
+        total_area_pi = sum(area),
+        avg_diff_pi = mean(diff),
+        med_diff_pi = median(diff)
+      ) %>% suppressWarnings()
+  }else{
+    tibble(total_area_pi = NaN,
+           avg_diff_pi = NaN,
+           med_diff_pi = NaN)
+  }
+
+}
+
+censoring_post_info <-
+  function(possible_data, setting, comparison = "model_weighted") {
+    df <- possible_data %>%
+      mutate(
+        censor =
+          case_when(
+            settings$scale == "log" & left_bound == -Inf ~ "left",
+            settings$scale == "MIC" &
+              (left_bound == 0 | left_bound == -Inf) ~ "left",
+            right_bound == Inf ~ "right",
+            TRUE ~ "interval"
+          )
+      )
+
+    if (comparison == "model_weighted") {
+      df %>% group_by(c, censor) %>% summarise(p = sum(`P(C=c|y,t)`)) %>%
+        mutate(sum = sum(p[c == c]),
+               weighted_prop_model = p / sum) %>%
+        ungroup() %>%
+        select(-c(p, sum)) %>%
+        rename(comp = c) %>%
+        tidyr::complete(comp, censor, fill = list(weighted_prop_model = 0)) %>%
+        return()
+
+    } else if (comparison == "true_pct") {
+      df %>% group_by(comp, censor) %>% summarise(p = n()) %>%
+        mutate(sum = sum(p[comp == comp]),
+               weighted_prop_true = p / sum) %>%
+        ungroup() %>%
+        select(-c(p, sum)) %>%
+        tidyr::complete(comp, censor, fill = list(weighted_prop_true = 0)) %>%
+        return()
+
+    } else{
+      errorCondition("choose model_weighted or true_pct")
+    }
+
+  }
