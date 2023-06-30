@@ -20,7 +20,7 @@ number_per_batch = 10
 number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/june_2023/run_form2_loess_1"
+location <- "~/Desktop/june_2023/run_form2_spline_2"
 
 
 #two formats i have used:
@@ -29,7 +29,7 @@ location <- "~/Desktop/june_2023/run_form2_loess_1"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "run_form2_loess_1"
+array_name <- "run_form2_spline_2"
 date <- "06132023"
 
 incomplete <- check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
@@ -54,6 +54,18 @@ rerun_parameters <- batch_results$settings
     ##function to map over all iterations
         ##function to fit locally using parameters provided from above passed through the other two functions (except for $iteration_set)
 
+rerun_incomplete_sets(
+  location = location,
+  incomplete = incomplete,
+  number_per_batch = number_per_batch,
+  array_name = array_name,
+  date = date,
+  rerun_parameters = rerun_parameters
+)
+
+setwd(
+ "~/Desktop/Dissertation Project/Chapter 1/mic.sim"
+)
 
 }
 
@@ -258,10 +270,10 @@ if ((results$failure_safety_notes["fm_fail"] == "fm_worked" &
            resid = (comp == "2") * 1 - pi_hat) %>%
     summarise(
       #######NOT SURE WHAT TO DO HERE
-      pi_resid_abs = sum(abs(resid)),
-      pi_resid_sq = sum((resid) ^ 2),
-      pi_false_resid_sq = sum((pi_dgm - pi_hat) ^ 2),
-      pi_bias = sum(pi_dgm - pi_hat)
+      pi_resid_abs = mean(abs(resid)),
+      pi_resid_sq = mean((resid) ^ 2),
+      pi_false_resid_sq = mean((pi_dgm - pi_hat) ^ 2),
+      pi_bias = mean(pi_dgm - pi_hat)
     )
 } else{
   pi_resid <-
@@ -278,9 +290,7 @@ if ((results$failure_safety_notes["fm_fail"] == "fm_worked" &
 if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
     !(results$failure_safety_notes["fms_only"] %>% as.logical())) {
   mu_resid <-
-    possible_data %>% filter(`P(C=c|y,t)` >= 0.5) %>%  ##Check, should it be the prediction for the predicted component? If we do this, need a way to resolve the exact 0.5s
-    ##Other idea is to weight the residuals by `P(C=c|y,t)` instead of only choosing one
-    ##Or do comp == c, so if the WT component gets pushed up, we know that is wrong and get huge residuals
+    possible_data %>% filter(c == comp) %>%
     mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
     mutate(mu_hat = case_when(
       c == "1" ~ predict(results$single_model_output$newmodel[[1]], data.frame(t = t)),
@@ -288,13 +298,12 @@ if (results$failure_safety_notes["fm_fail"] == "fm_worked" &
       TRUE ~ NaN
     )) %>%
     mutate(resid = observed_value - mu_hat,
-           false_resid = mu_dgm - mu_hat) %>%    ###SHOULD I GROUP BY COMP OR C?
-    summarise(
-      #######NOT SURE WHAT TO DO HERE
-      mu_resid_sq = sum((resid) ^ 2),
-      mu_false_resid_sq = sum((mu_dgm - mu_hat) ^ 2),
-      mu_bias = sum(mu_dgm - mu_hat)
-    )
+           false_resid = mu_dgm - mu_hat) %>%
+    summarize(.by = comp,
+      mu_resid_sq = mean((resid) ^ 2),
+      mu_false_resid_sq = mean((mu_dgm - mu_hat) ^ 2),
+      mu_bias = mean(mu_dgm - mu_hat)
+    )  ###RUN AGAIN WITHOUT .by
 } else if (results$failure_safety_notes["fms_fail"] == "fms_worked") {
   mu_resid <-
     possible_data %>% filter(`P(C=c|y,t)` >= 0.5) %>%  ##Check, should it be the prediction for the predicted component? If we do this, need a way to resolve the exact 0.5s
@@ -626,8 +635,17 @@ array_results <-
   rbindlist() %>% tibble()
 
 
-array_results %>% group_by(flip) %>% summarise(n = n())
+array_results %>% group_by(cross) %>% summarise(n = n())
 
-save(array_results, file = "~/Desktop/june_2023/run_form2_loess_1_06132023.Rdata")
+load("~/Desktop/june_2023/analysis/run_form2_loess_2_06132023.Rdata")
+
+
+
+
+
+
+
+
+save(array_results, file = "~/Desktop/june_2023/run_form2_spline_2_06132023.Rdata")
 
 

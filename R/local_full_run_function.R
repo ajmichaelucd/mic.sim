@@ -32,67 +32,48 @@
 local_full_run_function <- function(args,
                                     batch_size = 10,
                                     run_name,
-                                    n,
-                                    t_dist,
-                                    pi,
-                                    `E[X|T,C]`,
-                                    sd_vector,
-                                    covariate_list = NULL,
-                                    covariate_effect_vector = c(0),
-                                    covariate_names = NULL,
-                                    low_con,
-                                    high_con,
-                                    scale = "log",
-                                    formula,
-                                    formula2,
-                                    max_it = 3000,
-                                    ncomp = 2,
-                                    tol_ll = 1e-6,
-                                    maxiter_survreg = 30,
-                                    pi_function,
-                                    pi_link,
-                                    verbose = 3,
-                                    allow_safety = TRUE,
-                                    cutoff = 0.9,
-                                    fms_only,
-                                    initial_weighting = 1){
+                                    rerun_parameters){
   iteration_set <- ((batch_size * args) - (batch_size - 1)):(batch_size * args)
 
+  rerun_parameters$iteration_set <- iteration_set
+
   #run--------
-  results <- purrr::map(
+  model_results <- purrr::map(
     iteration_set,
     ~ full_sim_in_1_function(
       .x,
-      n = n,
-      t_dist = t_dist,
-      pi = pi,
-      `E[X|T,C]` = `E[X|T,C]`,
-      sd_vector = sd_vector,
-      covariate_list = covariate_list,
-      covariate_effect_vector = covariate_effect_vector,
-      covariate_names = NULL,
-      conc_limits_table = NULL,
-      low_con = low_con,
-      high_con = high_con,
-      scale = scale,
-      formula = formula,
-      formula2 = formula2,
-      max_it = max_it,
-      ncomp = ncomp,
-      tol_ll = tol_ll,
-      maxiter_survreg = maxiter_survreg,
-      pi_function = pi_function,
-      pi_link = pi_link,
-      verbose = verbose,
-      allow_safety = allow_safety,
-      cutoff = cutoff,
-      fms_only = fms_only,
-      initial_weighting = initial_weighting
+      n = rerun_parameters$n,
+      t_dist = rerun_parameters$t_dist,
+      pi = rerun_parameters$pi,
+      `E[X|T,C]` = rerun_parameters$`E[X|T,C]`,
+      sd_vector = rerun_parameters$sd_vector,
+      covariate_list = rerun_parameters$covariate_list,
+      covariate_effect_vector = rerun_parameters$covariate_effect_vector,
+      covariate_names = rerun_parameters$covariate_names,
+      conc_limits_table = rerun_parameters$conc_limits_table,
+      low_con = rerun_parameters$low_con,
+      high_con = rerun_parameters$high_con,
+      scale = rerun_parameters$scale,
+      formula = rerun_parameters$formula,
+      formula2 = rerun_parameters$formula2,
+      max_it = rerun_parameters$max_it,
+      ncomp = rerun_parameters$ncomp,
+      tol_ll = rerun_parameters$tol_ll,
+      maxiter_survreg = rerun_parameters$maxiter_survreg,
+#      pi_function = pi_function,
+      pi_link = rerun_parameters$pi_link,
+      verbose = rerun_parameters$verbose,
+      allow_safety = rerun_parameters$allow_safety,
+      cutoff = rerun_parameters$cutoff,
+      fms_only = rerun_parameters$fms_only,
+      initial_weighting = rerun_parameters$initial_weighting,
+      keep_true_values = rerun_parameters$keep_true_values
     ))
 
-
-
-  ##add a save here
+  results <- list(
+    model_results = model_results,
+    settings = rerun_parameters
+    )
 
 
 

@@ -4,35 +4,7 @@
 \alias{local_full_run_function}
 \title{local_full_run_function}
 \usage{
-local_full_run_function(
-  args,
-  batch_size = 10,
-  run_name,
-  n,
-  t_dist,
-  pi,
-  `E[X|T,C]`,
-  sd_vector,
-  covariate_list = NULL,
-  covariate_effect_vector = c(0),
-  covariate_names = NULL,
-  low_con,
-  high_con,
-  scale = "log",
-  formula,
-  formula2,
-  max_it = 3000,
-  ncomp = 2,
-  tol_ll = 1e-06,
-  maxiter_survreg = 30,
-  pi_function,
-  pi_link,
-  verbose = 3,
-  allow_safety = TRUE,
-  cutoff = 0.9,
-  fms_only,
-  initial_weighting = 1
-)
+local_full_run_function(args, batch_size = 10, run_name, rerun_parameters)
 }
 \arguments{
 \item{cutoff}{}
