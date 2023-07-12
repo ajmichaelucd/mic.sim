@@ -12,7 +12,7 @@ iteration = 158
 
 #calculate batch from iteration
 
-file = "~/Desktop/june_2023/run_form2_loess_2/run_form2_loess_2_06132023_1.Rdata"
+file = "~/Desktop/june_2023/run_form2_loess_1_06132023_1.Rdata"
 
 file  <- gen_path_sim(location = location, format = format, array_name = array_name, date = date, i = ceiling(iteration / number_per_batch))
 batch_results <- loadRData(file)
@@ -76,8 +76,8 @@ results$single_model_output$possible_data %>% filter(c == "2") %>%
   geom_function(fun = function(t){predict(results$single_model_output$newmodel[[1]], data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model"), size = 0.9) +
   geom_function(fun = function(t){predict(results$single_model_output$newmodel[[2]], data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model"), size = 0.9) +
   # geom_point(aes(x = t, y = mu_hat, color = c), fill = "black", shape = 21) + #geom_function
-   geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "1"), se = FALSE, span = 0.5, color = "red") +  ###fix later
-   geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(c == "2"), se = FALSE, span = 0.5, color = "red") + ###fix later
+   geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(comp == "1"), se = FALSE, span = 0.5, color = "red") +  ###fix later
+   geom_smooth(aes(x = t, y = observed_value), size = 0.3, alpha = 0.4, data = . %>% filter(comp == "2"), se = FALSE, span = 0.5, color = "orange") + ###fix later
   geom_hline(yintercept = settings$low_con %>% unlist) +
   geom_hline(yintercept = settings$high_con %>% unlist) +
   geom_function(fun = function(t){mu.se(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
