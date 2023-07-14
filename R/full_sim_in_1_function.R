@@ -38,7 +38,7 @@
 #' @examples
 full_sim_in_1_function <- function(i,
                                    n = 150,
-                                   t_dist = function(n){runif(n, min = 0, max = 10)},
+                                   t_dist = function(n){runif(n, min = 0, max = 15)},
                                    #pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
                                    pi = function(t) {m <- 0.6 + 0.02 * (t ^ 2) - 0.0015 * (t ^ 3)   #logit
                                    z <- exp(m) / (1+ exp(m))
@@ -151,87 +151,58 @@ full_sim_in_1_function <- function(i,
   #visible_data <- data.sim %>% mutate(obs_id = 1:n()) %>%
   #  relocate(obs_id, .before = everything())
 
-    visible_data <-
-      prep_sim_data_for_em(
-        data.sim,
-        left_bound_name = "left_bound",
-        right_bound_name = "right_bound",
-        time = "t",
-        covariate_names = covariate_names,
-        scale = scale,
-        keep_truth = keep_true_values,
-        observed_value_name = "observed_value",
-        comp_name = "comp"
+  visible_data <-
+    prep_sim_data_for_em(
+      data.sim,
+      left_bound_name = "left_bound",
+      right_bound_name = "right_bound",
+      time = "t",
+      covariate_names = covariate_names,
+      scale = scale,
+      keep_truth = keep_true_values,
+      observed_value_name = "observed_value",
+      comp_name = "comp"
+    )
+
+  prelim_cens_check <- visible_data %>%
+    mutate(
+      cens = case_when(
+        left_bound == -Inf | right_bound == low_con ~ "left_censored",
+        right_bound == Inf |
+          left_bound == high_con ~ "right_censored",
+        TRUE ~ "interval_censored"
       )
+    ) %>%
+    summarise(.by = cens,
+              n = n()) %>%
+    mutate(
+      n_tot = nrow(visible_data),
+      proportion = n / n_tot,
+      text_form = paste0("proportion ", cens, " is ", round(proportion, 4))
+    )
+  prelim_cens_check %>% pull(text_form) %>% cat(., sep = "\n")
+  prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum %>% paste0("total sum of left-censored and right_censored observations is ", .) %>% print
 
-  #if(!pi_function){
-  #  #mem here
-  #  poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
-  #  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
-  #  #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
-  #} else{
-  poss_fit_model <-
-    purrr::possibly(.f = fit_model_pi, otherwise = "Error")
-  single_model_output = poss_fit_model(
-    visible_data = visible_data,
-    formula = formula,
-    formula2 = formula2,
-    max_it = max_it,
-    ncomp = ncomp,
-    tol_ll = tol_ll,
-    pi_link = pi_link,
-    verbose = verbose,
-    maxiter_survreg = maxiter_survreg,
-    initial_weighting = initial_weighting,
-  )
-
-  #}
-
-
-  if (length(single_model_output) > 1) {
-    fm_check <-
-      check_for_excessive_censoring(single_model_output, cutoff)
-if(verbose > 1){print("fit_model converged")}
-  }
-
-
-  if (fms_only == TRUE &&
-      length(single_model_output) > 1 && fm_check == "All Clear") {
-    single_model_output <- "Pass"
-    if(verbose > 1){print("fit_model_converged within excessive censoring boundaries")}
-  }
-
-
-
-
-  #wrap fit model with possibly() or try()
-
-  if (length(single_model_output) == 1 &&
-      single_model_output == "Error") {
-    fm_fail = "fm_failed"
-    if(verbose > 1){print("fit_model failed to converge")}
-  } else if (fm_check == "Excessive Censoring") {
-    fm_fail = "fm_failed_cutoff"
-    if(verbose > 1){print("fit_model converged but violated excessive censoring cutoff")}
+  if (prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum >= 0.8) {
+    overall_censoring = "stop"
+    fm_convergence = NA
+    sigma_check = NA_character_
+    censor_fm_check = NA_character_
+    fms_convergence = NA
+    single_model_output = "Error"
   } else{
-    fm_fail = "fm_worked"
-    if(verbose > 1){print("fit_model converged within excessive censoring boundaries")}
-  }
+    overall_censoring = "go"
 
-  if (fm_fail %in% c("fm_failed", "fm_failed_cutoff") &
-      allow_safety == TRUE) {
-    if(verbose > 1){print("running fit_model_safety")}
-    formula = Surv(time = left_bound,
-                   time2 = right_bound,
-                   type = "interval2") ~ pspline(t, df = 0, calc = TRUE)  ####FIX FOR MORE COMPLEX MODELS
-    #    if(!pi_function){
-    #    poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
-    #    #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
-    #    single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
-    #    } else{
-    poss_fit_model_safety <-
-      purrr::possibly(.f = fit_model_safety_pi, otherwise = "Error")
-    single_model_output = poss_fit_model_safety(
+
+    #if(!pi_function){
+    #  #mem here
+    #  poss_fit_model <- purrr::possibly(.f = fit_model, otherwise = "Error")
+    #  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
+    #  #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+    #} else{
+    poss_fit_model <-
+      purrr::possibly(.f = fit_model_pi, otherwise = "Error")
+    single_model_output = poss_fit_model(
       visible_data = visible_data,
       formula = formula,
       formula2 = formula2,
@@ -241,35 +212,137 @@ if(verbose > 1){print("fit_model converged")}
       pi_link = pi_link,
       verbose = verbose,
       maxiter_survreg = maxiter_survreg,
+      initial_weighting = initial_weighting,
     )
-    #   }
 
-    if (length(single_model_output) == 1 &&
-        single_model_output == "Error") {
-      fms_fail = "fms_failed"
-      if(verbose > 1){print("fit_model_safety failed to converge")}
-    } else{
-      fms_fail = "fms_worked"
-      if(verbose > 1){print("fit_model_safety converged")}
+    #}
+
+    if (length(single_model_output) == 1) {
+      fm_convergence = FALSE
+      sigma_check = NA_character_
+      censor_fm_check  = NA_character_
+      fms_convergence = NA
+      if (verbose > 1) {
+        print("fit_model failed to converge")
+      }
+    } else {
+      fm_convergence = TRUE
+      if (verbose > 1) {
+        print("fit_model converged")
+      }
+      max_scale <-
+        max(single_model_output$newmodel[[1]]$scale,
+            single_model_output$newmodel[[2]]$scale)
+      max_difference_mu_hat <-
+        max(abs(
+          predict(results$single_model_output$newmodel[[2]], newdata = visible_data) - predict(results$single_model_output$newmodel[[1]], newdata = visible_data)
+        ))
+      if (max_scale ^ 2 > max_difference_mu_hat) {
+        sigma_check = "stop"
+        censor_fm_check = NA_character_
+        fms_convergence = NA
+      } else{
+        sigma_check = "go"
+
+        censor_fm_check <-
+          check_for_excessive_censoring(single_model_output, cutoff)
+
+        if (censor_fm_check == "BOTH") {
+          fms_convergence = NA
+          if (verbose > 1) {
+            print(
+              "fit_model_converged outside excessive censoring boundaries in both directions"
+            )
+          }
+        } else if (censor_fm_check == "ALl Clear" & fms_only = FALSE) {
+          fms_convergence = NA
+          if (verbose > 1) {
+            print("fit_model_converged within excessive censoring boundaries")
+          }
+        } else if (censor_fm_check == "ALl Clear" & fms_only = TRUE) {
+          fms_convergence = NA
+          if (verbose > 1) {
+            print("fit_model_converged within excessive censoring boundaries")
+          }
+          single_model_output = "PASS"
+        } else if (censor_fm_check %in% c("RC", "LC") &
+                   allow_safety = FALSE) {
+          if (verbose > 1) {
+            print("fit_model converged but violated excessive censoring cutoff")
+          }
+          fms_convergence = NA
+        } else{
+          if (verbose > 1) {
+            print(paste0("running fit_model_safety ", censor_fm_check))
+          }
+          # formula = Surv(time = left_bound,
+          #                time2 = right_bound,
+          #                type = "interval2") ~ pspline(t, df = 0, calc = TRUE)  ####I think formula can remain unchanged?
+
+
+          #    if(!pi_function){
+          #    poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
+          #    #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
+          #    single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
+          #    } else{
+          poss_fit_model_safety <-
+            purrr::possibly(.f = fit_model_safety_pi, otherwise = "Error")
+          single_model_output = poss_fit_model_safety(
+            visible_data = visible_data,
+            formula = formula,
+            formula2 = formula2,
+            fm_check = censor_fm_check,
+            max_it = max_it,
+            ncomp = ncomp,
+            tol_ll = tol_ll,
+            pi_link = pi_link,
+            verbose = verbose,
+            maxiter_survreg = maxiter_survreg,
+          )
+          #   }
+
+          if (length(single_model_output) == 1 &&
+              single_model_output == "Error") {
+            fms_convergence = FALSE
+            if (verbose > 1) {
+              print("fit_model_safety failed to converge")
+            }
+          } else{
+            fms_convergence = TRUE
+            if (verbose > 1) {
+              print("fit_model_safety converged")
+            }
+          }
+
+
+
+
+        }
+      }
     }
-
-
-  } else{
-    fms_fail = "fms_not_called"
   }
 
   #evaluate
   #run fit_model_safely if needed
 
-  failure_safety_notes <-
-    c(fms_only = fms_only, allow_safety = allow_safety, fm_fail = fm_fail, fms_fail = fms_fail)
+  run_status_notes <-
+    c(
+      overall_censoring = overall_censoring,
+      fm_convergence = fm_convergence,
+      sigma_check = sigma_check,
+      censor_fm_check = censor_fm_check,
+      fms_convergence = fms_convergence
+    )
 
-  output <- list(single_model_output = single_model_output,
-                 i = i,
-                 failure_safety_notes = failure_safety_notes)
+  output <- list(
+    single_model_output = single_model_output,
+    i = i,
+    run_status_notes = run_status_notes
+  )
 
 
 
   return(output)
+
 
 }

@@ -61,6 +61,7 @@ pi1 = function(t) {
 
 t_dist1 = function(n){runif(n, min = 0, max = 15)}
 attr(t_dist1, "min") = 0
+attr(t_dist1, "max") = 0
 
 sd_vector = c("1" = 0.6, "2" = 0.6) #0.5, 0.75, 1, 1.25
 

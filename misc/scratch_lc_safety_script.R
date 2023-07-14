@@ -1,28 +1,10 @@
-#' Title
-#'
-#' @param visible_data
-#' @param formula
-#' @param formula2
-#' @param max_it
-#' @param ncomp
-#' @param tol_ll
-#' @param browse_at_end
-#' @param browse_each_step
-#' @param plot_visuals
-#' @param pi_link
-#' @param verbose
-#' @param maxiter_survreg
-#'
-#' @return
-#' @export
-#'
-#' @examples
 fit_model_safety_pi = function(
     visible_data = prep_sim_data_for_em(),
     formula = Surv(time = left_bound,
                    time2 = right_bound,
                    type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
     formula2 = c == "2" ~ s(t),
+    fm_check = "RC",
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -35,41 +17,51 @@ fit_model_safety_pi = function(
     #low_con = 2^-4,
     #high_con = 2^4,
     maxiter_survreg = 30){
-#verbose = 0: print nothing
-#verbose = 1: print run number (controlled outside in the purrr::map of this) --done
-#verbose = 2: print run number and iteration number --done
-#verbose = 3: print run number, iteration number, and iteration results --done
-#verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
-#verbose = 0:
+  #verbose = 0: print nothing
+  #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
+  #verbose = 2: print run number and iteration number --done
+  #verbose = 3: print run number, iteration number, and iteration results --done
+  #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
+  #verbose = 0:
 
 
 
   median_y = median(visible_data$left_bound)
   #first E step-----
-
-  possible_data <-
+  possible_data = case_when(
+  is.na(fm_check) | fm_check %in% c("RC", "BOTH") ~
     visible_data %>% #visible data with c for component
     reframe(.by = everything(),    #implement for other intial weighting options too ##########
             c = as.character(1:2) #fir a logistic regression on c earlier #########
             # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
             #       .groups = "drop"
     ) %>%
-    #     mutate(
-    #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-    #                              left_bound > median_y & c == "2" ~ 0.4,
-    #                              left_bound <= median_y & c == "1" ~ 0.4,
-    #                              left_bound <= median_y & c == "2" ~ 0.6)
-    #     ) %>%
     mutate(
       `P(C=c|y,t)` = case_when(right_bound == Inf & c == "1"~ 0.01 ,
                                right_bound == Inf & c == "2"~ 0.99 ,
                                right_bound != Inf & c == "1"~ 1 ,
                                right_bound != Inf & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
       ###Also only works with scale == "log"
-    ) #%>%
-  #print()
+    ), #%>%
 
+  fm_check == "LC" ~
+    visible_data %>% #visible data with c for component
+    reframe(.by = everything(),    #implement for other intial weighting options too ##########
+            c = as.character(1:2) #fir a logistic regression on c earlier #########
+            # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+            #       .groups = "drop"
+    ) %>%
+    mutate(
+      `P(C=c|y,t)` = case_when(right_bound == low_con & c == "1"~ 0.99 ,
+                               right_bound == low_con & c == "2"~ 0.01 ,
+                               right_bound != low_con & c == "1"~ 0 ,
+                               right_bound != low_con & c == "2"~ 1) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
+      ###Also only works with scale == "log"
+    ),
+  TRUE ~ "Error"
+)
 
+if(possible_data = "Error"){errorCondition("invalid fm_check value")}
 
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3) ##changed to 3 to log survreg warnings
@@ -101,7 +93,11 @@ fit_model_safety_pi = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
+    df_temp <- case_when(is.na(fm_check) | fm_check %in% c("RC", "BOTH") ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1),
+                         fm_check == "LC" ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 2),
+                         TRUE ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
+    )
+
 
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
     #print("about to survreg")
@@ -141,7 +137,7 @@ fit_model_safety_pi = function(
     #     c == "1" ~ 1 - predict(logit, newdata = tibble(t = possible_data$t), type = "response")
     #   ))
     if(pi_link == "logit"){
-   #   binom_model <- stats::glm(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+      #   binom_model <- stats::glm(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
       binom_model <- gam::gam(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
     } else if(pi_link == "identity"){
 
@@ -162,7 +158,7 @@ fit_model_safety_pi = function(
 
       number_coef <- length(model$coefficients) == length(oldmodel$coefficients)
       if(number_coef){
-      mu_coef_diff <-  max(abs(model$coefficients - oldmodel$coefficients)) < 0.00001
+        mu_coef_diff <-  max(abs(model$coefficients - oldmodel$coefficients)) < 0.00001
 
       } else{
         mu_coef_diff <- FALSE
@@ -174,13 +170,13 @@ fit_model_safety_pi = function(
       if( mu_coef_diff ) # && check_pi < 0.00001)
       {message("stopped on coefficients")
         break}
-     # check_model = max(abs(newmodel - oldmodel))
-     # check_pi_tibble = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
-     # check_pi = max(abs(check_pi_tibble$pi_dif))
-#
-#
-     # param_checks = check_model < 0.00001 && check_pi < 0.00001
-#
+      # check_model = max(abs(newmodel - oldmodel))
+      # check_pi_tibble = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
+      # check_pi = max(abs(check_pi_tibble$pi_dif))
+      #
+      #
+      # param_checks = check_model < 0.00001 && check_pi < 0.00001
+      #
 
       #  if( check_model < 0.00001 && check_pi < 0.00001)
       #  {message("stopped on coefficients")
@@ -200,7 +196,7 @@ fit_model_safety_pi = function(
     #B. if it is not going up by very much, you can stop
     #if conditions are met, use break
     if(plot_visuals == TRUE){
-##outdated
+      ##outdated
       c1_plot <-   possible_data %>%
         mutate(
           mid =
