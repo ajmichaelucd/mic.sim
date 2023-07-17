@@ -246,7 +246,7 @@ full_sim_in_1_function <- function(i,
             single_model_output_fm$newmodel[[2]]$scale)
       max_difference_mu_hat <-
         max(abs(
-          predict(single_model_output_fm$single_model_output_fm$newmodel[[2]], newdata = visible_data) - predict(single_model_output_fm$single_model_output_fm$newmodel[[1]], newdata = visible_data)
+          predict(single_model_output_fm$newmodel[[2]], newdata = visible_data) - predict(single_model_output_fm$newmodel[[1]], newdata = visible_data)
         ))
       if (max_scale ^ 2 > max_difference_mu_hat) {
         sigma_check = "stop"
