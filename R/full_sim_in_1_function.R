@@ -94,6 +94,9 @@ full_sim_in_1_function <- function(i,
     message("starting run number", i)
   }
 
+  if (fms_only == TRUE & allow_safety == FALSE) {
+    errorCondition("Invalid combination of fms_only and allow_safety, cannot have fms_only == TRUE and allow_safety = FALSE")
+  }
 
   ##need i = i, n = n, t_dist = t_dist to create named list
 
@@ -192,7 +195,7 @@ full_sim_in_1_function <- function(i,
     sigma_check = NA_character_
     censor_fm_check = NA_character_
     fms_convergence = NA
-    single_model_output = "Error"
+    single_model_output_fm = "PASS"
   } else{
     overall_censoring = "go"
 
@@ -205,7 +208,7 @@ full_sim_in_1_function <- function(i,
     #} else{
     poss_fit_model <-
       purrr::possibly(.f = fit_model_pi, otherwise = "Error")
-    single_model_output = poss_fit_model(
+    single_model_output_fm = poss_fit_model(
       visible_data = visible_data,
       formula = formula,
       formula2 = formula2,
@@ -220,61 +223,79 @@ full_sim_in_1_function <- function(i,
 
     #}
 
-    if (length(single_model_output) == 1) {
+    if (length(single_model_output_fm) == 1) {
       fm_convergence = FALSE
       sigma_check = NA_character_
       censor_fm_check  = NA_character_
-      fms_convergence = NA
+      fms_convergence = NA ##Check on why the fm runs are erroring out, can't send it to fms without a side
       if (verbose > 1) {
         print("fit_model failed to converge")
       }
-    } else {
+    }
+    else {
       fm_convergence = TRUE
+
       if (verbose > 1) {
         print("fit_model converged")
       }
+    }
+
+    if(fm_convergence){
       max_scale <-
-        max(single_model_output$newmodel[[1]]$scale,
-            single_model_output$newmodel[[2]]$scale)
+        max(single_model_output_fm$newmodel[[1]]$scale,
+            single_model_output_fm$newmodel[[2]]$scale)
       max_difference_mu_hat <-
         max(abs(
-          predict(results$single_model_output$newmodel[[2]], newdata = visible_data) - predict(results$single_model_output$newmodel[[1]], newdata = visible_data)
+          predict(results$single_model_output_fm$newmodel[[2]], newdata = visible_data) - predict(results$single_model_output_fm$newmodel[[1]], newdata = visible_data)
         ))
       if (max_scale ^ 2 > max_difference_mu_hat) {
         sigma_check = "stop"
-        censor_fm_check = NA_character_
-        fms_convergence = NA
+        #censor_fm_check = NA_character_
+        #fms_convergence = "tbd"
       } else{
-        sigma_check = "go"
 
-        censor_fm_check <-
-          check_for_excessive_censoring(single_model_output, cutoff)
+        sigma_check = "go"
+}
+
+      censor_fm_check <-
+          check_for_excessive_censoring(single_model_output_fm, cutoff)
 
         if (censor_fm_check == "BOTH") {
           fms_convergence = NA
+          single_model_output_fms = "PASS"
           if (verbose > 1) {
             print(
-              "fit_model_converged outside excessive censoring boundaries in both directions"
+              "fit_model converged outside excessive censoring boundaries in both directions"
             )
           }
-        } else if (censor_fm_check == "ALl Clear" & fms_only == FALSE) {
+        } else if (censor_fm_check == "ALl Clear" & sigma_check == "go") {
           fms_convergence = NA
+          single_model_output_fms = "PASS"
           if (verbose > 1) {
-            print("fit_model_converged within excessive censoring boundaries")
+            print("fit_model converged within excessive censoring boundaries")
           }
-        } else if (censor_fm_check == "ALl Clear" & fms_only == TRUE) {
+        } else if (censor_fm_check == "ALl Clear" & sigma_check == "stop") {
           fms_convergence = NA
+          single_model_output_fms = "PASS"
           if (verbose > 1) {
-            print("fit_model_converged within excessive censoring boundaries")
+            print("fit_model converged within excessive censoring boundaries but violated sigma check, cannot find a side to use for fms")
           }
-          single_model_output = "PASS"
         } else if (censor_fm_check %in% c("RC", "LC") &
                    allow_safety == FALSE) {
           if (verbose > 1) {
             print("fit_model converged but violated excessive censoring cutoff")
           }
+          single_model_output_fms = "PASS"
           fms_convergence = NA
         } else{
+          fms_convergence = "tbd"
+        }
+      }
+      }
+
+    if(!is.na(fms_convergence)){
+
+
           if (verbose > 1) {
             print(paste0("running fit_model_safety ", censor_fm_check))
           }
@@ -290,7 +311,7 @@ full_sim_in_1_function <- function(i,
           #    } else{
           poss_fit_model_safety <-
             purrr::possibly(.f = fit_model_safety_pi, otherwise = "Error")
-          single_model_output = poss_fit_model_safety(
+          single_model_output_fms = poss_fit_model_safety(
             visible_data = visible_data,
             formula = formula,
             formula2 = formula2,
@@ -304,8 +325,8 @@ full_sim_in_1_function <- function(i,
           )
           #   }
 
-          if (length(single_model_output) == 1 &&
-              single_model_output == "Error") {
+          if (length(single_model_output_fms) == 1 &&
+              single_model_output_fms == "Error") {
             fms_convergence = FALSE
             if (verbose > 1) {
               print("fit_model_safety failed to converge")
@@ -317,13 +338,14 @@ full_sim_in_1_function <- function(i,
             }
           }
 
+    } else{
+  single_model_output_fms = "PASS"}
 
 
 
-        }
-      }
-    }
-  }
+
+
+
 
   #evaluate
   #run fit_model_safely if needed
@@ -337,8 +359,12 @@ full_sim_in_1_function <- function(i,
       fms_convergence = fms_convergence
     )
 
+  if(fms_only){
+    single_model_output_fm = "PASS"
+  }
+
   output <- list(
-    single_model_output = single_model_output,
+    single_model_output = list(single_model_output_fm = single_model_output_fm, single_model_output_fms = single_model_output_fms),
     i = i,
     run_status_notes = run_status_notes
   )

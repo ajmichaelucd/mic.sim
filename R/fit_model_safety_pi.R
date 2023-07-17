@@ -232,6 +232,7 @@ fit_model_safety_pi = function(
     }
 
     #Next E step-------------
+    if(fm_check == "RC"){
     possible_data %<>%
       #select(-any_of("P(C = c)")) %>%
       #left_join(pi, by = "c") %>%
@@ -262,6 +263,40 @@ fit_model_safety_pi = function(
              `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
              `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%
       ungroup()
+    } else{
+      possible_data %<>%
+        #select(-any_of("P(C = c)")) %>%
+        #left_join(pi, by = "c") %>%
+        mutate(
+          `E[Y|t,c]` = if_else( c==2, predict(model, newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else( c==2, model$scale, NA_real_),
+          # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
+
+          `P(Y|t,c)` =  if_else(c== 2,
+                                if_else(
+                                  left_bound == right_bound,
+                                  dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+                                  pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+                                    pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+                                ), (left_bound == -Inf) %>% as.numeric()) ##possibly add upper concentation as input and change this to right_bound == Inf & left_bound == high_con
+        ) %>%
+        group_by(obs_id) %>%
+        #mutate(
+        #  `P(c,y|t)` = `P(Y|t,c)` * `P(C = c)`,
+        #  `P(Y=y|t)` = sum(`P(c,y|t)`),
+        #  `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
+        #) %>%
+        mutate(`P(C=c|t)` = case_when( ########UNSURE ABOUT THIS SECTION
+          c == "2" ~ predict(binom_model, newdata = tibble(t = t), type = "response"), ########UNSURE ABOUT THIS SECTION
+          c == "1" ~ 1 - predict(binom_model, newdata = tibble(t = t), type = "response") ########UNSURE ABOUT THIS SECTION
+        )) %>%  ########UNSURE ABOUT THIS SECTION
+        mutate(`P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`, ########UNSURE ABOUT THIS SECTION
+               `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
+               `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%
+        ungroup()
+    }
+
+
     if(verbose > 2){
       print(pi)
       print(newmodel)
