@@ -252,13 +252,17 @@ full_sim_in_1_function <- function(i,
         sigma_check = "stop"
         #censor_fm_check = NA_character_
         #fms_convergence = "tbd"
+        if (verbose > 1) {print(paste0("sigma check results: ", sigma_check))}
       } else{
 
         sigma_check = "go"
+        if (verbose > 1) {print(paste0("sigma check results: ", sigma_check))}
 }
 
       censor_fm_check <-
           check_for_excessive_censoring(single_model_output_fm, cutoff)
+
+      if (verbose > 1) {print(paste0("censoring check results: ", censor_fm_check))}
 
         if (censor_fm_check == "BOTH") {
           fms_convergence = NA
@@ -268,13 +272,13 @@ full_sim_in_1_function <- function(i,
               "fit_model converged outside excessive censoring boundaries in both directions"
             )
           }
-        } else if (censor_fm_check == "ALl Clear" & sigma_check == "go") {
+        } else if (censor_fm_check == "All Clear" & sigma_check == "go") {
           fms_convergence = NA
           single_model_output_fms = "PASS"
           if (verbose > 1) {
             print("fit_model converged within excessive censoring boundaries")
           }
-        } else if (censor_fm_check == "ALl Clear" & sigma_check == "stop") {
+        } else if (censor_fm_check == "All Clear" & sigma_check == "stop") {
           fms_convergence = NA
           single_model_output_fms = "PASS"
           if (verbose > 1) {
