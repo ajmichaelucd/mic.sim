@@ -8,7 +8,7 @@ full_sim_in_1_function(
   i,
   n = 150,
   t_dist = function(n) {
-     runif(n, min = 0, max = 10)
+     runif(n, min = 0, max = 15)
  },
   pi = function(t) {
      m <- 0.6 + 0.02 * (t^2) - 0.0015 * (t^3)
@@ -46,7 +46,7 @@ full_sim_in_1_function(
 )
 }
 \arguments{
-\item{cutoff}{}
+\item{keep_true_values}{}
 }
 \description{
 full_sim_in_1_function

@@ -24,6 +24,9 @@
 #' @param verbose
 #' @param allow_safety
 #' @param cutoff
+#' @param fms_only
+#' @param initial_weighting
+#' @param keep_true_values
 #'
 #' @return
 #' @export
@@ -254,19 +257,19 @@ full_sim_in_1_function <- function(i,
               "fit_model_converged outside excessive censoring boundaries in both directions"
             )
           }
-        } else if (censor_fm_check == "ALl Clear" & fms_only = FALSE) {
+        } else if (censor_fm_check == "ALl Clear" & fms_only == FALSE) {
           fms_convergence = NA
           if (verbose > 1) {
             print("fit_model_converged within excessive censoring boundaries")
           }
-        } else if (censor_fm_check == "ALl Clear" & fms_only = TRUE) {
+        } else if (censor_fm_check == "ALl Clear" & fms_only == TRUE) {
           fms_convergence = NA
           if (verbose > 1) {
             print("fit_model_converged within excessive censoring boundaries")
           }
           single_model_output = "PASS"
         } else if (censor_fm_check %in% c("RC", "LC") &
-                   allow_safety = FALSE) {
+                   allow_safety == FALSE) {
           if (verbose > 1) {
             print("fit_model converged but violated excessive censoring cutoff")
           }

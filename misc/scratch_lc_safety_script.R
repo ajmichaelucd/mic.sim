@@ -11,11 +11,8 @@ fit_model_safety_pi = function(
     browse_at_end = FALSE,
     browse_each_step = FALSE,
     plot_visuals = FALSE,
-    #silent = FALSE,
     pi_link = "logit",
     verbose = 3,
-    #low_con = 2^-4,
-    #high_con = 2^4,
     maxiter_survreg = 30){
   #verbose = 0: print nothing
   #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
@@ -28,8 +25,8 @@ fit_model_safety_pi = function(
 
   median_y = median(visible_data$left_bound)
   #first E step-----
-  possible_data = case_when(
-  is.na(fm_check) | fm_check %in% c("RC", "BOTH") ~
+possible_data = case_when(
+  fm_check == "RC" ~
     visible_data %>% #visible data with c for component
     reframe(.by = everything(),    #implement for other intial weighting options too ##########
             c = as.character(1:2) #fir a logistic regression on c earlier #########
@@ -93,7 +90,7 @@ if(possible_data = "Error"){errorCondition("invalid fm_check value")}
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    df_temp <- case_when(is.na(fm_check) | fm_check %in% c("RC", "BOTH") ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1),
+    df_temp <- case_when(fm_check == "RC" ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1),
                          fm_check == "LC" ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 2),
                          TRUE ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
     )
