@@ -40,7 +40,7 @@ ncomp = 2
 
 
 pi1 = function(t) {
-  m <- 0.5 + 0.1 * t - 0.03 * t^2 + 0.0015 * t^3
+  m <- 0.5 + 0.05 * t - 0.007 * t^2 + 0.00026 * t^3
   z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
   tibble("1" = 1 - z, "2" = z)
 }
@@ -53,8 +53,8 @@ pi1 = function(t) {
 `E[X|T,C]` = function(t, c)
 {
   case_when(
-    c == "1" ~ -1.0 - 0.02 * t,
-    c == "2" ~ 4.0 + 0.0 * t,
+    c == "1" ~ -4.0 - 0.06 * t + 0.008 * t^2,
+    c == "2" ~ 1.0 + 0.04 * t - 0.001 * t^2,
     TRUE ~ NaN
   )
 }
@@ -63,10 +63,10 @@ t_dist1 = function(n){runif(n, min = 0, max = 15)}
 attr(t_dist1, "min") = 0
 attr(t_dist1, "max") = 0
 
-sd_vector = c("1" = 0.6, "2" = 0.6) #0.5, 0.75, 1, 1.25
+sd_vector = c("1" = 1, "2" = 1) #0.5, 0.75, 1, 1.25
 
 low_con = -3
-high_con = 1 #errored out when this was 2^3
+high_con = 2 #errored out when this was 2^3
 #RUN 1 : 2
 #RUN 2: 3
 #RUN 3: 4
