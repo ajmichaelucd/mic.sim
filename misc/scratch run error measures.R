@@ -1,35 +1,25 @@
-#' Title
-#'
-#' @param results
-#' @param settings
-#'
-#' @return
-#' @export
-#'
-#' @importFrom tidyr complete
-#' @importFrom magrittr %>%
-#' @importFrom dplyr case_when mutate reframe filter summarise summarize group_by select rename ungroup
-#' @importFrom tidyselect everything
-#' @importFrom tibble tibble as_tibble
-#' @importFrom stats predict
-#'
-#' @examples
-capture_error_measures_one_run <- function(results, settings){
+
+
+format <- "name_date_number"
+
+#general name of simulation array
+array_name <- "test_run_1"
+date <- "07172023"
+i = 1
+file  <- gen_path_sim(location = "~/Desktop/july_2023/test_run_1", format = format, array_name = array_name, date = date, i = i)
+batch_results <- loadRData(file)
+
+results <- batch_results$model_results[[1]]
+settings <- batch_results$settings
+
+capture_error_measures_one_run_2 <- function(results, settings){
   #first: Error? If so note this and pass this to end
   #If not, are we looking at the findings of fit_model_pi or fit_model_safety_pi
   #function for fit_model_pi results
   ###first identify wt vs nonwt
   #function for fit_model_safety_pi results
 
-#print(results$i)
-
-  #work on fit_model_pi results-----------------
-
-
-
-
-  ##check directionality-----------
-
+  #print(results$i)
 
   results$run_status_notes %>% as.list -> run_status_notes
 
@@ -47,7 +37,7 @@ capture_error_measures_one_run <- function(results, settings){
     run_status_notes$fm_convergence == "FALSE" ~ "nothing, fm failed",
     run_status_notes$overall_censoring == "stop" ~ "nothing, halted on censoring level",
     TRUE ~ "unforeseen combo"
-  )
+            )
   analysis <- case_when(
     length(results$single_model_output$single_model_output_fms) > 1 ~ "fms",
     length(results$single_model_output$single_model_output_fms) == 1 & length(results$single_model_output$single_model_output_fm) > 1 ~ "fm",
@@ -75,8 +65,8 @@ capture_error_measures_one_run <- function(results, settings){
   if (directionality$flip_decision == "flip") {
     possible_data <-
       single_model_output$possible_data %>% rename("original_c" = c) %>% mutate(c = case_when(original_c == "1" ~ "2",
-                                                                                              original_c == "2" ~ "1",
-                                                                                              TRUE ~ "Error"))
+                                                                                                      original_c == "2" ~ "1",
+                                                                                                      TRUE ~ "Error"))
 
   } else if (length(single_model_output) > 1) {
     possible_data <- single_model_output$possible_data
@@ -343,7 +333,7 @@ capture_error_measures_one_run <- function(results, settings){
   #  (results$failure_safety_notes["fm_fail"] %in% c("fm_failed", "fm_failed_cutoff")) &  results$failure_safety_notes["fms_fail"] == "fms_not_allowed" & !(results$failure_safety_notes["allow_safety"] %>% as.logical()) ~ "fm_failed, no fms",
   #  results$failure_safety_notes["fm_fail"] == "fm_worked" & (results$failure_safety_notes["fms_only"] %>% as.logical()) ~ "fm_worked, not saved",
   #  TRUE ~ "other"
-  #
+#
   #)
 
   ##Bind output into a single tibble (could do 1 row or multiple rows, just add i)
@@ -364,3 +354,260 @@ capture_error_measures_one_run <- function(results, settings){
     return()
 
 }
+
+get_t_min_max <- function(settings){
+  m <- functionBody(settings$t_dist) %>% as.character() %>% stringr::str_match(., "min =\\s*(.*?)\\s*, max =")
+
+  t_min <- m[2,2] %>% as.numeric()
+
+
+  g <- functionBody(settings$t_dist) %>% as.character() %>% stringr::str_split(., pattern = "max =", simplify = TRUE) %>% as.matrix() #%>% parse_number()
+
+  t_max <- g[2,2] %>% parse_number()
+
+  tibble(t_min, t_max) %>% return()
+}
+
+get_t_min_max <- function(settings){
+
+  tibble(t_min = attr(settings$t_dist, "min"), t_max = attr(settings$t_dist, "max")) %>% return()
+
+  }
+
+
+check_directionality <-
+  function(results = results,
+           settings = settings) {
+    df <-
+      tibble(t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 1000
+      )) %>%
+      mutate(
+        c1 = predict(results$single_model_output$single_model_output_fm$newmodel[[1]], newdata = tibble(t)),
+        c2 = predict(results$single_model_output$single_model_output_fm$newmodel[[2]], newdata = tibble(t)),
+        flip = case_when(c1 > c2 ~ "flip",
+                         c2 > c1 ~ "no flip",
+                         c2 == c1 ~ "equal",
+                         TRUE ~ NA)
+      ) %>%
+      group_by(flip) %>%
+      summarise(n = n())
+
+    if (nrow(df) == 1) {
+      flip_decision <- df %>% pull(flip)
+      cross <- "no cross"
+      directionality <- df %>%
+        pivot_wider(names_from = flip, values_from = n) %>%
+        mutate(flip_decision = flip_decision,
+               cross = cross)
+
+    } else{
+      directionality <-
+        df %>%
+        pivot_wider(names_from = flip, values_from = n) %>%
+        mutate(
+          flip_decision = case_when(
+            flip > `no flip` ~ "flip",
+            flip <= `no flip` ~ "no flip",
+            TRUE ~ "Error"
+          ),
+          cross = "cross"
+        )
+    }
+    return(directionality)
+  }
+
+
+scale_select <- function(results, directionality, analysis, single_model_output) {
+  if (analysis == "fm") {
+    if (directionality %>% pull(flip_decision) == "no flip") {
+      tibble(
+        c1_scale = single_model_output$newmodel[[1]]$scale,
+        c2_scale = single_model_output$newmodel[[2]]$scale
+      ) %>% return()
+    } else{
+      tibble(
+        c1_scale = results$single_model_output$newmodel[[2]]$scale,
+        c2_scale = results$single_model_output$newmodel[[1]]$scale
+      ) %>% return()
+    }
+  } else if (analysis == "fms") {
+    tibble(c1_scale = results$single_model_output$newmodel$scale,
+           c2_scale = NaN) %>% return()
+  } else{
+    scale_select <- tibble(c1_scale = NaN,
+                           c2_scale = NaN)
+  }
+}
+
+calculate_mu_area <- function(results, settings, directionality, analysis) {
+  if (analysis == "fm") {
+    tibble(
+      t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 100000
+      ),
+      width = (
+        get_t_min_max(settings = settings) %>% pull(t_max) - get_t_min_max(settings = settings) %>% pull(t_min)
+      ) / 100000
+    ) %>%
+      reframe(.by = everything(),    #implement for other initial weighting options too ##########
+              c = as.character(1:2)) %>%
+      mutate(
+        mu_hat = case_when(
+          (directionality %>% pull(flip_decision) == "no flip") &
+            c == "1" ~ predict(results$single_model_output$single_model_output_fm$newmodel[[1]], data.frame(t = t)),
+          (directionality %>% pull(flip_decision) == "no flip") &
+            c == "2" ~ predict(results$single_model_output$single_model_output_fm$newmodel[[2]], data.frame(t = t)),
+          (directionality %>% pull(flip_decision) == "flip") &
+            c == "1" ~ predict(results$single_model_output$single_model_output_fm$newmodel[[2]], data.frame(t = t)),
+          (directionality %>% pull(flip_decision) == "flip") &
+            c == "2" ~ predict(results$single_model_output$single_model_output_fm$newmodel[[1]], data.frame(t = t)),
+          TRUE ~ NaN
+        ),
+        mu_dgm = settings$`E[X|T,C]`(t = t, c = c),
+        diff = mu_dgm - mu_hat,
+        area = abs(diff) * width
+      ) %>%
+      group_by(c) %>%
+      summarise(
+        total_area = sum(area),
+        avg_diff = mean(diff),
+        med_diff = median(diff)
+      ) %>%
+      pivot_wider(
+        names_from = c,
+        names_prefix = "c",
+        values_from = total_area:med_diff
+      ) %>% return()
+  } else if (analysis == "fms") {
+    tibble(
+      t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 100000
+      ),
+      width = (
+        get_t_min_max(settings = settings) %>% pull(t_max) - get_t_min_max(settings = settings) %>% pull(t_min)
+      ) / 100000
+    ) %>%
+      reframe(.by = everything(),    #implement for other initial weighting options too ##########
+              c = as.character(1:2)) %>%
+      mutate(
+        mu_hat = case_when(
+          c == "1" ~ predict(results$single_model_output$single_model_output_fms$newmodel, data.frame(t = t)),
+          c == "2" ~ NaN,
+          TRUE ~ NaN
+        ),
+        mu_dgm = settings$`E[X|T,C]`(t = t, c = c),
+        diff = mu_dgm - mu_hat,
+        area = abs(diff) * width
+      ) %>%
+      group_by(c) %>%
+      summarise(
+        total_area = sum(area),
+        avg_diff = mean(diff),
+        med_diff = median(diff)
+      ) %>%
+      pivot_wider(
+        names_from = c,
+        names_prefix = "c",
+        values_from = total_area:med_diff
+      ) %>% return()
+  } else{
+    tibble(
+      total_area_c1 = NaN,
+      total_area_c2 = NaN,
+      avg_diff_c1 = NaN,
+      avg_diff_c2 = NaN,
+      med_diff_c1 = NaN,
+      med_diff_c2 = NaN
+    ) %>% return()
+  }
+
+}
+
+calculate_pi_area <- function(results, settings, directionality, analysis, single_model_output) {
+  if (analysis %in% c("fm", "fms")){
+    tibble(
+      t = seq(
+        get_t_min_max(settings = settings) %>% pull(t_min),
+        get_t_min_max(settings = settings) %>% pull(t_max),
+        length.out = 100000
+      ),
+      width = (
+        get_t_min_max(settings = settings) %>% pull(t_max) - get_t_min_max(settings = settings) %>% pull(t_min)
+      ) / 100000
+    ) %>%
+      mutate(
+        pi_hat =
+          case_when(
+            directionality %>% pull(flip_decision) == "flip" ~ 1 - predict(
+              single_model_output$binom_model,
+              data.frame(t = t),
+              type = "response"
+            ),
+            TRUE ~ predict(
+              single_model_output$binom_model,
+              data.frame(t = t),
+              type = "response"
+            )
+          ),
+        pi_dgm = settings$pi(t) %>% pull("2"),
+        diff = pi_dgm - pi_hat,
+        area = abs(diff) * width
+      ) %>%
+      summarise(
+        total_area_pi = sum(area),
+        avg_diff_pi = mean(diff),
+        med_diff_pi = median(diff)
+      ) %>% suppressWarnings()
+  }else{
+    tibble(total_area_pi = NaN,
+           avg_diff_pi = NaN,
+           med_diff_pi = NaN)
+  }
+
+}
+
+censoring_post_info <-
+  function(possible_data, settings, comparison = "model_weighted") {
+    df <- possible_data %>%
+      mutate(
+        censor =
+          case_when(
+            settings$scale == "log" & left_bound == -Inf ~ "left",
+            settings$scale == "MIC" &
+              (left_bound == 0 | left_bound == -Inf) ~ "left",
+            right_bound == Inf ~ "right",
+            TRUE ~ "interval"
+          )
+      )
+
+    if (comparison == "model_weighted") {
+      df %>% group_by(c, censor) %>% summarise(p = sum(`P(C=c|y,t)`)) %>%
+        mutate(sum = sum(p[c == c]),
+               weighted_prop_model = p / sum) %>%
+        ungroup() %>%
+        select(-c(p, sum)) %>%
+        rename(comp = c) %>%
+        tidyr::complete(comp, censor, fill = list(weighted_prop_model = 0)) %>%
+        return()
+
+    } else if (comparison == "true_pct") {
+      df %>% group_by(comp, censor) %>% summarise(p = n()) %>%
+        mutate(sum = sum(p[comp == comp]),
+               weighted_prop_true = p / sum) %>%
+        ungroup() %>%
+        select(-c(p, sum)) %>%
+        tidyr::complete(comp, censor, fill = list(weighted_prop_true = 0)) %>%
+        return()
+
+    } else{
+      errorCondition("choose model_weighted or true_pct")
+    }
+
+  }

@@ -184,22 +184,21 @@ fit_model_pi = function(
         rc = ifelse(right_bound == Inf, TRUE, FALSE)
       ) %>% ungroup
 
-  }else{warningCondition("Select a weight between 1 and 4 please, defaulting to 1")
+  }else{#warningCondition("Select a weight between 1 and 4 please, defaulting to 1")
     possible_data <-
       visible_data %>% #visible data with c for component
-      group_by_all() %>%
-      summarise(
-        c = as.character(1:2), #split at mean and assign
-        .groups = "drop"
+      reframe(.by = everything(),    #implement for other intial weighting options too ##########
+              c = as.character(1:2) #fir a logistic regression on c earlier #########
+              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+              #       .groups = "drop"
       ) %>%
 
       mutate(
-        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5,
-                                 left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ (((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5,
-                                 left_bound == -Inf & c == "2" ~ 0.01,
-                                 left_bound == -Inf & c == "1" ~ 0.99),
+        `P(C=c|y,t)` = case_when(left_bound == -Inf & c == "2" ~ 0,
+                                 left_bound == -Inf & c == "1" ~ 1,
+                                 right_bound == Inf & c == "2" ~ 1,
+                                 right_bound == Inf & c == "1" ~ 0,
+                                 TRUE ~ 0.5),
         mid =
           case_when(
             left_bound == -Inf ~ right_bound - 0.5,

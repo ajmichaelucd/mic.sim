@@ -14,14 +14,14 @@ library(ggplot2)
 
 ###Parameters to estimate and other simulation info----------------------
 #number of batches (e.g. 100)
-number_of_batches = 100
+number_of_batches = 10
 #number per batch (e.g. 10)
 number_per_batch = 10
 #check by putting total number here
-number_of_iterations = 1000
+number_of_iterations = 100
 
 #path to the directory full of the files
-location <- "~/Desktop/june_2023/run_form2_spline_2"
+location <- "~/Desktop/july_2023/test_run_1"
 
 
 #two formats i have used:
@@ -30,8 +30,8 @@ location <- "~/Desktop/june_2023/run_form2_spline_2"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "run_form2_spline_2"
-date <- "06132023"
+array_name <- "test_run_1"
+date <- "07172023"
 
 incomplete <- check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
@@ -98,7 +98,10 @@ array_results %>% summarise(.by = scenario, n = n())
 array_results %>% summarise(.by = scenario,
                             cens_2_rc = mean(model_cens_2_right),
                             se_cens_2_rc = sd(model_cens_2_right),
-                            true_cens_2_rc = mean(true_cens_2_right))
+                            true_cens_2_rc = mean(true_cens_2_right),
+                            cens_1_lc = mean(model_cens_1_left),
+                            se_cens_1_lc = sd(model_cens_1_left),
+                            true_cens_1_lc = mean(true_cens_1_left))
 
 #batch_results<- loadRData("~/Desktop/june_2023/run_form2_loess_2/run_form2_loess_2_06132023_1.Rdata")
 #results <- batch_results$model_results[[2]]

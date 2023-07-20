@@ -39,13 +39,13 @@ ncomp = 2
 #pi_truth = "identity"
 
 
-pi1 = function(t) {
+pi = function(t) {
   m <- 0.5 + 0.05 * t - 0.007 * t^2 + 0.00026 * t^3
   z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
   tibble("1" = 1 - z, "2" = z)
 }
 
-#pi1 =   function(t) {m <- 0.2 + 0.001 * t   #logit
+#pi =   function(t) {m <- 0.2 + 0.001 * t   #logit
 #  z <- exp(m) / (1+ exp(m))
 #  c("1" = z, "2" = 1 - z)}
 #
@@ -59,9 +59,9 @@ pi1 = function(t) {
   )
 }
 
-t_dist1 = function(n){runif(n, min = 0, max = 15)}
-attr(t_dist1, "min") = 0
-attr(t_dist1, "max") = 0
+t_dist = function(n){runif(n, min = 0, max = 15)}
+attr(t_dist, "min") = 0
+attr(t_dist, "max") = 15
 
 sd_vector = c("1" = 1, "2" = 1) #0.5, 0.75, 1, 1.25
 
@@ -100,8 +100,8 @@ model_results <- purrr::map(
   ~ full_sim_in_1_function(
     .x,
     n = n,
-    t_dist = t_dist1,
-    pi = pi1,
+    t_dist = t_dist,
+    pi = pi,
     `E[X|T,C]` = `E[X|T,C]`,
     sd_vector = sd_vector,
     covariate_list = covariate_list,
@@ -130,8 +130,8 @@ results <- list(
   settings = list( #name all settings, at batch level: create settings and save along with results
     iteration_set = iteration_set,
     n = n,
-    t_dist = t_dist1,
-    pi = pi1,
+    t_dist = t_dist,
+    pi = pi,
     `E[X|T,C]` = `E[X|T,C]`,
     sd_vector = sd_vector,
     covariate_list = covariate_list,

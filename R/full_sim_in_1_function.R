@@ -297,7 +297,7 @@ full_sim_in_1_function <- function(i,
       }
       }
 
-    if(!is.na(fms_convergence)){
+  if(!is.na(fms_convergence)){
 
 
           if (verbose > 1) {
