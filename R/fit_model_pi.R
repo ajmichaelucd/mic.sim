@@ -136,12 +136,12 @@ fit_model_pi = function(
       ) %>% #rowwise %>%
 
       mutate(
-        `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "2" ~ pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
-                                  left_bound != -Inf & right_bound != Inf &c == "1" ~ 1 - pbeta((left_bound + low_con + 1) / (high_con - low_con + 2), 1, 0.5),
-                                  left_bound == -Inf & c == "2" ~ 0.01,
-                                  left_bound == -Inf & c == "1" ~ 0.99,
-                                  right_bound == Inf & c == "2" ~ 0.99,
-                                  right_bound == Inf & c == "1" ~ 0.01,
+        `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "2" ~ .99,
+                                  left_bound != -Inf & right_bound != Inf & c == "1" ~ .01,
+                                  left_bound == -Inf & c == "2" ~ 0,
+                                  left_bound == -Inf & c == "1" ~ 1,
+                                  right_bound == Inf & c == "2" ~ 1,
+                                  right_bound == Inf & c == "1" ~ 0,
                                   TRUE ~ NaN),
         mid =
           case_when(
