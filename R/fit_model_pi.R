@@ -91,11 +91,11 @@ fit_model_pi = function(
   } else if(initial_weighting == 2){
     possible_data <-
       visible_data %>% #visible data with c for component
-      group_by_all() %>%
-      summarise(
-        c = as.character(1:2), #split at mean and assign
-        .groups = "drop"
-      ) %>% rowwise %>%
+      reframe(.by = everything(),    #implement for other intial weighting options too ##########
+              c = as.character(1:2) #fir a logistic regression on c earlier #########
+              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+              #       .groups = "drop"
+      ) %>%
 
       mutate(
         `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
@@ -129,10 +129,10 @@ fit_model_pi = function(
 
     possible_data <-
       visible_data %>% #visible data with c for component
-      group_by_all() %>%
-      summarise(
-        c = as.character(1:2), #split at mean and assign
-        .groups = "drop"
+      reframe(.by = everything(),    #implement for other intial weighting options too ##########
+              c = as.character(1:2) #fir a logistic regression on c earlier #########
+              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+              #       .groups = "drop"
       ) %>% #rowwise %>%
 
       mutate(
@@ -161,12 +161,11 @@ fit_model_pi = function(
   } else if(initial_weighting == 4){
 
     possible_data <-
-      visible_data %>% #visible data with c for component
-      group_by_all() %>%
-      summarise(
-        c = as.character(1:2), #split at mean and assign
-        .groups = "drop"
-      ) %>% rowwise %>%
+      reframe(.by = everything(),    #implement for other intial weighting options too ##########
+              c = as.character(1:2) #fir a logistic regression on c earlier #########
+              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+              #       .groups = "drop"
+      ) %>%
 
       mutate(
         `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ 0.55,
