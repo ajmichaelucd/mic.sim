@@ -87,6 +87,7 @@ full_sim_in_1_function <- function(i,
                                    fms_only = FALSE,
                                    initial_weighting = 1,
                                    keep_true_values = TRUE,
+                                   max_cens_tolerance = 0.8,
                                    ...
 ){
   set.seed(i)
@@ -189,7 +190,7 @@ full_sim_in_1_function <- function(i,
   prelim_cens_check %>% pull(text_form) %>% cat(., sep = "\n")
   prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum %>% paste0("total sum of left-censored and right_censored observations is ", .) %>% print
 
-  if (prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum >= 0.8) {
+  if (prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum >= max_cens_tolerance) {
     overall_censoring = "stop"
     fm_convergence = NA
     sigma_check = NA_character_

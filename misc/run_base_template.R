@@ -90,6 +90,7 @@ fms_only = FALSE
 initial_weighting = 1
 keep_true_values = TRUE
 conc_limits_table = NULL
+max_cens_tolerance = 0.8
 
 #poss_full_sim_in_1_function <- purrr::possibly(.f = full_sim_in_1_function, otherwise = "Error")
 #modded_poss_full_sim_in_1_function <- purrr::quietly(full_sim_in_1_function)
@@ -123,38 +124,8 @@ model_results <- purrr::map(
     cutoff = cutoff,
     fms_only = fms_only,
     initial_weighting = initial_weighting,
-    keep_true_values = keep_true_values
-  ))
-
-#run--------
-model_results <- purrr::map(
-  iteration_set,
-  ~ full_sim_in_1_function(
-    .x,
-    n = n,
-    t_dist = t_dist,
-    pi = pi,
-    `E[X|T,C]` = `E[X|T,C]`,
-    sd_vector = sd_vector,
-    covariate_list = covariate_list,
-    covariate_effect_vector = covariate_effect_vector,
-    low_con = low_con,
-    high_con = high_con,
-    scale = scale,
-    formula = formula,
-    formula2 = formula2,
-    max_it = max_it,
-    ncomp = ncomp,
-    tol_ll = tol_ll,
-    verbose = verbose,
-    maxiter_survreg = maxiter_survreg,
-    pi_function = pi_function,
-    pi_link = pi_link,
-    allow_safety = allow_safety,
-    cutoff = cutoff,
-    fms_only = fms_only,
-    initial_weighting = initial_weighting,
-    keep_true_values = keep_true_values
+    keep_true_values = keep_true_values,
+    max_cens_tolerance = max_cens_tolerance
   ))
 
 results <- list(
@@ -185,7 +156,8 @@ results <- list(
     cutoff = cutoff,
     fms_only = fms_only,
     initial_weighting = initial_weighting,
-    keep_true_values = keep_true_values
+    keep_true_values = keep_true_values,
+    max_cens_tolerance = max_cens_tolerance
   ))
 
 ##add a save here
