@@ -2,13 +2,14 @@
 % Please edit documentation in R/fit_model_safety_pi.R
 \name{fit_model_safety_pi}
 \alias{fit_model_safety_pi}
-\title{Title}
+\title{fit_modek_safety_pi}
 \usage{
 fit_model_safety_pi(
   visible_data = prep_sim_data_for_em(),
   formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t,
     df = 0, calc = TRUE),
   formula2 = c == "2" ~ s(t),
+  fm_check = "RC",
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
@@ -24,5 +25,5 @@ fit_model_safety_pi(
 \item{maxiter_survreg}{}
 }
 \description{
-Title
+fit_modek_safety_pi
 }
