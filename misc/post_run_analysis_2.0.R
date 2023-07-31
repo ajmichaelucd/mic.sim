@@ -15,14 +15,14 @@ library(patchwork)
 
 ###Parameters to estimate and other simulation info----------------------
 #number of batches (e.g. 100)
-number_of_batches = 10
+number_of_batches = 100
 #number per batch (e.g. 10)
 number_per_batch = 10
 #check by putting total number here
-number_of_iterations = 100
+number_of_iterations = 1000
 
 #path to the directory full of the files
-location <- "~/Desktop/july_2023/test_run_2"
+location <- "~/Desktop/july_2023/mh_clinda"
 
 
 #two formats i have used:
@@ -31,8 +31,8 @@ location <- "~/Desktop/july_2023/test_run_2"
 format <- "name_date_number"
 
 #general name of simulation array
-array_name <- "test_run_2"
-date <- "07172023"
+array_name <- "mh_clinda"
+date <- "07282023"
 
 incomplete <- check_array_complete(number_of_batches = number_of_batches, format = format, location = location, array_name = array_name, date = date)
 
@@ -91,6 +91,9 @@ array_results <-
   ) %>%
   rbindlist() %>% tibble()
 
+array_results %>% summarize(.by = c(overall_censoring, fm_convergence, sigma_check, censor_fm_check, fms_convergence), n = n())
+
+array_results %>% filter(sigma_check == "go")
 
 array_results %>% group_by(cross) %>% summarise(n = n())
 
@@ -114,13 +117,13 @@ array_results %>% summarise(.by = scenario,
 array_results %>% View
 
 
-save(array_results, file = "~/Desktop/june_2023/analysis/run_form2_spline_2_06132023_results.Rdata")
+save(array_results, file = "~/Desktop/july_2023/analysis/test_run_2.Rdata")
 
 
 
-
-
-
+df <- rbind(
+loadRData("~/Desktop/july_2023/analysis/test_run_3.Rdata") %>% mutate(run = 3),
+loadRData("~/Desktop/july_2023/analysis/test_run_2.Rdata") %>% mutate(run = 2))
 
 
 
@@ -142,7 +145,7 @@ run_form2_spline_2_results %>% mutate(form = "spline_2") #%>% ggplot() + geom_hi
 )
 
 
-df %>% summarise(.by = c(form, scenario),
+df %>% summarise(.by = c(run, scenario),
                 steps = mean(steps),
                  mu_resid_sq_1 = mean(mu_resid_sq_1),
                  mu_resid_sq_2 = mean(mu_resid_sq_2),
@@ -240,7 +243,7 @@ df %>% mutate(would_not_pass =
 
 
 
-iteration = 45
+iteration = 74
 number_per_batch = 10
 
 plot_iteration(iteration = iteration, number_per_batch = number_per_batch, analysis = NULL, location = location, format = format, array_name = array_name, date = date)
