@@ -232,11 +232,11 @@ full_sim_in_1_function <- function(i,
       if (verbose > 1) {
         print("fit_model failed to converge")
       }
-    }
-    else {
-      fm_convergence = TRUE
+    } else {
+      fm_convergence = case_when(single_model_output_fm$converge == "YES" ~ TRUE,
+                                 TRUE ~ FALSE)
 
-      if (verbose > 1) {
+      if (verbose > 1 & fm_convergence) {
         print("fit_model converged")
       }
     }
@@ -295,7 +295,23 @@ full_sim_in_1_function <- function(i,
         } else{
           fms_convergence = "tbd"
         }
-      }
+    } else{ ##put the stuff for a model that didn't converge but generated output here, assign censor_fm_check as "RC", "LC", or both? skip sigma check
+
+      sigma_check = NA_character_ #can't sigma check because one scale is missing
+      censor_fm_check =
+        case_when(
+          is.na(single_model_output_fm$newmodel[[1]]$coefficients[1]) & is.na(single_model_output_fm$newmodel[[2]]$coefficients[1]) ~ "BOTH",
+          is.na(single_model_output_fm$newmodel[[1]]$coefficients[1]) ~ "LC",
+          is.na(single_model_output_fm$newmodel[[2]]$coefficients[1]) ~ "RC",
+          TRUE ~ "BOTH"
+        )
+      fms_convergence = case_when(
+        censor_fm_check == "BOTH" ~ NA,
+        TRUE ~ "tbd"
+      )
+      if(is.na(fms_convergence)){single_model_output_fms = "PASS"}
+
+        }
       }
 
   if(!is.na(fms_convergence)){

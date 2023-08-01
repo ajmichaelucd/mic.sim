@@ -361,13 +361,19 @@ number_coef_2 <- length(modelsplit_2$coefficients) == length(oldmodel[[2]]$coeff
 
 
 if(number_coef_1 & number_coef_2){
-  mu_coef_diff_1 <-  max(abs(modelsplit_1$coefficients - oldmodel[[1]]$coefficients))
-  mu_coef_diff_2 <-  max(abs(modelsplit_2$coefficients - oldmodel[[2]]$coefficients))
+  mu_coef_diff_1 <-  sum(abs(modelsplit_1$coefficients - oldmodel[[1]]$coefficients))
+  mu_coef_diff_2 <-  sum(abs(modelsplit_2$coefficients - oldmodel[[2]]$coefficients))
   mu_coef_diff <- max(mu_coef_diff_1, mu_coef_diff_2) < 0.00001
   #binom_model$smooth.frame ????
 
 } else{
   mu_coef_diff <- FALSE
+}
+
+if(is.na(mu_coef_diff)){
+  converge = "NO"
+  break
+
 }
 
 #binom_model$coefficients
@@ -380,6 +386,7 @@ if(number_coef_1 & number_coef_2){
 
         if( mu_coef_diff ) # && check_pi < 0.00001)
         {message("stopped on coefficients")
+          converge = "YES"
           break}
       #
     }
@@ -496,6 +503,7 @@ if(number_coef_1 & number_coef_2){
       {
         if(verbose > 0){
           message("Stopped on combined LL and parameters")}
+        converge = "YES"
         break
       }
 
@@ -514,7 +522,8 @@ if(number_coef_1 & number_coef_2){
       possible_data = possible_data,
       binom_model = binom_model,
       newmodel = newmodel,
-      steps = i
+      steps = i,
+      converge = converge
     )
   )
 

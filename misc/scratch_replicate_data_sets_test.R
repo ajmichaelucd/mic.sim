@@ -8,7 +8,7 @@ ncomp = 2
 
 
 ggplot()+
-  geom_function(fun = function(t){0.3 + 0.02 * t - 0.0005 * t^2}) +
+  geom_function(fun = function(t){-1.75 + 0.2 * t - 0.007 * t^2}) +
   xlim(-0.5, 16.5) #+ ylim(0, 1)
 
 pi = function(t) {

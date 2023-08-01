@@ -45,8 +45,9 @@ fit_model_safety_pi = function(
 
   median_y = median(visible_data$left_bound)
   #first E step-----
-  possible_data = case_when(
-    fm_check == "RC" ~
+  #possible_data = case_when(
+    if(fm_check == "RC"){
+      possible_data =
       visible_data %>% #visible data with c for component
       reframe(.by = everything(),    #implement for other intial weighting options too ##########
               c = as.character(1:2) #fir a logistic regression on c earlier #########
@@ -59,9 +60,8 @@ fit_model_safety_pi = function(
                                  right_bound != Inf & c == "1"~ 1 ,
                                  right_bound != Inf & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
         ###Also only works with scale == "log"
-      ), #%>%
-
-    fm_check == "LC" ~
+      )} else if(fm_check == "LC"){ #%>%
+      possible_data =
       visible_data %>% #visible data with c for component
       reframe(.by = everything(),    #implement for other intial weighting options too ##########
               c = as.character(1:2) #fir a logistic regression on c earlier #########
@@ -74,11 +74,11 @@ fit_model_safety_pi = function(
                                  right_bound != low_con & c == "1"~ 0 ,
                                  right_bound != low_con & c == "2"~ 1) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
         ###Also only works with scale == "log"
-      ),
+      )}else{
     TRUE ~ "Error"
-  )
+  }
 
-  if(possible_data == "Error"){errorCondition("invalid fm_check value")}
+  if(length(possible_data) == 1){errorCondition("invalid fm_check value")}
 
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3) ##changed to 3 to log survreg warnings
@@ -110,10 +110,10 @@ fit_model_safety_pi = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    df_temp <- case_when(fm_check == "RC" ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1),
-                         fm_check == "LC" ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 2),
-                         TRUE ~ possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
-    )
+    if(fm_check == "RC") {df_temp = possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
+    }else if(fm_check == "LC") {df_temp = possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 2)
+    }else{df_temp = possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)}
+
 
 
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
@@ -175,7 +175,7 @@ fit_model_safety_pi = function(
 
       number_coef <- length(model$coefficients) == length(oldmodel$coefficients)
       if(number_coef){
-        mu_coef_diff <-  max(abs(model$coefficients - oldmodel$coefficients)) < 0.00001
+        mu_coef_diff <-  sum(abs(model$coefficients - oldmodel$coefficients)) < 0.00001
 
       } else{
         mu_coef_diff <- FALSE
