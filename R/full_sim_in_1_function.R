@@ -295,7 +295,7 @@ full_sim_in_1_function <- function(i,
         } else{
           fms_convergence = "tbd"
         }
-    } else{ ##put the stuff for a model that didn't converge but generated output here, assign censor_fm_check as "RC", "LC", or both? skip sigma check
+    } else if(length(single_model_output_fm) > 1 & !fm_convergence){ ##put the stuff for a model that didn't converge but generated output here, assign censor_fm_check as "RC", "LC", or both? skip sigma check
 
       sigma_check = NA_character_ #can't sigma check because one scale is missing
       censor_fm_check =
@@ -311,6 +311,8 @@ full_sim_in_1_function <- function(i,
       )
       if(is.na(fms_convergence)){single_model_output_fms = "PASS"}
 
+    } else{
+          print("skipping checks")
         }
       }
 
