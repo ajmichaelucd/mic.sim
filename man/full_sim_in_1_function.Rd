@@ -42,6 +42,7 @@ full_sim_in_1_function(
   fms_only = FALSE,
   initial_weighting = 1,
   keep_true_values = TRUE,
+  max_cens_tolerance = 0.8,
   ...
 )
 }

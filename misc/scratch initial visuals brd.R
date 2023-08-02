@@ -178,7 +178,7 @@ if(date_type == "decimal"){
  #     ylab("MIC")
 
 
-    df %>% ggplot() +
+  a  <- df %>% ggplot() +
       #geom_bar(aes(x = mid, fill = cens)) +
       geom_point(aes(x = t, y = mid, color = cens), data = df, alpha = 0) +
       geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(left_bound != -Inf & right_bound != Inf))) +
@@ -190,7 +190,7 @@ if(date_type == "decimal"){
       ggtitle(column) +
       xlab("Time") +
       ylab("MIC")
-   # ggMarginal(a, x = t, y = mid, data = df, type = "histogram", margins = c("both"), yparams = list(binwidth = 1), xparams = list(bins = 16), groupFill = TRUE)
+    ggMarginal(a, x = t, y = mid, data = df, type = "histogram", margins = c("both"), yparams = list(binwidth = 1), xparams = list(bins = 16), groupFill = TRUE)
 
 
 
