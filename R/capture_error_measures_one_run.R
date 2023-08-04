@@ -27,7 +27,7 @@ capture_error_measures_one_run <- function(results, settings){
 
 
 
-
+print(results$i)
   ##check directionality-----------
 
 
@@ -44,7 +44,10 @@ capture_error_measures_one_run <- function(results, settings){
     run_status_notes$fm_convergence == "TRUE" & run_status_notes$sigma_check == "go" & run_status_notes$censor_fm_check == "All Clear" ~ "fm, passed checks",
     run_status_notes$fm_convergence == "TRUE" & run_status_notes$sigma_check != "go" & run_status_notes$censor_fm_check == "All Clear" ~ "fm, halted on checks (fail)",
     run_status_notes$fm_convergence == "TRUE" & run_status_notes$censor_fm_check == "BOTH" ~ "fm, halted on checks (fail)",
-    run_status_notes$fm_convergence == "FALSE" ~ "nothing, fm failed",
+    run_status_notes$fm_convergence == "FALSE" & is.na(run_status_notes$censor_fm_check) ~ "nothing, fm failed",
+    run_status_notes$fm_convergence == "FALSE" & run_status_notes$censor_fm_check == "BOTH" ~ "nothing, fm failed",
+    run_status_notes$fm_convergence == "FALSE" & run_status_notes$censor_fm_check %in% c("LC", "RC") & fms_convergence == "FALSE" ~ "fm failed, tried fms, fms failed",
+    run_status_notes$fm_convergence == "FALSE" & run_status_notes$censor_fm_check %in% c("LC", "RC") & fms_convergence == "TRUE" ~ "fm failed, tried fms, fms converged",
     run_status_notes$overall_censoring == "stop" ~ "nothing, halted on censoring level",
     TRUE ~ "unforeseen combo"
   )
@@ -64,7 +67,7 @@ capture_error_measures_one_run <- function(results, settings){
   ##check directionality-----------
 
 
-  if (analysis == "fm") {
+  if (analysis == "fm" & run_status_notes$fm_convergence == "TRUE") {
     directionality <- check_directionality(results, settings)
 
   } else{
@@ -168,8 +171,8 @@ capture_error_measures_one_run <- function(results, settings){
       possible_data %>% filter(c == comp) %>%
       mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
       mutate(mu_hat = case_when(
-        c == "1" ~ predict(single_model_output$newmodel[[1]], data.frame(t = t)),
-        c == "2" ~ predict(single_model_output$newmodel[[2]], data.frame(t = t)),
+        c == "1" & !is.na(single_model_output$newmodel[[1]]$scale) ~ predict(single_model_output$newmodel[[1]], data.frame(t = t)),
+        c == "2" & !is.na(single_model_output$newmodel[[2]]$scale) ~ predict(single_model_output$newmodel[[2]], data.frame(t = t)),
         TRUE ~ NaN
       )) %>%
       mutate(resid = observed_value - mu_hat,
@@ -183,8 +186,8 @@ capture_error_measures_one_run <- function(results, settings){
       possible_data %>% filter(c == comp) %>%
       mutate(mu_dgm = settings$`E[X|T,C]`(t = t, c = comp)) %>%
       mutate(mu_hat = case_when(
-        c == "1" ~ predict(single_model_output$newmodel[[1]], data.frame(t = t)),
-        c == "2" ~ predict(single_model_output$newmodel[[2]], data.frame(t = t)),
+        c == "1" & !is.na(single_model_output$newmodel[[1]]$scale) ~ predict(single_model_output$newmodel[[1]], data.frame(t = t)),
+        c == "2" & !is.na(single_model_output$newmodel[[1]]$scale) ~ predict(single_model_output$newmodel[[2]], data.frame(t = t)),
         TRUE ~ NaN
       )) %>%
       mutate(resid = observed_value - mu_hat,
@@ -195,7 +198,9 @@ capture_error_measures_one_run <- function(results, settings){
         mu_bias = mean(mu_dgm - mu_hat)
       ) %>%
       mutate(comp = "both")
-    rbind(mu_resid_comp, mu_resid_both) %>%
+    full_join(mu_resid_comp, tibble(comp = as.character(c(1,2)))) %>% suppressMessages() %>%
+
+    rbind(., mu_resid_both) %>%
       pivot_wider(names_from = comp, values_from = mu_resid_sq:mu_bias) %>%
       select(mu_resid_sq_1,
              mu_resid_sq_2,
@@ -302,12 +307,16 @@ capture_error_measures_one_run <- function(results, settings){
   if (length(single_model_output) > 1) {
     censoring_levels <- cbind(
       censoring_post_info(possible_data, settings, comparison = "model_weighted") %>%
+        full_join(., tibble(comp = as.character(c(rep(1, 3), rep(2, 3))), censor = rep(c("left", "interval", "right"),2))) %>%
+        suppressMessages() %>%
         pivot_wider(
           names_from = c(comp, censor),
           values_from = weighted_prop_model,
           names_prefix = "model_cens_"
         ),
       censoring_post_info(possible_data, settings, comparison = "true_pct") %>%
+        full_join(., tibble(comp = as.character(c(rep(1, 3), rep(2, 3))), censor = rep(c("left", "interval", "right"),2))) %>%
+        suppressMessages() %>%
         pivot_wider(
           names_from = c(comp, censor),
           values_from = weighted_prop_true,
@@ -325,6 +334,8 @@ capture_error_measures_one_run <- function(results, settings){
         model_cens_2_left = NaN,
         model_cens_2_right = NaN,
         censoring_post_info(possible_data, settings, comparison = "true_pct") %>%
+          full_join(., tibble(comp = as.character(c(rep(1, 3), rep(2, 3))), censor = rep(c("left", "interval", "right"),2))) %>%
+          suppressMessages() %>%
           pivot_wider(
             names_from = c(comp, censor),
             values_from = weighted_prop_true,
@@ -347,7 +358,7 @@ capture_error_measures_one_run <- function(results, settings){
   #)
 
   ##Bind output into a single tibble (could do 1 row or multiple rows, just add i)
-  cbind(scenario, mu_resid, pi_resid, comp_scales, censoring_levels, results$run_status_notes %>% t() %>% as_tibble) %>%
+  cbind(situation, analysis, mu_resid, pi_resid, comp_scales, censoring_levels, results$run_status_notes %>% t() %>% as_tibble) %>%
     tibble %>%
     mutate(flip = directionality %>%
              pull(flip_decision),

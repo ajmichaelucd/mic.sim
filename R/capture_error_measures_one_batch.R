@@ -40,7 +40,7 @@ capture_error_measures_one_batch <- function(location,
 
   ###Analysis of iterations---------------------
   purrr::map(batch_results$model_results, ~capture_error_measures_one_run(results =  .x, settings = batch_results$settings)) %>%
-    data.table::rbindlist()
+    data.table::rbindlist(use.names = TRUE)
   ##add attribute read to the error_measures_one_run_both_directions segment
 
 }
