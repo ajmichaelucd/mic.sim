@@ -224,6 +224,13 @@ full_sim_in_1_function <- function(i,
 
     #}
 
+    if(ncomp == 1){
+      fm_convergence = TRUE
+      sigma_check = NA_character_
+      censor_fm_check = NA_character_
+      fms_convergence = NA
+    }else{
+
     if (length(single_model_output_fm) == 1) {
       fm_convergence = FALSE
       sigma_check = NA_character_
@@ -314,7 +321,7 @@ full_sim_in_1_function <- function(i,
     } else{
           print("skipping checks")
         }
-      }
+      }}
 
   if(!is.na(fms_convergence)){
 

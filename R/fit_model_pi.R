@@ -51,8 +51,33 @@ fit_model_pi = function(
   #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
   #verbose = 0:
 
+  if(ncomp == 1){
+    possible_data <-
+      visible_data %>%
+      mutate(#visible data with c for component
+        mid =
+          case_when(
+            left_bound == -Inf ~ right_bound - 0.5,
+            right_bound == Inf ~ left_bound + 0.5,
+            TRUE ~ (left_bound + right_bound) / 2
+          ),
+        rc = ifelse(right_bound == Inf, TRUE, FALSE)
+      ) #%>%  ##this is probably only accurate for scale = "log"
+    #print()
 
-  median_y = median(visible_data$left_bound)
+    newmodel  <- survival::survreg(
+      formula,  ##Make this chunk into an argument of the function
+      data = possible_data,
+      dist = "gaussian",
+      control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+
+    return(list(possible_data = possible_data,
+                newmodel = newmodel))
+
+  }else{
+
+
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_con[1], visible_data$high_con[1])))
   #first E step-----
   if(initial_weighting == 1){
     possible_data <-
@@ -70,14 +95,14 @@ fit_model_pi = function(
       #                              left_bound <= median_y & c == "2" ~ 0.6)
       #     ) %>%
       mutate(
-        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.99,
-                                 right_bound == Inf & c == "1" ~ 0.01,
+        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
+                                 right_bound == Inf & c == "1" ~ 0.0001,
                                  left_bound > median_y & c == "2" ~ ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
                                  left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
                                  left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
                                  left_bound <= median_y & left_bound != -Inf & c == "1" ~ ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
-                                 left_bound == -Inf & c == "2" ~ 0.01,
-                                 left_bound == -Inf & c == "1" ~ 0.99),
+                                 left_bound == -Inf & c == "2" ~ 0.0001,
+                                 left_bound == -Inf & c == "1" ~ 0.9999),
         mid =
           case_when(
             left_bound == -Inf ~ right_bound - 0.5,
@@ -183,20 +208,31 @@ fit_model_pi = function(
         rc = ifelse(right_bound == Inf, TRUE, FALSE)
       ) %>% ungroup
 
-  }else{#warningCondition("Select a weight between 1 and 4 please, defaulting to 1")
+  }else if(initial_weighting == 5){
     possible_data <-
-      visible_data %>% #visible data with c for component
+    visible_data %>% #visible data with c for component
+      #   group_by_all() %>%
       reframe(.by = everything(),    #implement for other intial weighting options too ##########
               c = as.character(1:2) #fir a logistic regression on c earlier #########
               # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
               #       .groups = "drop"
       ) %>%
-
+      #     mutate(
+      #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+      #                              left_bound > median_y & c == "2" ~ 0.4,
+      #                              left_bound <= median_y & c == "1" ~ 0.4,
+      #                              left_bound <= median_y & c == "2" ~ 0.6)
+      #     ) %>%
       mutate(
-        `P(C=c|y,t)` = case_when(left_bound == -Inf & c == "2" ~ 0,
-                                 left_bound == -Inf & c == "1" ~ 1,
-                                 right_bound == Inf & c == "2" ~ 1,
-                                 right_bound == Inf & c == "1" ~ 0,
+        m =  floor(((high_con - low_con) - 1)/ 2),
+        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
+                                 right_bound == Inf & c == "1" ~ 0.0001,
+                                 left_bound == -Inf & c == "2" ~ 0.0001,
+                                 left_bound == -Inf & c == "1" ~ 0.9999,
+                                 low_con + m >= right_bound & c == "2" ~ 0.1,
+                                 low_con + m >= right_bound & c == "1" ~ 0.9,
+                                 high_con - m <= left_bound & c == "2" ~ 0.9,
+                                 high_con - m <= left_bound & c == "1" ~ 0.1,
                                  TRUE ~ 0.5),
         mid =
           case_when(
@@ -205,7 +241,85 @@ fit_model_pi = function(
             TRUE ~ (left_bound + right_bound) / 2
           ),
         rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      )
+      ) %>% ungroup()
+  }else if(initial_weighting == 6){
+    possible_data <-
+    visible_data %>% #visible data with c for component
+      #   group_by_all() %>%
+      reframe(.by = everything(),    #implement for other intial weighting options too ##########
+              c = as.character(1:2) #fir a logistic regression on c earlier #########
+              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+              #       .groups = "drop"
+      ) %>%
+      #     mutate(
+      #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+      #                              left_bound > median_y & c == "2" ~ 0.4,
+      #                              left_bound <= median_y & c == "1" ~ 0.4,
+      #                              left_bound <= median_y & c == "2" ~ 0.6)
+      #     ) %>%
+      mutate(
+        m =  floor(((high_con - low_con) - 1)/ 2),
+        mm = floor(((high_con - low_con))/ 2),
+        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
+                                 right_bound == Inf & c == "1" ~ 0.0001,
+                                 left_bound == -Inf & c == "2" ~ 0.0001,
+                                 left_bound == -Inf & c == "1" ~ 0.9999,
+                                 low_con + m >= right_bound & c == "2" ~ 0.1,
+                                 low_con + m >= right_bound & c == "1" ~ 0.9,
+                                 high_con - m <= left_bound & c == "2" ~ 0.9,
+                                 high_con - m <= left_bound & c == "2" ~ 0.1,
+                                 mm > m & low_con + mm >= right_bound & c == "2" ~ 0.3,
+                                 mm > m & low_con + mm >= right_bound & c == "1" ~ 0.7,
+                                 mm > m & high_con - mm <= left_bound & c == "2" ~ 0.7,
+                                 mm > m & high_con - mm <= left_bound & c == "1" ~ 0.3,
+                                 TRUE ~ 0.5),
+        mid =
+          case_when(
+            left_bound == -Inf ~ right_bound - 0.5,
+            right_bound == Inf ~ left_bound + 0.5,
+            TRUE ~ (left_bound + right_bound) / 2
+          ),
+        rc = ifelse(right_bound == Inf, TRUE, FALSE)
+      ) %>% ungroup()
+  }else{#warningCondition("Select a weight between 1 and 4 please, defaulting to 1")
+    possible_data <-
+      visible_data %>% #visible data with c for component
+      #   group_by_all() %>%
+      reframe(.by = everything(),    #implement for other intial weighting options too ##########
+              c = as.character(1:2) #fir a logistic regression on c earlier #########
+              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+              #       .groups = "drop"
+      ) %>%
+      #     mutate(
+      #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+      #                              left_bound > median_y & c == "2" ~ 0.4,
+      #                              left_bound <= median_y & c == "1" ~ 0.4,
+      #                              left_bound <= median_y & c == "2" ~ 0.6)
+      #     ) %>%
+      mutate(
+        m =  floor(((high_con - low_con) - 1)/ 2),
+        mm = floor(((high_con - low_con))/ 2),
+        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 1,
+                                 right_bound == Inf & c == "1" ~ 0,
+                                 left_bound == -Inf & c == "2" ~ 0,
+                                 left_bound == -Inf & c == "1" ~ 1,
+                                 low_con + m >= right_bound & c == "2" ~ 0.1,
+                                 low_con + m >= right_bound & c == "1" ~ 0.9,
+                                 high_con - m <= left_bound & c == "2" ~ 0.9,
+                                 high_con - m <= left_bound & c == "2" ~ 0.1,
+                                 mm > m & low_con + mm >= right_bound & c == "2" ~ 0.1,
+                                 mm > m & low_con + mm >= right_bound & c == "1" ~ 0.9,
+                                 mm > m & high_con - mm <= left_bound & c == "2" ~ 0.9,
+                                 mm > m & high_con - mm <= left_bound & c == "1" ~ 0.1,
+                                 TRUE ~ 0.5),
+        mid =
+          case_when(
+            left_bound == -Inf ~ right_bound - 0.5,
+            right_bound == Inf ~ left_bound + 0.5,
+            TRUE ~ (left_bound + right_bound) / 2
+          ),
+        rc = ifelse(right_bound == Inf, TRUE, FALSE)
+      ) %>% ungroup()
   }
 
 
@@ -241,7 +355,7 @@ fit_model_pi = function(
     #   data = possible_data) #if not from normal, change the link function and error dist
     #eg if lognormal, survreg with lognormal(change error distand link function)
 
-    df_temp <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
+    df_temp <- possible_data %>% filter(`P(C=c|y,t)` > 0 )
     #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
 
 
@@ -258,7 +372,8 @@ fit_model_pi = function(
       dist = "gaussian",
       control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
     modelsplit_2 <- survival::survreg(
-      formula,  ##Make this chunk into an argument of the function
+      #formula,  ##Make this chunk into an argument of the function
+      formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t, df = 0, calc = TRUE, Boundary.knots = c(5.01, 16)),
       weights = `P(C=c|y,t)`,
       data = df2,
       dist = "gaussian",
@@ -370,7 +485,7 @@ if(number_coef_1 & number_coef_2){
   mu_coef_diff <- FALSE
 }
 
-if(is.na(mu_coef_diff)){
+if(is.na(mu_coef_diff) | (tibble(a = modelsplit_2$coefficients) %>% filter(is.na(a)) %>% nrow + tibble(a = modelsplit_2$coefficients) %>% filter(is.na(a)) %>% nrow) > 0){
   converge = "NO"
   break
 
@@ -424,7 +539,7 @@ if(is.na(mu_coef_diff)){
                                TRUE ~ NaN),
           #predict(model, newdata = possible_data),
         `sd[Y|t,c]` = case_when(c == "1" ~ modelsplit_1$scale,
-                                c == "2" ~ modelsplit_2$scale,
+                                c == "2" ~ modelsplit_2$scale, #1,
                                 TRUE ~ NaN),
           #model$scale[c], #####QUESTION HERE????????????????????????????
         # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
@@ -526,5 +641,5 @@ if(is.na(mu_coef_diff)){
       converge = converge
     )
   )
-
+  }
 }

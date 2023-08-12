@@ -52,8 +52,9 @@ gen_comp = function(p)
 }
 
 pi_grab = function(t, pi){  ##will need to be adjusted for more than 2 components
- c(
-   "1" = pi(t) %>% pull("1"),
-   "2" = pi(t) %>% pull("2")
- )
+# c(
+#   "1" = pi(t) %>% pull("1"),
+#   "2" = pi(t) %>% pull("2")
+# )
+  map_dbl(pi(t), as.numeric)
 }
