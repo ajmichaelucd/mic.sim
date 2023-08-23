@@ -40,15 +40,15 @@ brd_data_pm <- readxl::read_excel("~/Desktop/july_2023/BRD MODLING RESULT1.1.xls
                                                                    "text", "text", "text", "text", "text",
                                                                    "text", "text", "text", "text"))
 
-dublin_data <- read_excel("~/Downloads/Salmonella Dublin_Worksheet_MIC_Results_HF.xlsx",
-                                                         col_types = c("numeric", "text", "text",
-                                                                       "text", "text", "date", "date", "text",
-                                                                       "text", "text", "text", "text", "text",
-                                                                       "text", "text", "text", "text", "text",
-                                                                       "text", "text", "text", "text", "text",
-                                                                       "text", "text", "numeric", "text",
-                                                                       "text", "numeric", "text", "text",
-                                                                       "text", "text", "text", "text", "numeric")) ##issue with some dates
+dublin_data_gn <- read_excel("~/Desktop/july_2023/dublin_data.xlsx",
+                          sheet = "gn")
+
+dublin_data_bopo <- read_excel("~/Desktop/july_2023/dublin_data.xlsx",
+                          sheet = "BOPO Panel")
+
+
+
+
 
 #1:18 metadata
 
@@ -57,8 +57,10 @@ col.to <- brd_data_mh %>% select(-contains("MIC...")) %>% select(-contains("S/I/
 brd_mh <- brd_data_mh %>% select(-all_of(col.to)) %>% rename_at(vars(col.from), ~col.to) %>% select(-contains("S/I/R"))
 brd_pm <- brd_data_pm %>% select(-all_of(col.to)) %>% rename_at(vars(col.from), ~col.to) %>% select(-contains("S/I/R"))
 
-dublin <- dublin_data %>% janitor::clean_names() %>% select(-contains("atb_")) %>% rename(gentamycin_mic = gentamycin_mic_mic)
-dnames <- dublin %>% select(ampicillin_mic:gentamycin_mic) %>% colnames
+dublin_gn <- dublin_data_gn %>% janitor::clean_names() %>% select(-contains("atb_")) %>% rename(gentamycin_mic = gentamycin_mic_mic)
+dublin_bopo <- dublin_data_bopo %>% janitor::clean_names() %>% select(-contains("atb_")) %>% rename(enrofloxacin_mic = enrofloxacin_l_mic)
+dnames_gn <- dublin_gn %>% select(ampicillin_mic:gentamycin_mic) %>% colnames
+dnames_bopo <- dublin_bopo %>% select(ampicillin_mic:tylosin_tartrate_mic) %>% colnames
 
 #brd_data_mh %>% select(all_of(mic_cols))
 #brd_data_mh %>% select(-contains("MIC...")) %>% select(-contains("S/I/R")) %>% select(-(1:18)) %>% colnames
@@ -177,7 +179,7 @@ if(date_type == "decimal"){
  #     ylab("MIC")
 
 
-  a  <- df %>% ggplot() +
+  df %>% ggplot() +
       #geom_bar(aes(x = mid, fill = cens)) +
       geom_point(aes(x = t, y = mid, color = cens), data = df, alpha = 0) +
       geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(left_bound != -Inf & right_bound != Inf))) +
@@ -189,7 +191,7 @@ if(date_type == "decimal"){
       ggtitle(column) +
       xlab("Time") +
       ylab("MIC")
-    ggMarginal(a, x = t, y = mid, data = df, type = "histogram", margins = c("both"), yparams = list(binwidth = 1), xparams = list(bins = 16), groupFill = TRUE)
+    #ggMarginal(a, x = t, y = mid, data = df, type = "histogram", margins = c("both"), yparams = list(binwidth = 1), xparams = list(bins = 16), groupFill = TRUE)
 
 
 
@@ -202,8 +204,8 @@ pdf("~/Desktop/july_2023/brd_pm.pdf", width=11, height=8.5)
 map(drugs, ~preview_column(.x, brd_pm, "Date of Isolation", "decimal"))
 dev.off()
 
-pdf("~/Desktop/july_2023/dublin.pdf", width=11, height=8.5)
-map(dnames, ~preview_column(.x, dublin, "year", "year"))
+pdf("~/Desktop/july_2023/dublin_bopo.pdf", width=11, height=8.5)
+map(dnames_bopo, ~preview_column(.x, dublin_bopo, "year", "year"))
 dev.off()
 #for tms, there is an observation with lb -4 rb -3 but everything else is ≤-3
 
@@ -237,7 +239,17 @@ df = brd_mh %>%
          t = decimal_date(`Date of Isolation`) - 2007)
 
 
+#dublin_bopo %>% summarise(.by = year, n = n())
 
+cens_dir = "LC"
+ncomp = 2
+
+#df <- dublin_bopo %>% mutate(
+#  t = year - 1993
+#)
+
+#drug_name = "tulathromycin"
+#drug = paste0(drug_name, "_mic")
 
 import_mics(df %>% pull(drug)) %>% mutate(left_bound = log2(left_bound),
                                           right_bound = log2(right_bound)) %>%
@@ -258,11 +270,11 @@ import_mics(df %>% pull(drug)) %>% mutate(left_bound = log2(left_bound),
 
 low_con <- case_when(
   nrow(df_temp %>% filter(left_bound == -Inf)) == 0 ~ min(df_temp$left_bound),
-  TRUE ~ df_temp %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% unique)
+  TRUE ~ ifelse(nrow(df_temp %>% filter(left_bound == -Inf)) == 0, 0, df_temp %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% unique))
 
 high_con <- case_when(
   nrow(df_temp %>% filter(right_bound == Inf)) == 0 ~ max(df_temp$right_bound),
-  TRUE ~ df_temp %>% filter(right_bound == Inf) %>% pull(left_bound) %>% unique)
+  TRUE ~ ifelse( nrow(df_temp %>% filter(right_bound == Inf)) == 0, 0, df_temp %>% filter(right_bound == Inf) %>% pull(left_bound) %>% unique))
 
 df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = row_number()) %>% filter(!is.na(left_bound) & !is.na(right_bound)) -> visible_data
 
@@ -272,11 +284,12 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
                                                 type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
                formula2 = c == "2" ~ s(t),
                max_it = 3000,
-               ncomp = 2,
+               ncomp = ncomp,
                tol_ll = 1e-06,
                pi_link = "logit",
                verbose = 3,
                initial_weighting = 7)
+
 
 
 
@@ -308,13 +321,19 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
  }
 
  mu.se.brd <- function(t, c, z){predict(output$newmodel[[c]], data.frame(t = t)) + z * predict(output$newmodel[[c]], data.frame(t = t), se = TRUE)$se.fit}
+ mu.se.brd.fms <- function(t, z){predict(output$newmodel, data.frame(t = t)) + z * predict(output$newmodel, data.frame(t = t), se = TRUE)$se.fit}
+
+ if(ncomp == 2){
+
+   output$newmodel[[1]]$scale %>% print
+   output$newmodel[[2]]$scale %>% print
 
  df %>% ggplot() +
    #geom_bar(aes(x = mid, fill = cens)) +
    geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
-   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2"))) +
-   geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc"))) +
-   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc"))) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.2) +
+   geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
    geom_point(aes(x = t, y = left_bound), data = df %>% filter(left_bound != -Inf)) +
    geom_point(aes(x = t, y = right_bound), data = df %>% filter(right_bound != Inf)) +
    scale_colour_gradientn(colours = c("purple", "orange")) +
@@ -332,8 +351,41 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
 
 
 
- output$newmodel[[1]]$scale
- output$newmodel[[2]]$scale
+ }else{
+
+
+
+   output$newmodel$scale %>% print()
+
+ df %>% ggplot() +
+   #geom_bar(aes(x = mid, fill = cens)) +
+   #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "int")), alpha = 0.2) +
+   geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = cens), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+   geom_point(aes(x = t, y = left_bound), data = df %>% filter(left_bound != -Inf)) +
+   geom_point(aes(x = t, y = right_bound), data = df %>% filter(right_bound != Inf)) +
+   #scale_colour_gradientn(colours = c("purple", "orange")) +
+   #ylim(plot_min - 0.5, plot_max + 0.5) +
+   ggtitle(drug) +
+   xlab("Time") +
+   ylab("MIC") +
+   ggnewscale::new_scale_color() +
+   geom_function(fun = function(t){predict(output$newmodel, newdata = data.frame(t = t))}, aes(color = "Component Mu", linetype = "Fitted Model")) +
+   #geom_function(fun = function(t){predict(output$newmodel[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+   #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6)
+
+
+
+
+}
+
+
+
+
 
  ggplot() +
    geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}) +
@@ -344,7 +396,7 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
  output <- fit_model_safety_pi(visible_data = visible_data,
                                formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
                                formula2 = c == "2" ~ s(t),
-                               fm_check = "RC",
+                               fm_check = cens_dir,
                                max_it = 3000,
                                ncomp = 2,
                                tol_ll = 1e-06,
@@ -391,9 +443,9 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
  means <- df %>% ggplot() +
    #geom_bar(aes(x = mid, fill = cens)) +
    geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
-   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2"))) +
-   geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc"))) +
-   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc"))) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.2) +
+   geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
    geom_point(aes(x = t, y = left_bound), data = df %>% filter(left_bound != -Inf)) +
    geom_point(aes(x = t, y = right_bound), data = df %>% filter(right_bound != Inf)) +
    scale_colour_gradientn(colours = c("purple", "orange")) +
@@ -417,10 +469,30 @@ pi <- df %>%
        fun = function(t) {
          predict(output$binom_model, data.frame(t), type = "response")
        },
-       aes(color = "Fitted Model")
+       aes(color = "Proportion non-WT")
      ) +
   xlim(min(output$possible_data$t), max(output$possible_data$t)) +
   ylim(0, 1)
+
+means/pi
+
+
+
+
+
+
+
+
+dublin_bopo %>% summarise(.by = gentamicin_mic, n = n())
+23
+247
+
+
+
+
+
+
+
 
 
 

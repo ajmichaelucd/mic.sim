@@ -1,10 +1,10 @@
-fit_model_pi = function(
+fit_model_pi_3 = function(
     visible_data,
 
     formula = Surv(time = left_bound,
                    time2 = right_bound,
                    type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-    formula3 = cc ~ t, #or: c == "2" ~ lo(t)
+    formula3 = list(cc ~ s(t), ~ s(t)), #or: c == "2" ~ lo(t)
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -29,7 +29,7 @@ fit_model_pi = function(
 
   mean_width <- visible_data %>% mutate(diff = high_con - low_con) %>% summarise(mean = mean(diff)) %>% pull
 
-  if(mean_width <= 2.5){##put everything in here, this is because without at least 3 intervals we can't detect a third comp
+  if(mean_width <= 3){##put everything in here, this is because without at least 3 intervals we can't detect a third comp
   return(
     "Interval too narrow"
   )
@@ -201,34 +201,34 @@ fit_model_pi = function(
     #     binom_model <- stats::glm(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
     #   } else{ errorCondition("pick logit or identity link function")}
 
-    library(nnet)
+ #   library(nnet)
     possible_data <- possible_data %>% mutate(cc = case_when(
       c == "1" ~ 0,
       c == "2" ~ 1,
       TRUE ~ 2
     ))
-    possible_data$cc <- relevel(as.factor(possible_data$cc), ref = 1)
+#    possible_data$cc <- relevel(as.factor(possible_data$cc), ref = 1)
 
-    multinom(formula = formula3, data = possible_data, model = TRUE, weights = `P(C=c|y,t)`)
+ #   multinom(formula = formula3, data = possible_data, model = TRUE, weights = `P(C=c|y,t)`)
 
-    library(mgcv)
-    t = possible_data$t
-    y = possible_data$cc
-    rrr <- mgcv::gam(data = possible_data %>% filter( `P(C=c|y,t)` > 0), formula = list(cc~s(t), ~s(t)), family = multinom(K = 2), weights = `P(C=c|y,t)`)
+#    library(mgcv)
+#    t = possible_data$t
+#    y = possible_data$cc
+    rrr <- mgcv::gam(data = possible_data %>% filter( `P(C=c|y,t)` > 0), formula = formula3, family = mgcv::multinom(K = 2), weights = `P(C=c|y,t)`)
 
-    predict.gam(rrr, newdata = data.frame(t = seq(0:15)), type="response")
+    #mgcv::predict.gam(rrr, newdata = data.frame(t = seq(0:15)), type="response")
 
-    detach("package:mgcv", unload = TRUE)
-
-
+ #   detach("package:mgcv", unload = TRUE)
 
 
-    if(pi_link == "logit"){
-      binom_model <- gam::gam(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
-    } else if(pi_link == "identity"){
 
-      binom_model <- gam::gam(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
-    } else{ errorCondition("pick logit or identity link function")}
+#
+  #  if(pi_link == "logit"){
+  #    binom_model <- gam::gam(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+  #  } else if(pi_link == "identity"){
+#
+  #    binom_model <- gam::gam(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+  #  } else{ errorCondition("pick logit or identity link function")}
 
 
     #    if(plot_visuals = TRUE){
@@ -319,10 +319,12 @@ fit_model_pi = function(
       mutate(
         `E[Y|t,c]` = case_when(c == "1" ~ predict(modelsplit_1, newdata = possible_data),
                                c == "2" ~ predict(modelsplit_2, newdata = possible_data),
+                               c == "3" ~ predict(modelsplit_3, newdata = possible_data),
                                TRUE ~ NaN),
         #predict(model, newdata = possible_data),
         `sd[Y|t,c]` = case_when(c == "1" ~ modelsplit_1$scale,
                                 c == "2" ~ modelsplit_2$scale,
+                                c == "3" ~ modelsplit_3$scale,
                                 TRUE ~ NaN),
         #model$scale[c], #####QUESTION HERE????????????????????????????
         # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
@@ -334,15 +336,16 @@ fit_model_pi = function(
             pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
         )
       ) %>%
-      group_by(obs_id) %>%
+      group_by(obs_id) %>% #rowwise %>%
       #  mutate(
       #    `P(c,y|t)` = `P(Y|t,c)` * `P(C = c)`, #unsure here
       #    `P(Y=y|t)` = sum(`P(c,y|t)`),
       #    `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
       #  )
       mutate(`P(C=c|t)` = case_when( ########UNSURE ABOUT THIS SECTION
-        c == "2" ~ predict(binom_model, newdata = tibble(t = t), type = "response"), ########UNSURE ABOUT THIS SECTION
-        c == "1" ~ 1 - predict(binom_model, newdata = tibble(t = t), type = "response") ########UNSURE ABOUT THIS SECTION
+        c == "3" ~ mgcv::predict.gam(rrr, newdata = tibble(t = t), type="response")[,3],
+        c == "2" ~ mgcv::predict.gam(rrr, newdata = tibble(t = t), type="response")[,2], ########UNSURE ABOUT THIS SECTION
+        c == "1" ~ mgcv::predict.gam(rrr, newdata = tibble(t = t), type="response")[,1] ########UNSURE ABOUT THIS SECTION
       )) %>%  ########UNSURE ABOUT THIS SECTION
       mutate(`P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`, ########UNSURE ABOUT THIS SECTION
              `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
