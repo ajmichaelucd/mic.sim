@@ -240,7 +240,7 @@ full_sim_in_1_function <- function(i,
         print("fit_model failed to converge")
       }
     } else {
-      fm_convergence = case_when(single_model_output_fm$converge == "YES" ~ TRUE,
+      fm_convergence = case_when(single_model_output_fm$converge %in% c("YES", "iterations")  ~ TRUE,
                                  TRUE ~ FALSE)
 
       if (verbose > 1 & fm_convergence) {

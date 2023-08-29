@@ -221,7 +221,7 @@ brd_pm
 
 drug = "FLORFE"
 
-df = brd_mh %>%
+df = brd_pm %>%
   mutate(source = tolower(`Specimen Source`),
          source =
            case_when(
@@ -288,7 +288,7 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
                tol_ll = 1e-06,
                pi_link = "logit",
                verbose = 3,
-               initial_weighting = 7)
+               initial_weighting = 8)
 
 
 
@@ -320,6 +320,10 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
    plot_max <- (df %>% pull(right_bound) %>% max) + 1
  }
 
+ #ciTools::add_pi(df, output$newmodel[[1]], alpha = 0.05, names = c("lwr", "upr"))
+    #doesn't work with gaussian dist
+
+
  mu.se.brd <- function(t, c, z){predict(output$newmodel[[c]], data.frame(t = t)) + z * predict(output$newmodel[[c]], data.frame(t = t), se = TRUE)$se.fit}
  mu.se.brd.fms <- function(t, z){predict(output$newmodel, data.frame(t = t)) + z * predict(output$newmodel, data.frame(t = t), se = TRUE)$se.fit}
 
@@ -327,6 +331,18 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
 
    output$newmodel[[1]]$scale %>% print
    output$newmodel[[2]]$scale %>% print
+
+  ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
+     mutate(
+       c1pred = predict(output$newmodel[[1]], tibble(t), se = T)$fit,
+       c1pred_se = predict(output$newmodel[[1]], tibble(t), se = T)$se.fit,
+       c1pred_lb = c1pred - 1.96 * c1pred_se,
+       c1pred_ub = c1pred + 1.96 * c1pred_se,
+       c2pred = predict(output$newmodel[[2]], tibble(t), se = T)$fit,
+       c2pred_se = predict(output$newmodel[[2]], tibble(t), se = T)$se.fit,
+       c2pred_lb = c2pred - 1.96 * c2pred_se,
+       c2pred_ub = c2pred + 1.96 * c2pred_se,
+     )
 
  df %>% ggplot() +
    #geom_bar(aes(x = mid, fill = cens)) +
@@ -344,16 +360,28 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
    ggnewscale::new_scale_color() +
    geom_function(fun = function(t){predict(output$newmodel[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
    geom_function(fun = function(t){predict(output$newmodel[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
-   geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-   geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-   geom_function(fun = function(t){mu.se.brd(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-   geom_function(fun = function(t){mu.se.brd(t, c = 2, z = -1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6)
+   #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   #geom_function(fun = function(t){mu.se.brd(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   #geom_function(fun = function(t){mu.se.brd(t, c = 2, z = -1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.25) +
+   geom_ribbon(aes(ymin = c2pred_lb, ymax = c2pred_ub, x = t, fill = "Component 2 Mu"), data = ci_data, alpha = 0.25) +
+   geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
+   geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15)
 
-
+# need to examine the things for sim_pi_survreg_boot, specifically the vcov stuff and if we should let it draw values for all spline terms and then also for the
+ #way it calculates the sim response
+  #do we need to account for weighting or anything?
 
  }else{
 
-
+   ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
+     mutate(
+       c1pred = predict(output$newmodel, tibble(t), se = T)$fit,
+       c1pred_se = predict(output$newmodel, tibble(t), se = T)$se.fit,
+       c1pred_lb = c1pred - 1.96 * c1pred_se,
+       c1pred_ub = c1pred + 1.96 * c1pred_se
+     )
 
    output$newmodel$scale %>% print()
 
@@ -376,7 +404,8 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
    #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
    #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
    geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-   geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6)
+   geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+   geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.2)
 
 
 
@@ -384,12 +413,13 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
 }
 
 
-
+##maxing out iterations fails to generate a `converge` object!!!!!!!!!!!!!!
 
 
  ggplot() +
    geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}) +
-   xlim(0, 16)
+   xlim(0, 16) +
+   ylim(0,1)
 
 
 
