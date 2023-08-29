@@ -321,7 +321,12 @@ fit_model_pi = function(
         rc = ifelse(right_bound == Inf, TRUE, FALSE)
       ) %>% ungroup()
   } else{
-
+visible_data <- visible_data %>% mutate(cens = case_when(
+    left_bound == -Inf | right_bound == low_con ~ "lc",
+    right_bound == Inf |
+      left_bound == high_con ~ "rc",
+    TRUE ~ "int"
+))
     n_obs <- nrow(visible_data)
 
     cens_counts <-

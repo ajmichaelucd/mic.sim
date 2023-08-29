@@ -219,7 +219,7 @@ dev.off()
 
 brd_pm
 
-drug = "FLORFE"
+drug = "GENTAM"
 
 df = brd_pm %>%
   mutate(source = tolower(`Specimen Source`),
@@ -347,12 +347,12 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
  df %>% ggplot() +
    #geom_bar(aes(x = mid, fill = cens)) +
    geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
-   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.2) +
-   geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-   geom_point(aes(x = t, y = left_bound), data = df %>% filter(left_bound != -Inf)) +
-   geom_point(aes(x = t, y = right_bound), data = df %>% filter(right_bound != Inf)) +
-   scale_colour_gradientn(colours = c("purple", "orange")) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+   geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+   geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+   geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = df %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+   geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+   scale_colour_gradientn(colours = c("purple", "darkorange")) +
    #ylim(plot_min - 0.5, plot_max + 0.5) +
    ggtitle(drug) +
    xlab("Time") +
@@ -391,8 +391,8 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "int")), alpha = 0.2) +
    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = cens), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-   geom_point(aes(x = t, y = left_bound), data = df %>% filter(left_bound != -Inf)) +
-   geom_point(aes(x = t, y = right_bound), data = df %>% filter(right_bound != Inf)) +
+   geom_point(aes(x = t, y = left_bound,  color = cens), data = df %>% filter(left_bound != -Inf), alpha = 0.2) +
+   geom_point(aes(x = t, y = right_bound,  color = cens), data = df %>% filter(right_bound != Inf), alpha = 0.2) +
    #scale_colour_gradientn(colours = c("purple", "orange")) +
    #ylim(plot_min - 0.5, plot_max + 0.5) +
    ggtitle(drug) +
@@ -476,8 +476,8 @@ df_temp %>% mutate(low_con = low_con, high_con = high_con) %>% mutate(obs_id = r
    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.2) +
    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = right_bound - 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = left_bound + 1.5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-   geom_point(aes(x = t, y = left_bound), data = df %>% filter(left_bound != -Inf)) +
-   geom_point(aes(x = t, y = right_bound), data = df %>% filter(right_bound != Inf)) +
+   geom_point(aes(x = t, y = left_bound, color = `P(C=c|y,t)`), data = df %>% filter(left_bound != -Inf), alpha = 0.2) +
+   geom_point(aes(x = t, y = right_bound, color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf), alpha = 0.2) +
    scale_colour_gradientn(colours = c("purple", "orange")) +
    #ylim(plot_min - 0.5, plot_max + 0.5) +
    ggtitle(drug) +
