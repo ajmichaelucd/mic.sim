@@ -329,12 +329,18 @@ visible_data <- visible_data %>% mutate(cens = case_when(
 ))
     n_obs <- nrow(visible_data)
 
+    full_set = tibble(
+      cens = c("rc", "lc", "int")
+    )
+
     cens_counts <-
       visible_data %>%
       summarize(.by = cens,
                 n = n()
-      ) %>%
-      pivot_wider(
+      ) %>% right_join(., full_set) %>% mutate(n = case_when(
+        is.na(n) ~ 0,
+        TRUE ~ n
+      )) %>% pivot_wider(
         names_from = cens, values_from = n
       )
 

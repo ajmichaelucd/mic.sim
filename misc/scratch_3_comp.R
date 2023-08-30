@@ -36,7 +36,7 @@ fit_model_pi_3 = function(
     }
 
   #first E step-----
-
+if(initial_weighting == 1){
     possible_data <-
       visible_data %>% #visible data with c for component
       #   group_by_all() %>%
@@ -77,6 +77,38 @@ fit_model_pi_3 = function(
           ),
         rc = ifelse(right_bound == Inf, TRUE, FALSE)
       ) %>% ungroup()
+
+} else{
+  visible_data <- visible_data %>% mutate(cens = case_when(
+    left_bound == -Inf | right_bound == low_con ~ "lc",
+    right_bound == Inf |
+      left_bound == high_con ~ "rc",
+    TRUE ~ "int"
+  ))
+  n_obs <- nrow(visible_data)
+
+  full_set = tibble(
+    cens = c("rc", "lc", "int")
+  )
+
+  cens_counts <-
+    visible_data %>%
+    summarize(.by = cens,
+              n = n()
+    ) %>% right_join(., full_set) %>% mutate(n = case_when(
+      is.na(n) ~ 0,
+      TRUE ~ n
+    )) %>% pivot_wider(
+      names_from = cens, values_from = n
+    )
+
+  lc <- cens_counts %>% pull(lc)
+  int <- cens_counts %>% pull(int) #implement for 2 comp too
+  rc <- cens_counts %>% pull(rc)
+  `P(1)` <- (lc + 1) / (n_obs + 3)
+  `P(2)` <- (int + 1) / (n_obs + 3)
+  `P(3)` <- (rc + 1) / (n_obs + 3)
+}
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
   likelihood_documentation [,1] <- 1:max_it
