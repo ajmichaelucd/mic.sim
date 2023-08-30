@@ -108,6 +108,38 @@ if(initial_weighting == 1){
   `P(1)` <- (lc + 1) / (n_obs + 3)
   `P(2)` <- (int + 1) / (n_obs + 3)
   `P(3)` <- (rc + 1) / (n_obs + 3)
+
+
+  visible_data %>%
+    reframe(.by = everything(),
+            c = as.character(1:3)
+    ) %>%
+    mutate(
+      `E[Y|t,c]` = case_when(c == "1" ~ low_con,
+                             c == "2" ~ mean(c(low_con, high_con)),
+                             c == "3" ~ high_con,
+                             TRUE ~ NaN),
+      `sd[Y|t,c]` = case_when(c == "1" ~ 0.33*(high_con - low_con),
+                              c == "2" ~ 0.33*(high_con - low_con), ##may need to decrease from 0.33? is 0.5 for 2 comp
+                              c == "3" ~ 0.33*(high_con - low_con),
+                              TRUE ~ NaN),
+      `P(Y|t,c)` =  if_else(
+        left_bound == right_bound,
+        dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+      )
+    ) %>%
+    group_by(obs_id) %>%
+    mutate(`P(C=c|t)` = case_when(
+      c == "3" ~ `P(3)`,
+      c == "2" ~ `P(2)`, ########UNSURE ABOUT THIS SECTION
+      c == "1" ~ `P(1)` ########UNSURE ABOUT THIS SECTION
+    )) %>%  ########UNSURE ABOUT THIS SECTION
+    mutate(`P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`, ########UNSURE ABOUT THIS SECTION
+           `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
+           `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%  ########UNSURE ABOUT THIS SECTION
+    ungroup() -> possible_data
 }
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)

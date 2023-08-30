@@ -12,7 +12,7 @@ library(gam)
 load_all()
 
 
-i = 100
+i = 300
 
 pi = function(t) {
   m1 <- -1.5 + 0.1 * t
@@ -99,7 +99,7 @@ verbose = 2
 allow_safety = TRUE
 cutoff = 0.9
 fms_only = FALSE
-initial_weighting = 1
+initial_weighting = 2
 keep_true_values = TRUE
 conc_limits_table = NULL
 max_cens_tolerance = 0.8
