@@ -9,6 +9,7 @@
 #' @param browse_at_end
 #' @param browse_each_step
 #' @param plot_visuals
+#' @param prior_step_plot
 #' @param pi_link
 #' @param verbose
 #' @param maxiter_survreg
@@ -34,8 +35,9 @@ fit_model_pi = function(
     ncomp = 2,
     tol_ll = 1e-6,
     browse_at_end = FALSE,
-    browse_each_step = FALSE,
-    plot_visuals = FALSE,
+    browse_each_step = TRUE,
+    plot_visuals = TRUE,
+    prior_step_plot = TRUE,
     pi_link = "logit",
     #silent = FALSE,
     verbose = 3,
@@ -72,7 +74,9 @@ fit_model_pi = function(
       control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
 
     return(list(possible_data = possible_data,
-                newmodel = newmodel))
+                newmodel = newmodel,
+                converge = "YES",
+                ncomp = ncomp))
 
   }else{
 
@@ -542,7 +546,7 @@ if(number_coef_1 & number_coef_2){
   mu_coef_diff <- FALSE
 }
 
-if(is.na(mu_coef_diff) | (tibble(a = modelsplit_2$coefficients) %>% filter(is.na(a)) %>% nrow + tibble(a = modelsplit_2$coefficients) %>% filter(is.na(a)) %>% nrow) > 0){
+if(is.na(mu_coef_diff) | (tibble(a = modelsplit_1$coefficients) %>% filter(is.na(a)) %>% nrow + tibble(a = modelsplit_2$coefficients) %>% filter(is.na(a)) %>% nrow) > 0){
   converge = "NO"
   break
 
@@ -574,17 +578,17 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_2$coefficients) %>% filter(is.na
     #A. it is going up (with EM algorithm it should always increase)
     #B. if it is not going up by very much, you can stop
     #if conditions are met, use break
-    if(plot_visuals == TRUE){
-##outdated
-      c1_plot <-   possible_data %>%
-        filter(c == 1) %>%
-        ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
-        geom_point() +
-        geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], color = "red") +
-        geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], color = "violet")+
-        expand_limits(y = c(newmodel$mean[,"c1"], newmodel$mean[,"c2"]))
-      print(c1_plot)
-    }
+ #   if(plot_visuals == TRUE){
+###outdated
+ #     c1_plot <-   possible_data %>%
+ #       filter(c == 1) %>%
+ #       ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
+ #       geom_point() +
+ #       geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], color = "red") +
+ #       geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], color = "violet")+
+ #       expand_limits(y = c(newmodel$mean[,"c1"], newmodel$mean[,"c2"]))
+ #     print(c1_plot)
+ #   }
 
     #Next E step-------------
     possible_data %<>%
@@ -650,8 +654,22 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_2$coefficients) %>% filter(is.na
 
 
 
+    if(browse_each_step & plot_visuals){
 
-    if(browse_each_step){browser(message("End of step ", i))}
+      #plot_fm_step(binom_model, newmodel, ncomp, possible_data, prior_step_plot, i)
+
+
+
+
+
+
+
+      browser(message("End of step ", i))
+      plot_fm_step(binom_model, newmodel, ncomp, possible_data, prior_step_plot, i)
+      plot_likelihood(likelihood_documentation, format = "matrix")
+
+    }
+    if(browse_each_step & !plot_visuals){browser(message("End of step ", i))}
     if(i != 1)
     {
 
@@ -665,9 +683,9 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_2$coefficients) %>% filter(is.na
       #
       #    print(grid.arrange(c1_plot, other_plot, nrow = 1))
 
-      #if(check_ll < 0 ){
-      #  warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
-      #}
+      if(check_ll < 0 ){
+        warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
+      }
 
 
 
@@ -692,12 +710,13 @@ if(!exists("converge") & i == max_it ){
 
   return(
     list(
-      likelihood = likelihood_documentation[1:i, ],
+      likelihood = likelihood_documentation[1:i, ] %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)),
       possible_data = possible_data,
       binom_model = binom_model,
       newmodel = newmodel,
       steps = i,
-      converge = converge
+      converge = converge,
+      ncomp = ncomp
     )
   )
   }

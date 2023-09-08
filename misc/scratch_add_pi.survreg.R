@@ -21,7 +21,7 @@ sim_surv_coefs = function (df, fit, nSims)
   }
   beta.hat <- coef(fit)
   params <- matrix(NA, nrow = nSims, ncol = length(beta.hat))
-  params <- MASS::mvrnorm(nSims, beta.hat, vcov.hat)
+  params <- MASS::mvrnorm(nSims, beta.hat, vcov.hat) ##read up to see if p-spline coefs are approx normal
   params
 }
 
