@@ -12,15 +12,19 @@ plot_likelihood = function(likelihood_documentation, format){
     like <- likelihood_documentation %>%
       as_tibble %>%
       suppressWarnings() %>%
-      rename(step = V1, likelihood = V2, survreg_maxout = V3) %>%
-      tibble(., diff = c(NaN, diff(.$likelihood))) %>%
+      rename(step = V1, likelihood = V2, survreg_maxout = V3)
+    diff = c(NaN, diff(like$likelihood))
+      like = like %>% tibble(., diff) %>%
       filter(!is.na(likelihood)) }
   else if(format == "tibble"){
-    like = likelihood_documentation
+    diff = c(NaN, diff(likelihood_documentation$likelihood))
+    like = likelihood_documentation %>% tibble(., diff) %>%
+      filter(!is.na(likelihood))
   }
 
   like %>%
-    mutate( diff_sign =
+    mutate(
+            diff_sign =
               case_when(diff > 0 ~ "inc",
                         is.na(diff) ~ NA,
                         TRUE ~ "dec")

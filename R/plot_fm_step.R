@@ -87,21 +87,10 @@ plot_fm_step = function(binom_model, newmodel, ncomp, possible_data, prior_step_
         c2pred_ub = c2pred + 1.96 * c2pred_se,
       )
 
-    mean <- data.plot %>% ggplot() +
+    mean <- data.plot %>% ggplot()
       #geom_bar(aes(x = mid, fill = cens)) +
-      geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = data.plot %>% filter(c == "2"), alpha = 0) +
-      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
-      geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "lc" & c == "2") %>% mutate(plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
-      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "rc" & c == "2") %>% mutate(plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
-      geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = data.plot %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
-      geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = data.plot %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
-      scale_colour_gradientn(colours = c("purple", "darkorange")) +
-      #ylim(plot_min - 0.5, plot_max + 0.5) +
-      ggtitle(paste0("Iteration ", i)) +
-      xlab("Time") +
-      ylab("MIC") +
-      ggnewscale::new_scale_color() +
-      ylim(plot_min, plot_max)
+      #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = data.plot %>% filter(c == "2"), alpha = 0) +
+
     #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
     #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
     #geom_function(fun = function(t){mu.se.brd(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
@@ -127,18 +116,34 @@ plot_fm_step = function(binom_model, newmodel, ncomp, possible_data, prior_step_
     }
 
     ##find sim_pi_survreg_boot in scratch_add_pi_survreg.R
-
+mean = mean +
+  ggnewscale::new_scale_color() +
+  scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "lc" & c == "2") %>% mutate(plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "rc" & c == "2") %>% mutate(plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = data.plot %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+  geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = data.plot %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+  #scale_colour_gradientn(colours = c("purple", "darkorange")) +
+  #ylim(plot_min - 0.5, plot_max + 0.5) +
+  ggtitle(paste0("Iteration ", i)) +
+  xlab("Time") +
+  ylab("MIC") +
+  ylim(plot_min, plot_max)
     # need to examine the things for sim_pi_survreg_boot, specifically the vcov stuff and if we should let it draw values for all spline terms and then also for the
     #way it calculates the sim response
     #do we need to account for weighting or anything?
 
     pi <- ggplot() +
-      geom_function(fun = function(t){predict(binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Current Step")) +
+      geom_function(fun = function(t){(1 - predict(binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+      geom_function(fun = function(t){predict(binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
       xlim(0, 16) +
       ylim(0,1)
 
     if(prior_step_plot & i > 1){
-      pi = pi + geom_function(fun = function(t){predict(oldbinommodel, newdata = data.frame(t = t), type = "response")}, aes(color = "Prior Step"))
+      pi = pi +
+        geom_function(fun = function(t){(1 - predict(oldbinommodel, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+        geom_function(fun = function(t){predict(oldbinommodel, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2"))
     }
 
 

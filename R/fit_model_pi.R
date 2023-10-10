@@ -35,9 +35,9 @@ fit_model_pi = function(
     ncomp = 2,
     tol_ll = 1e-6,
     browse_at_end = FALSE,
-    browse_each_step = TRUE,
-    plot_visuals = TRUE,
-    prior_step_plot = TRUE,
+    browse_each_step = FALSE,
+    plot_visuals = FALSE,
+    prior_step_plot = FALSE,
     pi_link = "logit",
     #silent = FALSE,
     verbose = 3,
@@ -362,8 +362,8 @@ visible_data <- visible_data %>% mutate(cens = case_when(
         `E[Y|t,c]` = case_when(c == "1" ~ low_con,
                                c == "2" ~ high_con,
                                TRUE ~ NaN),
-        `sd[Y|t,c]` = case_when(c == "1" ~ 0.5*(high_con - low_con),
-                                c == "2" ~ 0.5*(high_con - low_con),
+        `sd[Y|t,c]` = case_when(c == "1" ~ 0.2 * (high_con - low_con),
+                                c == "2" ~  0.2 * (high_con - low_con),
                                 TRUE ~ NaN),
         `P(Y|t,c)` =  if_else(
           left_bound == right_bound,
@@ -381,6 +381,50 @@ visible_data <- visible_data %>% mutate(cens = case_when(
              `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
              `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%  ########UNSURE ABOUT THIS SECTION
       ungroup() -> possible_data
+
+if(plot_visuals){
+    data.plot = possible_data %>% mutate(cens =
+                                           case_when(
+                                             left_bound == -Inf ~ "lc",
+                                             right_bound == Inf ~ "rc",
+                                             TRUE ~ "int"
+                                           ),
+                                         mid =
+                                           case_when(
+                                             left_bound == -Inf ~ right_bound - 0.5,
+                                             right_bound == Inf ~ left_bound + 0.5,
+                                             TRUE ~ (left_bound + right_bound) / 2
+                                           ))
+
+
+    #mean <-
+      data.plot %>% ggplot() +
+      #geom_bar(aes(x = mid, fill = cens)) +
+     # geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = data.plot %>% filter(c == "2"), alpha = 0) +
+        geom_ribbon(aes(ymin = low_con - 1.96 * 0.3*(high_con - low_con), ymax = low_con + 1.96 * 0.3*(high_con - low_con), x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.25) +
+        geom_ribbon(aes(ymin = high_con - 1.96 * 0.3*(high_con - low_con), ymax = high_con + 1.96 * 0.3*(high_con - low_con), x = t, fill = "Component 2 Mu"), data = ci_data, alpha = 0.25) +
+        geom_hline( aes(yintercept = high_con, color = "Component 2 Mean")) +
+        geom_hline( aes(yintercept = low_con, color = "Component 1 Mean")) +
+        ggnewscale::new_scale_color() +
+       # scale_color_gradient2(low = "purple", high = "darkorange", mid = "green", midpoint = 0.5) +
+        scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+      geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "lc" & c == "2") %>% mutate(plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (data.plot %>% filter(cens == "rc" & c == "2") %>% mutate(plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+      geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = data.plot %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+      geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = data.plot %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+      #scale_colour_gradientn(colours = c("purple", "darkorange")) +
+      #ylim(plot_min - 0.5, plot_max + 0.5) +
+      ggtitle(paste0("Initial Condition")) +
+      xlab("Time") +
+      ylab("MIC") +
+      ylim(low_con -  2 * 0.5*(high_con - low_con) , high_con + 2* 0.5*(high_con - low_con))
+
+      browser("stopping at inital setup to examine a plot for the basis of the initial weighting")
+
+}
+
+
   }
 
 
@@ -434,12 +478,15 @@ visible_data <- visible_data %>% mutate(cens = case_when(
       control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
     modelsplit_2 <- survival::survreg(
       #formula,  ##Make this chunk into an argument of the function
-      formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t, df = 0, calc = TRUE, Boundary.knots = c(5.01, 16)),
+      formula = formula,
+        #Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t, df = 0, calc = TRUE, Boundary.knots = c(5.01, 16)),
       weights = `P(C=c|y,t)`,
       data = df2,
       dist = "gaussian",
       control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
-    #
+    #split model apart because p-spline and strata didn't work together I believe?
+
+
     #model <- survival::survreg(
     #  formula,  ##Make this chunk into an argument of the function
     #  weights = `P(C=c|y,t)`,
@@ -612,13 +659,13 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_1$coefficients) %>% filter(is.na
             pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
         )
       ) %>%
-      group_by(obs_id) %>%
+      group_by(obs_id) %>% #remove, use .by or by in the mutate step (combine the two mutates)
       #  mutate(
       #    `P(c,y|t)` = `P(Y|t,c)` * `P(C = c)`, #unsure here
       #    `P(Y=y|t)` = sum(`P(c,y|t)`),
       #    `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
       #  )
-      mutate(`P(C=c|t)` = case_when( ########UNSURE ABOUT THIS SECTION
+      mutate( `P(C=c|t)` = case_when( ########UNSURE ABOUT THIS SECTION
         c == "2" ~ predict(binom_model, newdata = tibble(t = t), type = "response"), ########UNSURE ABOUT THIS SECTION
         c == "1" ~ 1 - predict(binom_model, newdata = tibble(t = t), type = "response") ########UNSURE ABOUT THIS SECTION
       )) %>%  ########UNSURE ABOUT THIS SECTION
@@ -633,8 +680,7 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_1$coefficients) %>% filter(is.na
     }
 
     log_likelihood_obs <- possible_data %>%
-      group_by(obs_id) %>%
-      summarise(likelihood_i = sum(`P(c,y|t)`)) %>%
+      summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
       mutate(log_likelihood_i = log(likelihood_i))
     log_likelihood <- sum(log_likelihood_obs$log_likelihood_i)
 
@@ -649,7 +695,9 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_1$coefficients) %>% filter(is.na
     #      y = likelihood_documentation[1:i,2],
     #      type = "l")
 
-
+if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2]){
+  browser("likelihood decreased")
+}
 
 
 
@@ -666,8 +714,10 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_1$coefficients) %>% filter(is.na
 
       browser(message("End of step ", i))
       plot_fm_step(binom_model, newmodel, ncomp, possible_data, prior_step_plot, i)
-      plot_likelihood(likelihood_documentation, format = "matrix")
 
+      if(i > 1){
+      plot_likelihood(likelihood_documentation, format = "matrix")
+}
     }
     if(browse_each_step & !plot_visuals){browser(message("End of step ", i))}
     if(i != 1)
@@ -704,13 +754,15 @@ if(is.na(mu_coef_diff) | (tibble(a = modelsplit_1$coefficients) %>% filter(is.na
   }
   if(browse_at_end){browser()}
 
-if(!exists("converge") & i == max_it ){
+if(i == max_it & !(check_ll_2 & param_checks)){
   converge = "iterations"
 }
 
   return(
     list(
-      likelihood = likelihood_documentation[1:i, ] %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)),
+      #likelihood = likelihood_documentation[1:i, ] %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)),
+      #likelihood = likelihood_documentation[1:i, ],
+      likelihood = tibble_like(likelihood_documentation),
       possible_data = possible_data,
       binom_model = binom_model,
       newmodel = newmodel,
@@ -720,4 +772,8 @@ if(!exists("converge") & i == max_it ){
     )
   )
   }
+}
+
+tibble_like <- function(likelihood_documentation){
+  likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)) %>% return()
 }
