@@ -18,8 +18,9 @@ fit_model_pi(
   prior_step_plot = FALSE,
   pi_link = "logit",
   verbose = 3,
+  model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
-  initial_weighting = 1
+  initial_weighting = 8
 )
 }
 \arguments{
