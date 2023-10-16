@@ -364,13 +364,7 @@ if(plot_visuals){
 
    mu_models_new = fit_all_mu_models(possible_data, ncomp, formula, maxiter_survreg)
 
-   #add check for failures? could use 'possibly' in the fit_all_mu_models to stop if there's an error
-
-  check_survreg_iteration_maxout = function(mu_models, ncomp, maxiter_survreg){
-     purrr::map(1:ncomp, ~(mu_models[[.x]]$iter[1] == maxiter_survreg)) %>% unlist %>% any %>% return()
-  }
-
-  likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp)
+  likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
 
 
 fit_pi_model = function(pi_formula, pi_link, possible_data){

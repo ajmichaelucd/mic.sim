@@ -7,7 +7,7 @@
 fit_mu_model(possible_data, comp, mu_formula, maxiter_survreg = 30)
 }
 \arguments{
-\item{possible_data}{data frame iterated on by the EM algorithm, should contain left_bound, right_bound, c, & P(C=c|y,t)}
+\item{possible_data}{data frame iterated on by the EM algorithm, should contain left_bound, right_bound, c, P(C=c|y,t), and any covariates, such as time, e.g. "t"}
 
 \item{comp}{numeric variable, which component is this model being fitted to, e.g. 2}
 

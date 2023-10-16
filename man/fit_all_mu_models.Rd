@@ -7,7 +7,7 @@
 fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
 }
 \arguments{
-\item{possible_data}{data frame iterated on by the EM algorithm, should contain left_bound, right_bound, c, & P(C=c|y,t)}
+\item{possible_data}{data frame iterated on by the EM algorithm, should contain left_bound, right_bound, c, P(C=c|y,t), and any covariates, such as time, e.g. "t"}
 
 \item{ncomp}{number of components being fitted by the EM algorithm}
 

@@ -2,19 +2,19 @@
 #name of mic column(s)
 
 data = brd_mh
-mic_col = "TULATH"
+mic_col = "FLORFE"
 id_col = "Unique ID"
 date_col = "Date of Isolation"
 date_type = "decimal" #or "year"
 covariate_vector = c("source")
 start_time = 2007 #in decimal years (or just year if date_type == "year
 
-drug = "TULATH"
+drug = "FLORFE"
 bug = "mh"
 primary_model_parameters = list(formula = Surv(time = left_bound,
                                                time2 = right_bound,
                                                type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-                                formula2 = c == "2" ~ s(t),
+                                formula2 = c == "2" ~ lo(t),
                                 max_it = 300,
                                 ncomp = 2,
                                 tol_ll = 1e-06,
@@ -114,12 +114,13 @@ fm_checks(single_model_output_fm_1)
 #then request user feeback
 
 plot_fm(single_model_output_fm_2, paste0(drug, "-", stringr::str_to_upper(bug), " FM2"))
+plot_likelihood(single_model_output_fm_2$likelihood, format = "tibble")
 plot_fm(single_model_output_fm_1, paste0(drug, "-", stringr::str_to_upper(bug), " FM1"))
 
 
 
 
-
+##this says it converged but converge from the object says it did not
 print(fm_checks(single_model_output_fm_2)$censor_fm_check)
 
 fms_run = TRUE
@@ -146,4 +147,4 @@ plot_fms(single_model_output_fms_2, title = paste0(drug, "-", stringr::str_to_up
 
 
 
-plot_likelihood(single_model_output_fm_2$likelihood, format = "tibble")
+
