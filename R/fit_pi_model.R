@@ -13,10 +13,10 @@
 fit_pi_model = function(pi_formula, pi_link, possible_data){
 
   if(pi_link == "logit"){
-    binom_model = gam::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+    binom_model = gam::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
   } else if(pi_link == "identity"){
 
-    binom_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+    binom_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
   } else{ errorCondition("pick logit or identity link function")}
 
   return(binom_model)

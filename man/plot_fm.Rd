@@ -4,10 +4,10 @@
 \alias{plot_fm}
 \title{Title}
 \usage{
-plot_fm(output, title)
+plot_fm(output, title, add_log_reg, s_breakpoint, r_breakpoint)
 }
 \arguments{
-\item{title}{}
+\item{r_breakpoint}{}
 }
 \description{
 Title

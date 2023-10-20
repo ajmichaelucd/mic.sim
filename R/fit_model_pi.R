@@ -68,14 +68,14 @@ fit_model_pi = function(
       ) #%>%  ##this is probably only accurate for scale = "log"
     #print()
 
-    newmodel  <- survival::survreg(
+    mu_model  <- survival::survreg(
       formula,  ##Make this chunk into an argument of the function
       data = possible_data,
       dist = "gaussian",
       control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
 
     return(list(possible_data = possible_data,
-                newmodel = newmodel,
+                newmodel = mu_model,
                 converge = "YES",
                 ncomp = ncomp))
 
@@ -341,7 +341,7 @@ if(plot_visuals){
   }
 
 
-  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
+  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 5)
   likelihood_documentation [,1] <- 1:max_it
 
 
@@ -370,13 +370,13 @@ if(plot_visuals){
 fit_pi_model = function(pi_formula, pi_link, possible_data){
 
     if(pi_link == "logit"){
-      binom_model = gam::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+      pi_model = gam::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
     } else if(pi_link == "identity"){
 
-      binom_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+      pi_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
     } else{ errorCondition("pick logit or identity link function")}
 
-  return(binom_model)
+  return(pi_model)
 }
 
 
@@ -419,6 +419,16 @@ if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
       }
 
     #Next E step-------------
+
+likelihood_documentation[i, 4] <-m_step_check_maximizing(possible_data, mu_models_new, pi_model_new)
+if(i > 1){
+  likelihood_documentation[i, 5] <- m_step_check_maximizing(possible_data, mu_models_old, pi_model_old)
+}else{
+  likelihood_documentation[i, 5] <- NaN
+}
+
+
+
 possible_data %<>%
   mutate(
     `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
@@ -438,8 +448,8 @@ possible_data %<>%
         pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
     ),
     `P(C=c|t)` = case_when(
-      c == "2" ~ predict(binom_model, newdata = tibble(t = t), type = "response"),
-      c == "1" ~ 1 - predict(binom_model, newdata = tibble(t = t), type = "response")
+      c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+      c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
     ),
     `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
   ) %>%
@@ -476,7 +486,7 @@ if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2])
     if(browse_each_step & plot_visuals){
 
       browser(message("End of step ", i))
-      plot_fm_step(binom_model, newmodel, ncomp, possible_data, prior_step_plot, i)
+      plot_fm_step(pi_model_new, mu_models_new, ncomp, possible_data, prior_step_plot, i)
 
       if(i > 1){
       plot_likelihood(likelihood_documentation, format = "matrix")
@@ -536,5 +546,36 @@ if(i == max_it & !(check_ll < tol_ll & param_checks)){
 }
 
 tibble_like <- function(likelihood_documentation){
-  likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)) %>% return()
+  likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5) %>% filter(!is.na(likelihood)) %>% return()
+}
+
+m_step_check_maximizing = function(possible_data, mu_models, pi_model){
+  possible_data %>%
+    mutate(
+      `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models[[1]], newdata = possible_data),
+                             c == "2" ~ predict(mu_models[[2]], newdata = possible_data),
+                             TRUE ~ NaN),
+      #predict(model, newdata = possible_data),
+      `sd[Y|t,c]` = case_when(c == "1" ~ mu_models[[1]]$scale,
+                              c == "2" ~ mu_models[[2]]$scale, #1,
+                              TRUE ~ NaN),
+      #model$scale[c], #####QUESTION HERE????????????????????????????
+      # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
+
+      `P(Y|t,c)` =  if_else(
+        left_bound == right_bound,
+        dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+      ),
+      `P(C=c|t)` = case_when(
+        c == "2" ~ predict(pi_model, newdata = tibble(t = t), type = "response"),
+        c == "1" ~ 1 - predict(pi_model, newdata = tibble(t = t), type = "response")
+      ),
+      `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+    ) %>% select(obs_id, c, `P(c,y|t)`, `P(C=c|y,t)`) %>%
+    mutate(m_step_check = `P(C=c|y,t)` * log(`P(c,y|t)`)) %>% pull(m_step_check) %>% sum
+
+
+
 }

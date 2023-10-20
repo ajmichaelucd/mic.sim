@@ -135,8 +135,8 @@ log_reg <- function(drug, bug, data, date_col, date_type, first_year, id, breakp
       mutate(t = decimal_date(date) - first_year) %>%
       suppressWarnings()
   } else if(date_type == "year"){
-    df_temp <- data %>% rename(date = date_col) %>% rowwise %>%
-      mutate(t = as.numeric(date) + runif(1, -0.35, 0.35)) %>% ungroup %>%
+    df_temp <- data %>% rename(date = date_col) %>%
+      mutate(t = as.numeric(date) - first_year) %>%
       suppressWarnings()
   }else{
     errorCondition("pick decimal or year")

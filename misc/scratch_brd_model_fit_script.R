@@ -1,16 +1,31 @@
 #data
 #name of mic column(s)
 
-data = brd_mh
-mic_col = "FLORFE"
+data = brd_pm %>% mutate(
+  source_full = str_to_lower(`Specimen Source`)
+) %>% #summarise(.by = source_full, n = n()) %>% print(n = 32) %>%
+  mutate( source_detailed =
+            case_when(
+              grepl("lung", source_full) ~ "lung",
+              grepl("trach", source_full) | grepl("traech", source_full)~ "trachea",
+              grepl("phary", source_full) ~ "pharyngeal swab",
+              grepl("nasa", source_full) & !grepl("phary", source_full) ~ "nasal swab",
+              source_full %in% c("dnp", "dnps") ~ "pharyngeal swab",
+              grepl("bron", source_full) ~ "bronchial",
+              grepl("lg", source_full) ~ "lung",
+              TRUE ~ source_full
+
+            )
+  )
+mic_col = "TULATH"
 id_col = "Unique ID"
 date_col = "Date of Isolation"
 date_type = "decimal" #or "year"
-covariate_vector = c("source")
+covariate_vector = c("source", "source_detailed")
 start_time = 2007 #in decimal years (or just year if date_type == "year
 
-drug = "FLORFE"
-bug = "mh"
+drug = "TULATH"
+bug = "pm"
 primary_model_parameters = list(formula = Surv(time = left_bound,
                                                time2 = right_bound,
                                                type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
@@ -113,8 +128,9 @@ fm_checks(single_model_output_fm_1)
 
 #then request user feeback
 
-plot_fm(single_model_output_fm_2, paste0(drug, "-", stringr::str_to_upper(bug), " FM2"))
+plot_fm(single_model_output_fm_2, paste0(drug, "-", stringr::str_to_upper(bug), " FM2"), add_log_reg = TRUE, s_breakpoint = "≤2", r_breakpoint = "≥8")
 plot_likelihood(single_model_output_fm_2$likelihood, format = "tibble")
+      ##add a check that the number of likelihoods is greater than 1
 plot_fm(single_model_output_fm_1, paste0(drug, "-", stringr::str_to_upper(bug), " FM1"))
 
 

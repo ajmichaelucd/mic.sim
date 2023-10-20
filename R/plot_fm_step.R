@@ -1,17 +1,19 @@
 #' Title
 #'
-#' @param binom_model
-#' @param newmodel
+#' @param pi_model_new
+#' @param mu_models_new
 #' @param ncomp
 #' @param possible_data
 #' @param prior_step_plot
 #' @param i
+#' @param mu_models_old
+#' @param pi_model_old
 #'
 #' @return
 #' @export
 #'
 #' @examples
-plot_fm_step = function(binom_model, newmodel, ncomp, possible_data, prior_step_plot, i){
+plot_fm_step = function(pi_model_new, mu_models_new, ncomp, possible_data, prior_step_plot = FALSE, i, mu_models_old = NULL, pi_model_old = NULL){
 
   data.plot = possible_data %>% mutate(cens =
                                   case_when(
@@ -34,10 +36,10 @@ plot_fm_step = function(binom_model, newmodel, ncomp, possible_data, prior_step_
 
 
   if(ncomp == 1){
-    plot_min_2 <- sim_pi_survreg_boot(data.plot, fit = newmodel, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2
+    plot_min_2 <- sim_pi_survreg_boot(data.plot, fit = mu_models_new, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2
   } else if(ncomp == 2){
-    plot_min_2 <- min(sim_pi_survreg_boot(data.plot, fit = newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2,
-                      sim_pi_survreg_boot(data.plot, fit = newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2)
+    plot_min_2 <- min(sim_pi_survreg_boot(data.plot, fit = mu_models_new[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2,
+                      sim_pi_survreg_boot(data.plot, fit = mu_models_new[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2)
   }else{
     plot_min_2 = plot_min_1
   }
@@ -52,10 +54,10 @@ plot_fm_step = function(binom_model, newmodel, ncomp, possible_data, prior_step_
   }
 
   if(ncomp == 1){
-    plot_max_2 <- sim_pi_survreg_boot(data.plot, fit = newmodel, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2
+    plot_max_2 <- sim_pi_survreg_boot(data.plot, fit = mu_models_new, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2
   } else if(ncomp == 2){
-    plot_max_2 <- max(sim_pi_survreg_boot(data.plot, fit = newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2,
-                      sim_pi_survreg_boot(data.plot, fit = newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2)
+    plot_max_2 <- max(sim_pi_survreg_boot(data.plot, fit = mu_models_new[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2,
+                      sim_pi_survreg_boot(data.plot, fit = mu_models_new[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2)
   }else{
     plot_max_2 = plot_max_1
   }
@@ -63,26 +65,26 @@ plot_fm_step = function(binom_model, newmodel, ncomp, possible_data, prior_step_
   plot_max = max(plot_max_1, plot_max_2)
 
 
-  #ciTools::add_pi(data.plot, newmodel[[1]], alpha = 0.05, names = c("lwr", "upr"))
+  #ciTools::add_pi(data.plot, mu_models_new[[1]], alpha = 0.05, names = c("lwr", "upr"))
   #doesn't work with gaussian dist
 
 
-  #mu.se.brd <- function(t, c, z, newmodel){predict(newmodel[[c]], data.frame(t = t)) + z * predict(newmodel[[c]], data.frame(t = t), se = TRUE)$se.fit}
-  #mu.se.brd.fms <- function(t, z, newmodel){predict(newmodel, data.frame(t = t)) + z * predict(newmodel, data.frame(t = t), se = TRUE)$se.fit}
+  #mu.se.brd <- function(t, c, z, mu_models_new){predict(mu_models_new[[c]], data.frame(t = t)) + z * predict(mu_models_new[[c]], data.frame(t = t), se = TRUE)$se.fit}
+  #mu.se.brd.fms <- function(t, z, mu_models_new){predict(mu_models_new, data.frame(t = t)) + z * predict(mu_models_new, data.frame(t = t), se = TRUE)$se.fit}
 
   if(ncomp == 2){
 
-    #newmodel[[1]]$scale %>% print
-    #newmodel[[2]]$scale %>% print
+    #mu_models_new[[1]]$scale %>% print
+    #mu_models_new[[2]]$scale %>% print
 
     ci_data <- tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2)) %>%
       mutate(
-        c1pred = predict(newmodel[[1]], tibble(t), se = T)$fit,
-        c1pred_se = predict(newmodel[[1]], tibble(t), se = T)$se.fit,
+        c1pred = predict(mu_models_new[[1]], tibble(t), se = T)$fit,
+        c1pred_se = predict(mu_models_new[[1]], tibble(t), se = T)$se.fit,
         c1pred_lb = c1pred - 1.96 * c1pred_se,
         c1pred_ub = c1pred + 1.96 * c1pred_se,
-        c2pred = predict(newmodel[[2]], tibble(t), se = T)$fit,
-        c2pred_se = predict(newmodel[[2]], tibble(t), se = T)$se.fit,
+        c2pred = predict(mu_models_new[[2]], tibble(t), se = T)$fit,
+        c2pred_se = predict(mu_models_new[[2]], tibble(t), se = T)$se.fit,
         c2pred_lb = c2pred - 1.96 * c2pred_se,
         c2pred_ub = c2pred + 1.96 * c2pred_se,
       )
@@ -95,24 +97,24 @@ plot_fm_step = function(binom_model, newmodel, ncomp, possible_data, prior_step_
     #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
     #geom_function(fun = function(t){mu.se.brd(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
     #geom_function(fun = function(t){mu.se.brd(t, c = 2, z = -1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-    if(!is.na(newmodel[[1]]$scale)){
+    if(!is.na(mu_models_new[[1]]$scale)){
       mean = mean +
-        geom_function(fun = function(t){predict(newmodel[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+        geom_function(fun = function(t){predict(mu_models_new[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
         geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.25) +
-        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(data.plot, fit = newmodel[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15)
+        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(data.plot, fit = mu_models_new[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15)
     }
-    if(i > 1 & prior_step_plot && !is.na(oldmodel[[1]]$scale)){
-      mean = mean + geom_function(fun = function(t){predict(oldmodel[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu Prior", linetype = "Fitted Model"))
+    if(i > 1 & prior_step_plot && !is.na(mu_models_old[[1]]$scale)){
+      mean = mean + geom_function(fun = function(t){predict(mu_models_old[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu Prior", linetype = "Fitted Model"))
     }
 
-    if(!is.na(newmodel[[2]]$scale)){
+    if(!is.na(mu_models_new[[2]]$scale)){
       mean = mean +
-        geom_function(fun = function(t){predict(newmodel[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+        geom_function(fun = function(t){predict(mu_models_new[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
         geom_ribbon(aes(ymin = c2pred_lb, ymax = c2pred_ub, x = t, fill = "Component 2 Mu"), data = ci_data, alpha = 0.25) +
-        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(data.plot, fit = newmodel[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15)
+        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(data.plot, fit = mu_models_new[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15)
     }
-    if(i > 1 & prior_step_plot && !is.na(oldmodel[[2]]$scale)){
-      mean = mean + geom_function(fun = function(t){predict(oldmodel[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu Prior", linetype = "Fitted Model"))
+    if(i > 1 & prior_step_plot && !is.na(mu_models_old[[2]]$scale)){
+      mean = mean + geom_function(fun = function(t){predict(mu_models_old[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu Prior", linetype = "Fitted Model"))
     }
 
     ##find sim_pi_survreg_boot in scratch_add_pi_survreg.R
@@ -135,15 +137,15 @@ mean = mean +
     #do we need to account for weighting or anything?
 
     pi <- ggplot() +
-      geom_function(fun = function(t){(1 - predict(binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
-      geom_function(fun = function(t){predict(binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+      geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+      geom_function(fun = function(t){predict(pi_model_new, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
       xlim(0, 16) +
       ylim(0,1)
 
     if(prior_step_plot & i > 1){
       pi = pi +
-        geom_function(fun = function(t){(1 - predict(oldbinommodel, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
-        geom_function(fun = function(t){predict(oldbinommodel, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2"))
+        geom_function(fun = function(t){(1 - predict(pi_model_old, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+        geom_function(fun = function(t){predict(pi_model_old, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2"))
     }
 
 
@@ -154,13 +156,13 @@ mean = mean +
 
     ci_data <- tibble(t = rep(seq(0, max(possible_data$t), len = 300), 2)) %>%
       mutate(
-        c1pred = predict(newmodel, tibble(t), se = T)$fit,
-        c1pred_se = predict(newmodel, tibble(t), se = T)$se.fit,
+        c1pred = predict(mu_models_new, tibble(t), se = T)$fit,
+        c1pred_se = predict(mu_models_new, tibble(t), se = T)$se.fit,
         c1pred_lb = c1pred - 1.96 * c1pred_se,
         c1pred_ub = c1pred + 1.96 * c1pred_se
       )
 
-    #newmodel$scale %>% print()
+    #mu_models_new$scale %>% print()
 
     mean <- data.plot %>% ggplot() +
       #geom_bar(aes(x = mid, fill = cens)) +
@@ -176,14 +178,14 @@ mean = mean +
       xlab("Time") +
       ylab("MIC") +
       ggnewscale::new_scale_color() +
-      geom_function(fun = function(t){predict(newmodel, newdata = data.frame(t = t))}, aes(color = "Component Mu", linetype = "Fitted Model")) +
-      #geom_function(fun = function(t){predict(newmodel[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){predict(mu_models_new, newdata = data.frame(t = t))}, aes(color = "Component Mu", linetype = "Fitted Model")) +
+      #geom_function(fun = function(t){predict(mu_models_new[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
       #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
       #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
       #geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
       #geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
       geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.2) +
-      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(data.plot, fit = newmodel, alpha = 0.05, nSims = 10000), alpha = 0.15) +
+      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(data.plot, fit = mu_models_new, alpha = 0.05, nSims = 10000), alpha = 0.15) +
       ylim(plot_min, plot_max)
 
 

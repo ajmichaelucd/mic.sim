@@ -2,12 +2,15 @@
 #'
 #' @param output
 #' @param title
+#' @param add_log_reg
+#' @param s_breakpoint
+#' @param r_breakpoint
 #'
 #' @return
 #' @export
 #'
 #' @examples
-plot_fm <- function(output, title){
+plot_fm <- function(output, title, add_log_reg, s_breakpoint, r_breakpoint){
 
     if(output$ncomp == "2"){
       check_comp_conv = function(models){
@@ -137,8 +140,19 @@ plot_fm <- function(output, title){
       geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
       xlim(0, 16) +
       ylim(0,1)
+    if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint)){
+      lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
-    mean/pi
+      pi = pi +
+        geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1", linetype = "Logistic Regression")) +
+        geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2", linetype = "Logistic Regression"))
+      mean = mean +
+        ggnewscale::new_scale_color() +
+        geom_hline(aes(yintercept = s_breakpoint %>% parse_number() %>% log2, color = "Susceptible Breakpoint"), alpha = 0.4) +
+        geom_hline(aes(yintercept = r_breakpoint %>% parse_number() %>% log2, color = "Resistant Breakpoint"), alpha = 0.4) +
+        scale_color_viridis_d(option = "turbo")
+    }
+    return(mean/pi)
 
   }else{
     if(output$ncomp == 1){
@@ -213,10 +227,24 @@ plot_fm <- function(output, title){
         ylim(plot_min, plot_max)
 
       pi <- ggplot() +
-        geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
-        geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+        geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1", linetype = "Model")) +
+        geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2", linetype = "Model")) +
         xlim(0, 16) +
         ylim(0,1)
+
+
+      if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint)){
+        lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
+
+pi = pi +
+  geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1", linetype = "Logistic Regression")) +
+  geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2", linetype = "Logistic Regression"))
+mean = mean +
+  ggnewscale::new_scale_color() +
+  geom_hline(aes(yintercept = s_breakpoint %>% parse_number() %>% log2, color = "Susceptible Breakpoint"), alpha = 0.4) +
+  geom_hline(aes(yintercept = r_breakpoint %>% parse_number() %>% log2, color = "Resistant Breakpoint"), alpha = 0.4) +
+  scale_color_viridis_d(option = "turbo")
+      }
       return(mean/pi)
     }
   }

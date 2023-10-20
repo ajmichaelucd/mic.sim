@@ -4,10 +4,19 @@
 \alias{plot_fm_step}
 \title{Title}
 \usage{
-plot_fm_step(binom_model, newmodel, ncomp, possible_data, prior_step_plot, i)
+plot_fm_step(
+  pi_model_new,
+  mu_models_new,
+  ncomp,
+  possible_data,
+  prior_step_plot = FALSE,
+  i,
+  mu_models_old = NULL,
+  pi_model_old = NULL
+)
 }
 \arguments{
-\item{i}{}
+\item{pi_model_old}{}
 }
 \description{
 Title
