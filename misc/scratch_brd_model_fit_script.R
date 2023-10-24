@@ -1,7 +1,7 @@
 #data
 #name of mic column(s)
 
-data = brd_pm %>% mutate(
+data = brd_mh %>% mutate(
   source_full = str_to_lower(`Specimen Source`)
 ) %>% #summarise(.by = source_full, n = n()) %>% print(n = 32) %>%
   mutate( source_detailed =
@@ -17,20 +17,20 @@ data = brd_pm %>% mutate(
 
             )
   )
-mic_col = "TULATH"
+mic_col = "FLORFE"
 id_col = "Unique ID"
 date_col = "Date of Isolation"
 date_type = "decimal" #or "year"
 covariate_vector = c("source", "source_detailed")
 start_time = 2007 #in decimal years (or just year if date_type == "year
 
-drug = "TULATH"
-bug = "pm"
+drug = "FLORFE"
+bug = "mh"
 primary_model_parameters = list(formula = Surv(time = left_bound,
                                                time2 = right_bound,
-                                               type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-                                formula2 = c == "2" ~ lo(t),
-                                max_it = 300,
+                                               type = "interval2") ~ ns(t, df = 4),
+                                formula2 = c == "2" ~ s(t),
+                                max_it = 1000,
                                 ncomp = 2,
                                 tol_ll = 1e-06,
                                 pi_link = "logit",
@@ -117,7 +117,7 @@ single_model_output_fm_1 <- visible_data %>%
                browse_each_step = primary_model_parameters$browse_each_step,
                plot_visuals = primary_model_parameters$plot_visuals
   )
-single_model_output_fm_2
+single_model_output_fm_2$likelihood
 single_model_output_fm_1
 
 

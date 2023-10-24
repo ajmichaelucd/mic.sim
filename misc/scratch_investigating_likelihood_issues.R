@@ -190,3 +190,61 @@ mm = possible_data %>% filter(`P(C=c|y,t)` > 0) %>%
 ggplot() +
   geom_function(fun = function(t){predict(mm, newdata = data.frame(t = t, c = "1"))}, aes(color = "Component 1", linetype = "Fitted Model")) +
   geom_function(fun = function(t){predict(mm, newdata = data.frame(t = t,  c = "2"))}, aes(color = "Component 2", linetype = "Fitted Model"))
+
+
+
+
+
+
+
+
+
+possible_data %<>%
+  mutate(
+    `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
+                           c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
+                           TRUE ~ NaN),
+    #predict(model, newdata = possible_data),
+    `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$scale,
+                            c == "2" ~ mu_models_new[[2]]$scale, #1,
+                            TRUE ~ NaN),
+    #model$scale[c], #####QUESTION HERE????????????????????????????
+    # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
+
+    `P(Y|t,c)` = case_when(
+      left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+      left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+        pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+      TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+        pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)
+    ),
+    `P(C=c|t)` = case_when(
+      c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+      c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+    ),
+    `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+  ) %>%
+  mutate(.by = obs_id,
+         `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+  mutate(
+    `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

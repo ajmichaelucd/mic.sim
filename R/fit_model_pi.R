@@ -374,7 +374,11 @@ fit_pi_model = function(pi_formula, pi_link, possible_data){
     } else if(pi_link == "identity"){
 
       pi_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
-    } else{ errorCondition("pick logit or identity link function")}
+    }
+  if(pi_link == "logit_simple"){
+    pi_model = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+  }else{ errorCondition("pick logit or identity link function")}
+
 
   return(pi_model)
 }
@@ -420,7 +424,7 @@ if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
 
     #Next E step-------------
 
-likelihood_documentation[i, 4] <-m_step_check_maximizing(possible_data, mu_models_new, pi_model_new)
+likelihood_documentation[i, 4] <- m_step_check_maximizing(possible_data, mu_models_new, pi_model_new)
 if(i > 1){
   likelihood_documentation[i, 5] <- m_step_check_maximizing(possible_data, mu_models_old, pi_model_old)
 }else{
@@ -441,11 +445,12 @@ possible_data %<>%
     #model$scale[c], #####QUESTION HERE????????????????????????????
     # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
 
-    `P(Y|t,c)` =  if_else(
-      left_bound == right_bound,
-      dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-      pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-        pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+    `P(Y|t,c)` = case_when(
+      left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+      left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+        pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+      TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+        pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)
     ),
     `P(C=c|t)` = case_when(
       c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
@@ -457,6 +462,7 @@ possible_data %<>%
          `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
   mutate(
     `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+
     if(verbose > 2){
       print(pi_model_new)
       print(mu_models_new)
@@ -562,11 +568,12 @@ m_step_check_maximizing = function(possible_data, mu_models, pi_model){
       #model$scale[c], #####QUESTION HERE????????????????????????????
       # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
 
-      `P(Y|t,c)` =  if_else(
-        left_bound == right_bound,
-        dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-        pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+      `P(Y|t,c)` = case_when(
+        left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+          pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)
       ),
       `P(C=c|t)` = case_when(
         c == "2" ~ predict(pi_model, newdata = tibble(t = t), type = "response"),

@@ -55,21 +55,22 @@ initial_weighting_fixed_regression_at_boundaries = function(visible_data, ncomp)
       `sd[Y|t,c]` = case_when(c == "1" ~ 0.2 * (high_con - low_con),
                               c == "2" ~  0.2 * (high_con - low_con),
                               TRUE ~ NaN),
-      `P(Y|t,c)` =  if_else(
-        left_bound == right_bound,
-        dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-        pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
+      `P(Y|t,c)` = case_when(
+        left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+          pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)
       )
     ) %>%
-    group_by(obs_id) %>%
     mutate(`P(C=c|t)` = case_when(
       c == "2" ~ `P(2)`,
       c == "1" ~ `P(1)`
-    )) %>%
-    mutate(`P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`,
-           `P(Y=y|t)` = sum(`P(c,y|t)`),
-           `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%
-    ungroup() %>%
+    ),
+    `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`) %>%
+    mutate(.by = obs_id,
+           `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+    mutate(
+      `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%
     return()
 }
