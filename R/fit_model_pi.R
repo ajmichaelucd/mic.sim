@@ -19,6 +19,7 @@
 #' @importFrom gam gam s lo
 #' @importFrom splines ns
 #' @importFrom ggplot2 geom_function aes
+#' @importFrom tidyr pivot_wider
 #'
 #' @return
 #' @export
@@ -45,7 +46,8 @@ fit_model_pi = function(
     #low_con = 2^-3,
     #high_con = 2^3,
     maxiter_survreg = 30,
-    initial_weighting = 8 #smoothingspline or loess
+    initial_weighting = 8,
+    stop_on_likelihood_drop = TRUE
     ){
   #verbose = 0: print nothing
   #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
@@ -366,29 +368,7 @@ if(plot_visuals){
 
   likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
 
-
-fit_pi_model = function(pi_formula, pi_link, possible_data){
-
-    if(pi_link == "logit"){
-      pi_model = gam::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
-    } else if(pi_link == "identity"){
-
-      pi_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
-    }
-  if(pi_link == "logit_simple"){
-    pi_model = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
-  }else{ errorCondition("pick logit or identity link function")}
-
-
-  return(pi_model)
-}
-
-
 pi_model_new = fit_pi_model(pi_formula = formula2, pi_link = pi_link, possible_data = possible_data)
-
-check_mu_models_convergence = function(mu_models, ncomp){
-  purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$scale), is.na(mu_models[[.x]]$coefficients)))
-}
 
 if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
   converge = "NO"
@@ -482,6 +462,11 @@ log_likelihood_new = calculate_log_likelihood(possible_data)
       message(log_likelihood_new)
     }
 
+if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2] & stop_on_likelihood_drop){
+  converge = "likelihood decreased"
+  break
+}
+
 if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2]){
   browser("likelihood decreased")
 }
@@ -523,6 +508,7 @@ if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2])
 
 
   }
+
   if(browse_at_end){browser()}
 
 if(i == max_it & !(check_ll < tol_ll & param_checks)){
@@ -585,4 +571,21 @@ m_step_check_maximizing = function(possible_data, mu_models, pi_model){
 
 
 
+}
+
+fit_pi_model = function(pi_formula, pi_link, possible_data){
+
+  if(pi_link == "logit"){
+    pi_model = gam::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+  } else if(pi_link == "identity"){
+
+    pi_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+  }else{ errorCondition("pick logit or identity link function")}
+
+
+  return(pi_model)
+}
+
+check_mu_models_convergence = function(mu_models, ncomp){
+  purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$scale), is.na(mu_models[[.x]]$coefficients)))
 }

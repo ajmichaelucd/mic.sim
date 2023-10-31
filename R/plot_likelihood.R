@@ -3,6 +3,8 @@
 #' @param likelihood_documentation
 #' @param format
 #'
+#' @import ggplot2
+#'
 #' @return
 #' @export
 #'

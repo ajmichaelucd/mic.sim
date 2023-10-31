@@ -5,6 +5,10 @@ library(lubridate)
 library(readxl)
 library(ggExtra)
 
+
+##Imports and Cleaning--------------
+brd_breakpoints = readxl::read_excel("~/Desktop/sep_2023/brd_breakpoints.xlsx")
+
 brd_data_mh <- readxl::read_excel("~/Desktop/july_2023/BRD MODLING RESULT1.1.xlsx",
                                   sheet = "M.heam ", col_types = c("text",
                                                                    "text", "text", "text", "text", "text",
@@ -101,26 +105,65 @@ dnames_bopo <- dublin_bopo %>% select(ampicillin_mic:tylosin_tartrate_mic) %>% c
 dublin_gn <- dublin_gn %>% rename_at(vars(dublin_gn %>% select(ampicillin_mic:gentamycin_mic) %>% colnames), ~dnames_gn)
 dublin_bopo <- dublin_bopo %>% rename_at(vars(dublin_bopo %>% select(ampicillin_mic:tylosin_tartrate_mic) %>% colnames), ~dnames_bopo)
 
+
+##Modeling-----------
+primary_model_parameters = list(formula = Surv(time = left_bound,
+                                               time2 = right_bound,
+                                               type = "interval2") ~ pspline(t, df = 0,  calc = TRUE, method = "aic"),
+                                formula2 = c == "2" ~ s(t),
+                                max_it = 1000,
+                                ncomp = 2,
+                                tol_ll = 1e-06,
+                                pi_link = "logit",
+                                verbose = 3,
+                                initial_weighting = 8,
+                                browse_each_step = FALSE,
+                                plot_visuals = FALSE,
+                                stop_on_likelihood_drop = TRUE)
+
+
+
+
 drug = "TILDIP"
 bug = "mh"
 if(bug == "mh"){
   set = brd_mh
+  s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
+  r_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_r)
 } else if(bug == "pm"){
   set = brd_pm
-}else {
-  set = NA
+  s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(pm_s)
+  r_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(pm_r)
+}else if(bug == "dublin_bopo"){
+  set = dublin_bopo
+  s_breakpoint = NA
+  r_breakpoint = NA
+}else{
+  set = dublin_gn
+  s_breakpoint = NA
+  r_breakpoint = NA
 }
 
 
 prep_df(bug, drug, set) -> df_temp
 
-low_con <- case_when(
-  nrow(df_temp %>% filter(left_bound == -Inf)) == 0 ~ min(df_temp$left_bound),
-  TRUE ~ ifelse(nrow(df_temp %>% filter(left_bound == -Inf)) == 0, 0, df_temp %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% unique))
+get_concentration = function(df, side){
+  if(side == "low"){
+    case_when(
+      nrow(df %>% filter(left_bound == -Inf)) == 0 ~ min(df$left_bound),
+      TRUE ~ ifelse(nrow(df %>% filter(left_bound == -Inf)) == 0, 0, df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% unique)) %>% return()
+  } else if(side == "high"){
+    case_when(
+      nrow(df %>% filter(right_bound == Inf)) == 0 ~ max(df$right_bound),
+      TRUE ~ ifelse( nrow(df %>% filter(right_bound == Inf)) == 0, 0, df %>% filter(right_bound == Inf) %>% pull(left_bound) %>% unique))
+  }else{
+    errorCondition("choose 'low' or 'high'")
+  }
+}
 
-high_con <- case_when(
-  nrow(df_temp %>% filter(right_bound == Inf)) == 0 ~ max(df_temp$right_bound),
-  TRUE ~ ifelse( nrow(df_temp %>% filter(right_bound == Inf)) == 0, 0, df_temp %>% filter(right_bound == Inf) %>% pull(left_bound) %>% unique))
+
+low_con <- get_concentration(df_temp, "low")
+high_con <- get_concentration(df_temp, "high")
 
 visible_data = df_temp %>%
   mutate(low_con = low_con, high_con = high_con) %>%
@@ -144,24 +187,54 @@ prelim_cens_check <- visible_data %>%
     text_form = paste0("proportion ", cens, " is ", round(proportion, 4))
   )
 prelim_cens_check %>% pull(text_form) %>% cat(., sep = "\n")
-prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum %>% paste0("total sum of left-censored and right_censored observations is ", .) %>% print
+prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum %>% paste0("total sum of left-censored and right_censored observations is ", .) %>% print()
 
-
-single_model_output_fm <- visible_data %>%
+single_model_output_fm_2 <- visible_data %>%
   fit_model_pi(visible_data = .,
-                       formula = Surv(time = left_bound,
-                                      time2 = right_bound,
-                                      type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-                       formula2 = c == "2" ~ s(t),
-                       max_it = 50,
-                       ncomp = 2,
-                       tol_ll = 1e-06,
-                       pi_link = "logit",
-                       verbose = 3,
-                       initial_weighting = 8,
-               browse_each_step = FALSE,
-               plot_visuals = FALSE
-               )
+               formula = primary_model_parameters$formula,
+               formula2 = primary_model_parameters$formula2,
+               max_it = primary_model_parameters$max_it,
+               ncomp = 2,
+               tol_ll = primary_model_parameters$tol_ll,
+               pi_link = primary_model_parameters$pi_link,
+               verbose = primary_model_parameters$verbose,
+               initial_weighting = primary_model_parameters$initial_weighting,
+               browse_each_step = primary_model_parameters$browse_each_step,
+               plot_visuals = primary_model_parameters$plot_visuals,
+               stop_on_likelihood_drop = primary_model_parameters$stop_on_likelihood_drop
+  )
+
+single_model_output_fm_1 <- visible_data %>%
+  fit_model_pi(visible_data = .,
+               formula = primary_model_parameters$formula,
+               formula2 = primary_model_parameters$formula2,
+               max_it = primary_model_parameters$max_it,
+               ncomp = 1,
+               tol_ll = primary_model_parameters$tol_ll,
+               pi_link = primary_model_parameters$pi_link,
+               verbose = primary_model_parameters$verbose,
+               initial_weighting = primary_model_parameters$initial_weighting,
+               browse_each_step = primary_model_parameters$browse_each_step,
+               plot_visuals = primary_model_parameters$plot_visuals
+  )
+
+
+plot_likelihood(single_model_output_fm_2$likelihood, "tibble")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 print(single_model_output_fm$converge)
 single_model_output_fm
 if (length(single_model_output_fm) == 1) {

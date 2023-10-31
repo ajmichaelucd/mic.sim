@@ -34,25 +34,9 @@ grab_column <- function(drug, data, date_col, date_type, first_year, id){
     errorCondition("pick decimal or year")
   }
 
-
-
-
   import_mics((data %>% select(all_of(drug))) %>%
                 pull(drug)) %>%
     mutate(left_bound = log2(left_bound), right_bound = log2(right_bound)) %>%
-    # mutate(
-    #   cens =
-    #     case_when(
-    #       left_bound == -Inf ~ "lc",
-    #       right_bound == Inf ~ "rc",
-    #       TRUE ~ "int"
-    #     ),
-    #   mid =
-    #     case_when(
-    #       left_bound == -Inf ~ right_bound - 0.5,
-    #       right_bound == Inf ~ left_bound + 0.5,
-  #       TRUE ~ (left_bound + right_bound) / 2
-  #     )) %>%
   tibble(., df_temp) -> df
   if(id == "accession"){
     df %>% rename(id = "Accession") %>% relocate(t) %>% relocate(id) -> result
@@ -66,19 +50,6 @@ grab_column <- function(drug, data, date_col, date_type, first_year, id){
     filter(!is.na(left_bound)) %>%
     select(id:right_bound) %>%
     return()
-  #
-  # if(nrow(df %>% filter(left_bound == -Inf)) > 0){
-  #   plot_min <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min) - 1
-  # }else{
-  #   plot_min <- (df %>% pull(left_bound) %>% min) - 1
-  # }
-  #
-  # if(nrow(df %>% filter(right_bound == Inf)) > 0){
-  #   plot_max <- (df %>% filter(right_bound == Inf) %>% pull(left_bound) %>% max) + 1
-  # }else{
-  #   plot_max <- (df %>% pull(right_bound) %>% max) + 1
-  # }
-  #
 
 
 

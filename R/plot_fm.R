@@ -6,6 +6,10 @@
 #' @param s_breakpoint
 #' @param r_breakpoint
 #'
+#'
+#' @import ggplot2
+#' @import ggnewscale
+#'
 #' @return
 #' @export
 #'

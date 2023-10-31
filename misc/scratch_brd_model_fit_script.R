@@ -2,7 +2,7 @@
 #name of mic column(s)
 
 data = brd_mh %>% mutate(
-  source_full = str_to_lower(`Specimen Source`)
+  source_full = stringr::str_to_lower(`Specimen Source`)
 ) %>% #summarise(.by = source_full, n = n()) %>% print(n = 32) %>%
   mutate( source_detailed =
             case_when(
@@ -28,7 +28,7 @@ drug = "FLORFE"
 bug = "mh"
 primary_model_parameters = list(formula = Surv(time = left_bound,
                                                time2 = right_bound,
-                                               type = "interval2") ~ ns(t, df = 4),
+                                               type = "interval2") ~ pspline(t, df = 0,  calc = TRUE, method = "aic"),
                                 formula2 = c == "2" ~ s(t),
                                 max_it = 1000,
                                 ncomp = 2,
@@ -55,7 +55,7 @@ if(length(mic_col) == 1){
 
   if(date_type == "decimal"){
     covariates = data %>% rename(date = date_col) %>%
-      mutate(t = decimal_date(date) - start_time) %>%
+      mutate(t = lubridate::decimal_date(date) - start_time) %>%
       select(id_col, t, covariate_vector) %>%
       rename(id = id_col)
   } else if(date_type == "year"){

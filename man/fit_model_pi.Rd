@@ -20,7 +20,8 @@ fit_model_pi(
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
-  initial_weighting = 8
+  initial_weighting = 8,
+  stop_on_likelihood_drop = TRUE
 )
 }
 \arguments{
