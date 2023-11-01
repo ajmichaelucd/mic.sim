@@ -14,12 +14,13 @@
 #' @export
 #'
 #' @examples
-plot_fm <- function(output, title, add_log_reg, s_breakpoint, r_breakpoint){
+plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE){
+
+  if(!is.null(output$prior_step_models) & use_prior_step){
+    output$newmodel = output$prior_step_models$mu_models
+  }
 
     if(output$ncomp == "2"){
-      check_comp_conv = function(models){
-        is.na(models$scale) | (tibble(a = models$coefficients) %>% filter(is.na(a)) %>% nrow) > 0
-      }
       results <- tibble(c = 1:2, dnc = purrr::map_lgl(output$newmodel, ~check_comp_conv(.x)))
       if(nrow(results %>% filter(dnc)) > 0){
         fitted_comp = output$newmodel[[results %>% filter(!dnc) %>% pull(c)]]
@@ -45,41 +46,9 @@ plot_fm <- function(output, title, add_log_reg, s_breakpoint, r_breakpoint){
                                            TRUE ~ (left_bound + right_bound) / 2
                                          ))
 
-  if(nrow(df %>% filter(left_bound == -Inf)) > 0){
-    plot_min_1 <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min) - 1
-  }else{
-    plot_min_1 <- (df %>% pull(left_bound) %>% min) - 1
-  }
+plot_min = plot_bounds(df, "min", ncomp)
+plot_max = plot_bounds(df, "max", ncomp)
 
-
-  if(ncomp == 1){
-    plot_min_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2
-  } else if(ncomp == 2){
-    plot_min_2 <- min(sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2,
-                      sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2)
-  }else{
-    plot_min_2 = plot_min_1
-  }
-
-  plot_min = min(plot_min_1, plot_min_2)
-
-
-  if(nrow(df %>% filter(right_bound == Inf)) > 0){
-    plot_max_1 <- (df %>% filter(right_bound == Inf) %>% pull(left_bound) %>% max) + 1
-  }else{
-    plot_max_1 <- (df %>% pull(right_bound) %>% max) + 1
-  }
-
-  if(ncomp == 1){
-    plot_max_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2
-  } else if(ncomp == 2){
-    plot_max_2 <- max(sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2,
-                      sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2)
-  }else{
-    plot_max_2 = plot_max_1
-  }
-
-  plot_max = max(plot_max_1, plot_max_2)
 
 
   #ciTools::add_pi(df, output$newmodel[[1]], alpha = 0.05, names = c("lwr", "upr"))
@@ -140,16 +109,16 @@ plot_fm <- function(output, title, add_log_reg, s_breakpoint, r_breakpoint){
     #do we need to account for weighting or anything?
 
     pi <- ggplot() +
-      geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
-      geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+      geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Wild Type", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Non-Wild Type", linetype = "Fitted Model")) +
       xlim(0, 16) +
       ylim(0,1)
-    if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint)){
+    if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint) & !is.na(s_breakpoint) & !is.na(r_breakpoint)){
       lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
       pi = pi +
-        geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1", linetype = "Logistic Regression")) +
-        geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2", linetype = "Logistic Regression"))
+        geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+        geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression"))
       mean = mean +
         ggnewscale::new_scale_color() +
         geom_hline(aes(yintercept = s_breakpoint %>% parse_number() %>% log2, color = "Susceptible Breakpoint"), alpha = 0.4) +
@@ -231,18 +200,18 @@ plot_fm <- function(output, title, add_log_reg, s_breakpoint, r_breakpoint){
         ylim(plot_min, plot_max)
 
       pi <- ggplot() +
-        geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1", linetype = "Model")) +
-        geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2", linetype = "Model")) +
+        geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Wild Type", linetype = "Fitted Model")) +
+        geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Non-Wild Type", linetype = "Fitted Model")) +
         xlim(0, 16) +
         ylim(0,1)
 
 
-      if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint)){
+      if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint) & !is.na(s_breakpoint) & !is.na(r_breakpoint)){
         lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
 pi = pi +
-  geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1", linetype = "Logistic Regression")) +
-  geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2", linetype = "Logistic Regression"))
+  geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+  geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression"))
 mean = mean +
   ggnewscale::new_scale_color() +
   geom_hline(aes(yintercept = s_breakpoint %>% parse_number() %>% log2, color = "Susceptible Breakpoint"), alpha = 0.4) +
@@ -256,4 +225,51 @@ mean = mean +
 
   ##maxing out iterations fails to generate a `converge` object!!!!!!!!!!!!!!
 
+}
+
+plot_bounds = function(df, side, ncomp){
+  if(side == "min"){
+    if(nrow(df %>% filter(left_bound == -Inf)) > 0){
+      plot_min_1 <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min) - 1
+    }else{
+      plot_min_1 <- (df %>% pull(left_bound) %>% min) - 1
+    }
+
+
+    if(ncomp == 1){
+      plot_min_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2
+    } else if(ncomp == 2){
+      plot_min_2 <- min(sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2,
+                        sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min - 0.2)
+    }else{
+      plot_min_2 = plot_min_1
+    }
+
+    plot_min = min(plot_min_1, plot_min_2)
+    return(plot_min)
+  } else if(side == "max"){
+    if(nrow(df %>% filter(right_bound == Inf)) > 0){
+      plot_max_1 <- (df %>% filter(right_bound == Inf) %>% pull(left_bound) %>% max) + 1
+    }else{
+      plot_max_1 <- (df %>% pull(right_bound) %>% max) + 1
+    }
+
+    if(ncomp == 1){
+      plot_max_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2
+    } else if(ncomp == 2){
+      plot_max_2 <- max(sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2,
+                        sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max + 0.2)
+    }else{
+      plot_max_2 = plot_max_1
+    }
+
+    plot_max = max(plot_max_1, plot_max_2)
+    return(plot_max)
+  }else{
+    errorCondition("choose 'min' or 'max'")
+  }
+}
+
+check_comp_conv = function(models){
+  is.na(models$scale) | (tibble(a = models$coefficients) %>% filter(is.na(a)) %>% nrow) > 0
 }

@@ -4,7 +4,14 @@
 \alias{plot_fm}
 \title{Title}
 \usage{
-plot_fm(output, title, add_log_reg, s_breakpoint, r_breakpoint)
+plot_fm(
+  output,
+  title,
+  add_log_reg = FALSE,
+  s_breakpoint = NA,
+  r_breakpoint = NA,
+  use_prior_step = FALSE
+)
 }
 \arguments{
 \item{r_breakpoint}{}

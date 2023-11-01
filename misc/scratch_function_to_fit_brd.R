@@ -8,6 +8,7 @@ library(ggExtra)
 
 ##Imports and Cleaning--------------
 brd_breakpoints = readxl::read_excel("~/Desktop/sep_2023/brd_breakpoints.xlsx")
+dublin_breakpoints = readxl::read_excel("~/Desktop/sep_2023/dublin_breakpoints.xlsx")
 
 brd_data_mh <- readxl::read_excel("~/Desktop/july_2023/BRD MODLING RESULT1.1.xlsx",
                                   sheet = "M.heam ", col_types = c("text",
@@ -124,8 +125,8 @@ primary_model_parameters = list(formula = Surv(time = left_bound,
 
 
 
-drug = "TILDIP"
-bug = "mh"
+drug = "chloramphenicol"
+bug = "dublin_gn"
 if(bug == "mh"){
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
@@ -136,12 +137,12 @@ if(bug == "mh"){
   r_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(pm_r)
 }else if(bug == "dublin_bopo"){
   set = dublin_bopo
-  s_breakpoint = NA
-  r_breakpoint = NA
+  if(drug %in% dublin_breakpoints$drug_name){s_breakpoint = dublin_breakpoints %>% filter(drug_name == drug) %>% pull(bopo_s)}else{s_breakpoint = NA}
+  if(drug %in% dublin_breakpoints$drug_name){r_breakpoint = dublin_breakpoints %>% filter(drug_name == drug) %>% pull(bopo_r)}else{s_breakpoint = NA}
 }else{
   set = dublin_gn
-  s_breakpoint = NA
-  r_breakpoint = NA
+  if(drug %in% dublin_breakpoints$drug_name){s_breakpoint = dublin_breakpoints %>% filter(drug_name == drug) %>% pull(gn_s)}else{s_breakpoint = NA}
+  if(drug %in% dublin_breakpoints$drug_name){r_breakpoint = dublin_breakpoints %>% filter(drug_name == drug) %>% pull(gn_r)}else{s_breakpoint = NA}
 }
 
 
@@ -222,8 +223,30 @@ single_model_output_fm_1 <- visible_data %>%
 plot_likelihood(single_model_output_fm_2$likelihood, "tibble")
 
 
+plot_fm(single_model_output_fm_2, paste0(drug, "-", stringr::str_to_upper(bug), " FM2"), add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint
+        #, use_prior_step = TRUE
+        )
+
+plot_fm(single_model_output_fm_1, paste0(drug, "-", stringr::str_to_upper(bug), " FM1"))
 
 
+
+cens_dir = "RC"
+
+
+
+single_model_output_fms_2 <- fit_model_safety_pi(visible_data = visible_data,
+                                                 formula = primary_model_parameters$formula,
+                                                 formula2 = primary_model_parameters$formula2,
+                                                 max_it = primary_model_parameters$max_it,
+                                                 fm_check = cens_dir,
+                                                 ncomp = 2,
+                                                 tol_ll = primary_model_parameters$tol_ll,
+                                                 pi_link = primary_model_parameters$pi_link,
+                                                 verbose = primary_model_parameters$verbose,
+                                                 browse_each_step = primary_model_parameters$browse_each_step,
+                                                 plot_visuals = primary_model_parameters$plot_visuals
+)
 
 
 

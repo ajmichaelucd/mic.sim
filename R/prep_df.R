@@ -28,7 +28,7 @@ grab_column <- function(drug, data, date_col, date_type, first_year, id){
       suppressWarnings()
   } else if(date_type == "year"){
     df_temp <- data %>% rename(date = date_col) %>%
-      mutate(t = as.numeric(date) ) %>%
+      mutate(t = as.numeric(date) - first_year) %>%
       suppressWarnings()
   }else{
     errorCondition("pick decimal or year")
