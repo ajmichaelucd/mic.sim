@@ -18,7 +18,7 @@
 #' @importFrom survival pspline survreg Surv coxph.wtest
 #' @importFrom gam gam s lo
 #' @importFrom splines ns
-#' @importFrom ggplot2 geom_function aes
+#' @importFrom ggplot2 geom_function aes ggplot
 #' @importFrom tidyr pivot_wider
 #'
 #' @return
@@ -378,26 +378,6 @@ if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
 
     if(i != 1){
 
-      model_coefficient_checks = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
-        #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
-        pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
-
-        #these are the actual smoothing things for every observation I believe
-        pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
-
-        #check if the number of coefficients in the mu models changes
-        mu_number_of_coef_check = purrr::map(1:ncomp, ~(length(na.omit(mu_models_new[[.x]]$coefficients)) == length(na.omit(mu_models_old[[.x]]$coefficients)))) %>%
-          unlist %>% all
-
-        mu_coefficient_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$coefficients - mu_models_old[[.x]]$coefficients) %>% abs %>% sum)) %>% unlist %>% max < model_coefficient_tolerance
-
-        mu_sigma_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$scale - mu_models_old[[.x]]$scale) %>% abs)) %>% unlist %>% max < model_coefficient_tolerance
-
-        #check likelihood at end of E step
-
-        return(all(pi_parametric_coef_check, pi_nonparametric_check, mu_number_of_coef_check, mu_coefficient_check, mu_sigma_check))
-      }
-
       model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp)
 
       }
@@ -447,13 +427,7 @@ possible_data %<>%
       print(pi_model_new)
       print(mu_models_new)
     }
-calculate_log_likelihood = function(possible_data){
-    log_likelihood_obs <- possible_data %>%
-      summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
-      mutate(log_likelihood_i = log(likelihood_i))
-    log_likelihood <- sum(log_likelihood_obs$log_likelihood_i)
-    return(log_likelihood)
-}
+
 
 log_likelihood_new = calculate_log_likelihood(possible_data)
     likelihood_documentation[i, 2] <- log_likelihood_new
@@ -588,4 +562,32 @@ fit_pi_model = function(pi_formula, pi_link, possible_data){
 
 check_mu_models_convergence = function(mu_models, ncomp){
   purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$scale), is.na(mu_models[[.x]]$coefficients)))
+}
+
+model_coefficient_checks = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
+  #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
+  pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
+
+  #these are the actual smoothing things for every observation I believe
+  pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
+
+  #check if the number of coefficients in the mu models changes
+  mu_number_of_coef_check = purrr::map(1:ncomp, ~(length(na.omit(mu_models_new[[.x]]$coefficients)) == length(na.omit(mu_models_old[[.x]]$coefficients)))) %>%
+    unlist %>% all
+
+  mu_coefficient_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$coefficients - mu_models_old[[.x]]$coefficients) %>% abs %>% sum)) %>% unlist %>% max < model_coefficient_tolerance
+
+  mu_sigma_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$scale - mu_models_old[[.x]]$scale) %>% abs)) %>% unlist %>% max < model_coefficient_tolerance
+
+  #check likelihood at end of E step
+
+  return(all(pi_parametric_coef_check, pi_nonparametric_check, mu_number_of_coef_check, mu_coefficient_check, mu_sigma_check))
+}
+
+calculate_log_likelihood = function(possible_data){
+  log_likelihood_obs <- possible_data %>%
+    summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
+    mutate(log_likelihood_i = log(likelihood_i))
+  log_likelihood <- sum(log_likelihood_obs$log_likelihood_i)
+  return(log_likelihood)
 }

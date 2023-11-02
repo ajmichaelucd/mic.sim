@@ -10,7 +10,8 @@ plot_fm(
   add_log_reg = FALSE,
   s_breakpoint = NA,
   r_breakpoint = NA,
-  use_prior_step = FALSE
+  use_prior_step = FALSE,
+  range_zoom = FALSE
 )
 }
 \arguments{

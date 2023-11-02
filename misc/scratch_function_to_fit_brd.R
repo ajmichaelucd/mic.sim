@@ -120,13 +120,13 @@ primary_model_parameters = list(formula = Surv(time = left_bound,
                                 initial_weighting = 8,
                                 browse_each_step = FALSE,
                                 plot_visuals = FALSE,
-                                stop_on_likelihood_drop = TRUE)
+                                stop_on_likelihood_drop = FALSE)
 
 
 
 
-drug = "chloramphenicol"
-bug = "dublin_gn"
+drug = "TULATH"
+bug = "pm"
 if(bug == "mh"){
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
@@ -227,6 +227,10 @@ plot_fm(single_model_output_fm_2, paste0(drug, "-", stringr::str_to_upper(bug), 
         #, use_prior_step = TRUE
         )
 
+plot_fm(single_model_output_fm_2, paste0(drug, "-", stringr::str_to_upper(bug), " FM2 ZOOM"), add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint
+        #, use_prior_step = TRUE
+        , range_zoom = TRUE)
+
 plot_fm(single_model_output_fm_1, paste0(drug, "-", stringr::str_to_upper(bug), " FM1"))
 
 
@@ -245,8 +249,27 @@ single_model_output_fms_2 <- fit_model_safety_pi(visible_data = visible_data,
                                                  pi_link = primary_model_parameters$pi_link,
                                                  verbose = primary_model_parameters$verbose,
                                                  browse_each_step = primary_model_parameters$browse_each_step,
-                                                 plot_visuals = primary_model_parameters$plot_visuals
+                                                 plot_visuals = primary_model_parameters$plot_visuals,
+                                                 stop_on_likelihood_drop = primary_model_parameters$stop_on_likelihood_drop
 )
+
+
+##figure out plotting
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

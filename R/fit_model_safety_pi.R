@@ -14,6 +14,12 @@
 #' @param verbose
 #' @param maxiter_survreg
 #'
+#' @importFrom survival pspline survreg Surv coxph.wtest
+#' @importFrom gam gam s lo
+#' @importFrom splines ns
+#' @importFrom ggplot2 geom_function aes ggplot
+#' @importFrom tidyr pivot_wider
+#'
 #' @return
 #' @export
 #'
@@ -33,7 +39,9 @@ fit_model_safety_pi = function(
     plot_visuals = FALSE,
     pi_link = "logit",
     verbose = 3,
-    maxiter_survreg = 30){
+    model_coefficient_tolerance = 0.00001,
+    maxiter_survreg = 30,
+    stop_on_likelihood_drop = TRUE){
   #verbose = 0: print nothing
   #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
   #verbose = 2: print run number and iteration number --done
@@ -81,7 +89,7 @@ fit_model_safety_pi = function(
   if(length(possible_data) == 1){errorCondition("invalid fm_check value")}
 
 
-  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3) ##changed to 3 to log survreg warnings
+  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
   likelihood_documentation [,1] <- 1:max_it
 
 
@@ -96,277 +104,186 @@ fit_model_safety_pi = function(
     #first M step--------
     #MLE of all parameters
     if(i != 1){
-      oldmodel <- newmodel
-      oldpi <- pi
-      old_log_likelihood <- log_likelihood
-      old_possible_data <- possible_data
-      oldbinommodel <- newbinommodel
+      mu_model_old = mu_model_new
+      pi_model_old = pi_model_new
+      log_likelihood_old = log_likelihood_new
+      possible_data_old = possible_data
     }
 
-    #model P(Y|t,c)
-    # model0 <- biglm(
-    #   formula = y ~ c - 1,
-    #   weights =  ~`P(C=c|y,t)`,
-    #   data = possible_data) #if not from normal, change the link function and error dist
-    #eg if lognormal, survreg with lognormal(change error distand link function)
-
-    if(fm_check == "RC") {df_temp = possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)
-    }else if(fm_check == "LC") {df_temp = possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 2)
-    }else{df_temp = possible_data %>% filter(`P(C=c|y,t)` != 0 , c == 1)}
+    if(fm_check == "RC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 1, mu_formula = formula, maxiter_survreg = maxiter_survreg)
+    }else if(fm_check == "LC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 2, mu_formula = formula, maxiter_survreg = maxiter_survreg)
+    }else{errorCondition("Invalid fm_check value")}
 
 
-
-    #possible_data <- possible_data %>% filter(`P(C=c|y,t)` != 0 )
-    #print("about to survreg")
-    model <- survival::survreg(
-      formula,  ##Make this chunk into an argument of the function
-      weights = `P(C=c|y,t)`,
-      data = df_temp,
-      dist = "gaussian",
-      control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
-
-
-    if (model$iter[1] == maxiter_survreg){
+    if (mu_model_new$iter[1] == maxiter_survreg){
       likelihood_documentation[i,3] <- TRUE
     } else{
       likelihood_documentation[i,3] <- FALSE
     }
-    #browser()
 
+    pi_model_new = fit_pi_model(pi_formula = formula2, pi_link = pi_link, possible_data = possible_data)
 
-
-
-    newmodel = model
-
-    nn <- paste("c", 1:ncomp, sep = "")
-
-    ##newmodel2 <- tibble(t(data.frame(split(newmodel$mean, rep_len(nn, length.out = length(newmodel$mean)))))) %>%
-    # rename(comp_mean = 1) %>%
-    # mutate(sd = c(newmodel$sd)) %>%
-    # mutate(names = nn) %>%
-    # relocate(names, .before = everything()) %>% print()
-
-    #Estimate mixing probabilities--------
-    #pi = newbinommodel
-
-    #   pi <- possible_data  %>% mutate(`P(C=c|y,t)` = case_when(
-    #     c == "2" ~ predict(logit, newdata = tibble(t = possible_data$t), type = "response"),
-    #     c == "1" ~ 1 - predict(logit, newdata = tibble(t = possible_data$t), type = "response")
-    #   ))
-    if(pi_link == "logit"){
-      #   binom_model <- stats::glm(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
-      binom_model <- gam::gam(formula2, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
-    } else if(pi_link == "identity"){
-
-      binom_model <- gam::gam(formula2, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
-    } else{ errorCondition("pick logit or identity link function")}
-
-    newbinommodel <- binom_model
-
-    pi = newbinommodel
-    #pull(`P(C = c)`, name = c)
-
-    # newmodel <- c(model$coefficients, sigma(model))
-    # `sd(y)` = model$scale
-    # newmodel = c(coef(model), `sd(y)`)
+    if(check_mu_model_convergence(mu_model_new, ncomp) %>% unlist %>% any){
+      converge = "NO"
+      break
+    }
 
     if(i != 1){
 
+      model_coefficient_checks_results = model_coefficient_checks_safety(mu_model_new, pi_model_new, mu_model_old, pi_model_old, model_coefficient_tolerance, ncomp)
 
-      number_coef <- length(model$coefficients) == length(oldmodel$coefficients)
-      if(number_coef){
-        mu_coef_diff <-  sum(abs(model$coefficients - oldmodel$coefficients)) < 0.00001
-
-      } else{
-        mu_coef_diff <- FALSE
-      }
-
-      param_checks = mu_coef_diff #&& check_pi < 0.00001
-
-
-      if( mu_coef_diff ) # && check_pi < 0.00001)
-      {message("stopped on coefficients")
-        break}
-      # check_model = max(abs(newmodel - oldmodel))
-      # check_pi_tibble = tibble(c = 1:2, pi_dif = pi$`P(C = c)` - oldpi$`P(C = c)`)
-      # check_pi = max(abs(check_pi_tibble$pi_dif))
-      #
-      #
-      # param_checks = check_model < 0.00001 && check_pi < 0.00001
-      #
-
-      #  if( check_model < 0.00001 && check_pi < 0.00001)
-      #  {message("stopped on coefficients")
-      #    break}
-      #
     }
-    #marginal_likelihood  #add warning: Chicago style pizza is a casserole
-    #observed data likelihood sum(log(P(y_i|t_i)))
-    #`P(Y|t,c)` * `P(C=c|t)` = P(Y, C|t) then sum over possible values of C
-    #aka P(C = c)
 
-    #group by obs_id then sum `P(c,y|t)` to get likelihood for each observation, take log of that, and then sum of those is observed data likelihood
-
-
-    #once we have likelihood, make sure:
-    #A. it is going up (with EM algorithm it should always increase)
-    #B. if it is not going up by very much, you can stop
-    #if conditions are met, use break
-    if(plot_visuals == TRUE){
-      ##outdated
-      c1_plot <-   possible_data %>%
-        mutate(
-          mid =
-            case_when(
-              left_bound == -Inf ~ right_bound - 0.5,
-              right_bound == Inf ~ left_bound + 0.5,
-              TRUE ~ (left_bound + right_bound) / 2
-            )
-        ) %>%
-        filter(c == 1) %>%
-        ggplot(mapping = aes(x = t, y = mid, color = `P(C=c|y,t)`)) +
-        geom_point() +
-        geom_abline(data = NULL, intercept = newmodel$mean[,"c1"], slope = newmodel$mean[,"c1:t"], mapping = aes(col = "c1")) +
-        geom_abline(data = NULL, intercept = newmodel$mean[,"c2"], slope = newmodel$mean[,"c2:t"], mapping = aes(col = "c2"))
-      print(c1_plot)
-    }
 
     #Next E step-------------
     if(fm_check == "RC"){
     possible_data %<>%
-      #select(-any_of("P(C = c)")) %>%
-      #left_join(pi, by = "c") %>%
       mutate(
-        `E[Y|t,c]` = if_else( c==1, predict(model, newdata = possible_data), NA_real_),
-        `sd[Y|t,c]` = if_else( c==1, model$scale, NA_real_),
-        # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
-
-        `P(Y|t,c)` =  if_else(c== 1,
-                              if_else(
-                                left_bound == right_bound,
-                                dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-                                pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-                                  pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
-                              ), (right_bound == Inf) %>% as.numeric()) ##possibly add upper concentation as input and change this to right_bound == Inf & left_bound == high_con
+        `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new, newdata = possible_data), NA_real_),
+        `sd[Y|t,c]` = if_else(c == 1, mu_model_new$scale, NA_real_),
+        `P(Y|t,c)` = case_when(
+          c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+            pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 1 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+            pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+          TRUE ~ (right_bound == Inf) %>% as.numeric()
+        ),
+        `P(C=c|t)` = case_when(
+          c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+          c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+        ),
+        `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
       ) %>%
-      group_by(obs_id) %>%
-      #mutate(
-      #  `P(c,y|t)` = `P(Y|t,c)` * `P(C = c)`,
-      #  `P(Y=y|t)` = sum(`P(c,y|t)`),
-      #  `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
-      #) %>%
-      mutate(`P(C=c|t)` = case_when( ########UNSURE ABOUT THIS SECTION
-        c == "2" ~ predict(binom_model, newdata = tibble(t = t), type = "response"), ########UNSURE ABOUT THIS SECTION
-        c == "1" ~ 1 - predict(binom_model, newdata = tibble(t = t), type = "response") ########UNSURE ABOUT THIS SECTION
-      )) %>%  ########UNSURE ABOUT THIS SECTION
-      mutate(`P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`, ########UNSURE ABOUT THIS SECTION
-             `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
-             `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%
-      ungroup()
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
     } else{
       possible_data %<>%
         #select(-any_of("P(C = c)")) %>%
         #left_join(pi, by = "c") %>%
         mutate(
-          `E[Y|t,c]` = if_else( c==2, predict(model, newdata = possible_data), NA_real_),
-          `sd[Y|t,c]` = if_else( c==2, model$scale, NA_real_),
-          # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
-
-          `P(Y|t,c)` =  if_else(c== 2,
-                                if_else(
-                                  left_bound == right_bound,
-                                  dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-                                  pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-                                    pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`)
-                                ), (left_bound == -Inf) %>% as.numeric()) ##possibly add upper concentation as input and change this to right_bound == Inf & left_bound == high_con
+          `E[Y|t,c]` = if_else(c == 2, predict(mu_model_new, newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else(c == 2, mu_model_new$scale, NA_real_),
+          `P(Y|t,c)` = case_when(
+            c == 2 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 2 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 2 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+            TRUE ~ (left_bound == -Inf) %>% as.numeric()
+            ),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+          ),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
         ) %>%
-        group_by(obs_id) %>%
-        #mutate(
-        #  `P(c,y|t)` = `P(Y|t,c)` * `P(C = c)`,
-        #  `P(Y=y|t)` = sum(`P(c,y|t)`),
-        #  `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`
-        #) %>%
-        mutate(`P(C=c|t)` = case_when( ########UNSURE ABOUT THIS SECTION
-          c == "2" ~ predict(binom_model, newdata = tibble(t = t), type = "response"), ########UNSURE ABOUT THIS SECTION
-          c == "1" ~ 1 - predict(binom_model, newdata = tibble(t = t), type = "response") ########UNSURE ABOUT THIS SECTION
-        )) %>%  ########UNSURE ABOUT THIS SECTION
-        mutate(`P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`, ########UNSURE ABOUT THIS SECTION
-               `P(Y=y|t)` = sum(`P(c,y|t)`), ########UNSURE ABOUT THIS SECTION
-               `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`) %>%
-        ungroup()
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
     }
 
 
     if(verbose > 2){
-      print(pi)
-      print(newmodel)
+      print(pi_model_new)
+      print(mu_model_new)
     }
 
-    log_likelihood_obs <- possible_data %>%
-      group_by(obs_id) %>%
-      summarise(likelihood_i = sum(`P(c,y|t)`)) %>%
-      mutate(log_likelihood_i = log(likelihood_i))
-    log_likelihood <- sum(log_likelihood_obs$log_likelihood_i)
-
-    likelihood_documentation[i, 2] <- log_likelihood
+    log_likelihood_new = calculate_log_likelihood(possible_data)
+    likelihood_documentation[i, 2] <- log_likelihood_new
 
     if(verbose > 2){
-      message(log_likelihood)
+      message(log_likelihood_new)
     }
-    #par(mfrow = c(2,1))
-    #    plot(
-    #      x = likelihood_documentation[1:i,1],
-    #      y = likelihood_documentation[1:i,2],
-    #      type = "l")
 
+    if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2] & stop_on_likelihood_drop){
+      converge = "likelihood decreased"
+      break
+    }
 
-
-
+    if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2]){
+      browser("likelihood decreased")
+    }
 
 
 
     if(browse_each_step){browser(message("End of step ", i))}
+
     if(i != 1)
     {
 
-      check_ll = log_likelihood - old_log_likelihood
+      check_ll = (log_likelihood_new - log_likelihood_old)
 
-      check_ll_2 = check_ll < tol_ll
-
-      #    other_plot <- tibble(likelihood_documentation) %>% ggplot() +
-      #      geom_line(aes(x = likelihood_documentation[,1],
-      #                    y = likelihood_documentation[,2]))
-      #
-      #    print(grid.arrange(c1_plot, other_plot, nrow = 1))
-
-      #if(check_ll < 0 ){
-      #  warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
-      #}
+      if(check_ll < 0){
+        warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
+      }
 
 
 
-      if(check_ll_2 & param_checks)
+      if(check_ll < tol_ll & model_coefficient_checks_results)
       {
         if(verbose > 0){
           message("Stopped on combined LL and parameters")}
+        converge = "YES"
         break
       }
 
     }
 
-
-
   }
   if(browse_at_end){browser()}
 
+  if(i == max_it & !(check_ll < tol_ll & param_checks)){
+    converge = "iterations"
+  }
+
+
+  if(i == 1){
+    mu_models_old = NA
+    pi_model_old = NA
+    log_likelihood_old = NA
+    possible_data_old = NA
+  }
+
   return(
     list(
-      likelihood = likelihood_documentation[1:i, ],
+      likelihood = likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)),
       possible_data = possible_data,
-      binom_model = binom_model,
-      newmodel = newmodel,
-      steps = i
+      binom_model = pi_model_new,
+      newmodel = mu_model_new,
+      steps = i,
+      converge = converge,
+      ncomp = ncomp,
+      prior_step_models = list(mu_model = mu_model_old, pi_model = pi_model_old, log_likelihood = log_likelihood_old, possible_data = possible_data_old)
     )
   )
 
+}
+
+
+
+check_mu_model_convergence = function(mu_model, ncomp){
+any(is.na(mu_model$scale), is.na(mu_model$coefficients))
+}
+
+model_coefficient_checks_safety = function(mu_model_new, pi_model_new, mu_model_old, pi_model_old, model_coefficient_tolerance, ncomp){
+  #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
+  pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
+
+  #these are the actual smoothing things for every observation I believe
+  pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
+
+  #check if the number of coefficients in the mu models changes
+  mu_number_of_coef_check = (length(na.omit(mu_model_new$coefficients)) == length(na.omit(mu_model_old$coefficients)))
+
+  mu_coefficient_check = ((mu_model_new$coefficients - mu_model_old$coefficients) %>% abs %>% sum) < model_coefficient_tolerance
+
+  mu_sigma_check = ((mu_model_new$scale - mu_model_old$scale) %>% abs) < model_coefficient_tolerance
+
+  #check likelihood at end of E step
+
+  return(all(pi_parametric_coef_check, pi_nonparametric_check, mu_number_of_coef_check, mu_coefficient_check, mu_sigma_check))
 }
