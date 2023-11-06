@@ -4,7 +4,14 @@
 \alias{plot_fms}
 \title{Title}
 \usage{
-plot_fms(output, title)
+plot_fms(
+  output,
+  title,
+  cens_dir,
+  add_log_reg = FALSE,
+  s_breakpoint = NULL,
+  r_breakpoint = NULL
+)
 }
 \arguments{
 \item{title}{}

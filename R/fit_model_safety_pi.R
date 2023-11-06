@@ -41,7 +41,8 @@ fit_model_safety_pi = function(
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
     maxiter_survreg = 30,
-    stop_on_likelihood_drop = TRUE){
+    stop_on_likelihood_drop = TRUE,
+    extra_row = FALSE){
   #verbose = 0: print nothing
   #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
   #verbose = 2: print run number and iteration number --done
@@ -54,7 +55,7 @@ fit_model_safety_pi = function(
   median_y = median(visible_data$left_bound)
   #first E step-----
   #possible_data = case_when(
-    if(fm_check == "RC"){
+    if(fm_check == "RC" & !extra_row){
       possible_data =
       visible_data %>% #visible data with c for component
       reframe(.by = everything(),    #implement for other intial weighting options too ##########
@@ -68,7 +69,7 @@ fit_model_safety_pi = function(
                                  right_bound != Inf & c == "1"~ 1 ,
                                  right_bound != Inf & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
         ###Also only works with scale == "log"
-      )} else if(fm_check == "LC"){ #%>%
+      )} else if(fm_check == "LC" & !extra_row){ #%>%
       possible_data =
       visible_data %>% #visible data with c for component
       reframe(.by = everything(),    #implement for other intial weighting options too ##########
@@ -82,7 +83,35 @@ fit_model_safety_pi = function(
                                  right_bound != low_con & c == "1"~ 0 ,
                                  right_bound != low_con & c == "2"~ 1) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
         ###Also only works with scale == "log"
-      )}else{
+      )}else if(fm_check == "LC" & extra_row){ #%>%
+        possible_data =
+          visible_data %>% #visible data with c for component
+          reframe(.by = everything(),    #implement for other intial weighting options too ##########
+                  c = as.character(1:2) #fir a logistic regression on c earlier #########
+                  # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+                  #       .groups = "drop"
+          ) %>%
+          mutate(
+            `P(C=c|y,t)` = case_when((right_bound == low_con | left_bound == low_con) & c == "1"~ 0.99 ,
+                                     (right_bound == low_con | left_bound == low_con) & c == "2"~ 0.01 ,
+                                     right_bound != low_con & left_bound != low_con & c == "1"~ 0 ,
+                                     right_bound != low_con & left_bound != low_con & c == "2"~ 1) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
+            ###Also only works with scale == "log"
+          )}else if(fm_check == "RC" & extra_row){
+            possible_data =
+              visible_data %>% #visible data with c for component
+              reframe(.by = everything(),    #implement for other intial weighting options too ##########
+                      c = as.character(1:2) #fir a logistic regression on c earlier #########
+                      # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+                      #       .groups = "drop"
+              ) %>%
+              mutate(
+                `P(C=c|y,t)` = case_when((right_bound == Inf | right_bound == high_con) & c == "1"~ 0.01 ,
+                                         (right_bound == Inf | right_bound == high_con) & c == "2"~ 0.99 ,
+                                         right_bound != Inf & right_bound != high_con & c == "1"~ 1 ,
+                                         right_bound != Inf & right_bound != high_con & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
+                ###Also only works with scale == "log"
+              )}else{
     TRUE ~ "Error"
   }
 
@@ -136,7 +165,7 @@ fit_model_safety_pi = function(
 
 
     #Next E step-------------
-    if(fm_check == "RC"){
+    if(fm_check == "RC" & !extra_row){
     possible_data %<>%
       mutate(
         `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new, newdata = possible_data), NA_real_),
@@ -159,6 +188,54 @@ fit_model_safety_pi = function(
                `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
         mutate(
           `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+    } else if(fm_check == "LC" & !extra_row){
+      possible_data %<>%
+        #select(-any_of("P(C = c)")) %>%
+        #left_join(pi, by = "c") %>%
+        mutate(
+          `E[Y|t,c]` = if_else(c == 2, predict(mu_model_new, newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else(c == 2, mu_model_new$scale, NA_real_),
+          `P(Y|t,c)` = case_when(
+            c == 2 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 2 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 2 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+            TRUE ~ (left_bound == -Inf ) %>% as.numeric()
+            ),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+          ),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+    } else if(fm_check == "RC" & extra_row){
+      possible_data %<>%
+        mutate(
+          `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new, newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else(c == 1, mu_model_new$scale, NA_real_),
+          `P(Y|t,c)` = case_when(
+            c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 1 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+            TRUE ~ (right_bound == Inf | right_bound == high_con) %>% as.numeric()
+          ),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+          ),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
     } else{
       possible_data %<>%
         #select(-any_of("P(C = c)")) %>%
@@ -172,8 +249,8 @@ fit_model_safety_pi = function(
               pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
             c == 2 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
               pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
-            TRUE ~ (left_bound == -Inf) %>% as.numeric()
-            ),
+            TRUE ~ (left_bound == -Inf | left_bound == low_con) %>% as.numeric()
+          ),
           `P(C=c|t)` = case_when(
             c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
             c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")

@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-plot_fms = function(output, title){
+plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint = NULL, r_breakpoint = NULL){
 
   df = output$possible_data %>% mutate(cens =
                                          case_when(
@@ -22,31 +22,18 @@ plot_fms = function(output, title){
                                            TRUE ~ (left_bound + right_bound) / 2
                                          ))
 
-  if(nrow(df %>% filter(left_bound == -Inf)) > 0){
-    plot_min <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min) - 1
-  }else{
-    plot_min <- (df %>% pull(left_bound) %>% min) - 1
-  }
-
-  if(nrow(df %>% filter(right_bound == Inf)) > 0){
-    plot_max <- (df %>% filter(right_bound == Inf) %>% pull(left_bound) %>% max) + 1
-  }else{
-    plot_max <- (df %>% pull(right_bound) %>% max) + 1
-  }
-
-
 
 
   if(nrow(df %>% filter(left_bound == -Inf)) > 0){
-    plot_min_1 <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min) - 1
+    plot_min_1 <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min(., na.rm = TRUE)) - 1
   }else{
-    plot_min_1 <- (df %>% pull(left_bound) %>% min) - 1
+    plot_min_1 <- (df %>% pull(left_bound) %>% min(., na.rm = TRUE)) - 1
   }
 
-  plot_min_2 <- sim_pi_survreg_boot(df, fit = output$newmodel, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min
+  plot_min_2 <- sim_pi_survreg_boot(df, fit = output$newmodel, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE)
 
 
-  plot_min = min(plot_min_1, plot_min_2)
+  plot_min = min(plot_min_1, plot_min_2, na.rm = TRUE)
 
 
   if(nrow(df %>% filter(right_bound == Inf)) > 0){
@@ -70,14 +57,14 @@ plot_fms = function(output, title){
 
   mu.se.brd.safety <- function(t, z){predict(output$newmodel, data.frame(t = t)) + z * predict(output$newmodel, data.frame(t = t), se = TRUE)$se.fit}
 
-  means <- df %>% ggplot() +
-    geom_function(fun = function(t){predict(output$newmodel, newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
-    #  geom_function(fun = function(t){predict(output$newmodel[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
-    #geom_function(fun = function(t){mu.se.brd.safety(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-    #geom_function(fun = function(t){mu.se.brd.safety(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-    geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component Mu"), data = ci_data, alpha = 0.25) +
-    geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component Mu"), data = sim_pi_survreg_boot(df, fit = output$newmodel, alpha = 0.05, nSims = 10000), alpha = 0.15) +
-    #geom_bar(aes(x = mid, fill = cens)) +
+  if(cens_dir == "LC"){color_comp = "Component 2 Mu"}else if(cens_dir == "RC"){color_comp = "Component 1 Mu"}else{errorCondition("Pick LC or RC for cens_dir")}
+
+  mean <- df %>% ggplot() +
+    geom_point(aes(x = 1, y = 1, color = "Component 1 Mu", fill = "Component 2 Mu"), alpha = 0) +
+    geom_point(aes(x = 1, y = 1, color = "Component 2 Mu", fill = "Component 2 Mu"), alpha = 0) +
+    geom_function(fun = function(t){predict(output$newmodel, newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model")) +
+    geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = color_comp), data = ci_data, alpha = 0.25) +
+    geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = color_comp), data = sim_pi_survreg_boot(df, fit = output$newmodel, alpha = 0.05, nSims = 10000), alpha = 0.15) +
     ggnewscale::new_scale_color() +
     scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
     #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
@@ -113,6 +100,19 @@ plot_fms = function(output, title){
     xlim(min(output$possible_data$t), max(output$possible_data$t)) +
     ylim(0, 1)
 
-  return(means/pi)
+  if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint) & !is.na(s_breakpoint) & !is.na(r_breakpoint)){
+    lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
+
+    pi = pi +
+      geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+      geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression"))
+    mean = mean +
+      ggnewscale::new_scale_color() +
+      geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint"), alpha = 0.4) +
+      geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint"), alpha = 0.4) +
+      scale_color_viridis_d(option = "turbo")
+  }
+
+  return(mean/pi)
 
 }

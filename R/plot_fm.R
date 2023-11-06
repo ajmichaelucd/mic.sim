@@ -123,8 +123,8 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
         geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression"))
       mean = mean +
         ggnewscale::new_scale_color() +
-        geom_hline(aes(yintercept = s_breakpoint %>% parse_number() %>% log2, color = "Susceptible Breakpoint"), alpha = 0.4) +
-        geom_hline(aes(yintercept = r_breakpoint %>% parse_number() %>% log2, color = "Resistant Breakpoint"), alpha = 0.4) +
+        geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint"), alpha = 0.4) +
+        geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint"), alpha = 0.4) +
         scale_color_viridis_d(option = "turbo")
     }
     return(mean/pi)
@@ -217,8 +217,8 @@ pi = pi +
   geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression"))
 mean = mean +
   ggnewscale::new_scale_color() +
-  geom_hline(aes(yintercept = s_breakpoint %>% parse_number() %>% log2, color = "Susceptible Breakpoint"), alpha = 0.4) +
-  geom_hline(aes(yintercept = r_breakpoint %>% parse_number() %>% log2, color = "Resistant Breakpoint"), alpha = 0.4) +
+  geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint"), alpha = 0.4) +
+  geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint"), alpha = 0.4) +
   scale_color_viridis_d(option = "turbo")
       }
       return(mean/pi)

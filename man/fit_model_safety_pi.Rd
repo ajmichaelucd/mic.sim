@@ -20,7 +20,8 @@ fit_model_safety_pi(
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
-  stop_on_likelihood_drop = TRUE
+  stop_on_likelihood_drop = TRUE,
+  extra_row = FALSE
 )
 }
 \arguments{
