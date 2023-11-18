@@ -115,7 +115,8 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
       geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Non-Wild Type", linetype = "Fitted Model")) +
       xlim(0, 16) +
       ylim(0,1)
-    if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint) & !is.na(s_breakpoint) & !is.na(r_breakpoint)){
+    if(add_log_reg && !is.null(s_breakpoint) & !is.null(r_breakpoint)){
+      if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
       lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
       pi = pi +
@@ -126,7 +127,7 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
         geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint"), alpha = 0.4) +
         geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint"), alpha = 0.4) +
         scale_color_viridis_d(option = "turbo")
-    }
+    }}
     return(mean/pi)
 
   }else{
@@ -209,8 +210,9 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
         ylim(0,1)
 
 
-      if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint) & !is.na(s_breakpoint) & !is.na(r_breakpoint)){
-        lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
+      if(add_log_reg && !is.null(s_breakpoint) & !is.null(r_breakpoint)){
+        if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
+          lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
 pi = pi +
   geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
@@ -220,6 +222,7 @@ mean = mean +
   geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint"), alpha = 0.4) +
   geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint"), alpha = 0.4) +
   scale_color_viridis_d(option = "turbo")
+        }
       }
       return(mean/pi)
     }

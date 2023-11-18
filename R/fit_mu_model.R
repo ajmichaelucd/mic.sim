@@ -11,8 +11,8 @@
 #' @export
 #'
 #' @examples
-fit_mu_model = function(possible_data, comp, mu_formula, maxiter_survreg = 30){
-  possible_data %>% filter(`P(C=c|y,t)` > 0 & c == comp) %>%
+fit_mu_model = function(possible_data, pred_comp, mu_formula, maxiter_survreg = 30){
+  possible_data %>% filter(`P(C=c|y,t)` > 0 & c == pred_comp) %>%
     survival::survreg(
       formula = mu_formula,
       weights = `P(C=c|y,t)`,

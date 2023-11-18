@@ -12,5 +12,5 @@
 #'
 #' @examples
 fit_all_mu_models = function(possible_data, ncomp, mu_formula, maxiter_survreg){
-  purrr::map(1:ncomp, ~fit_mu_model(possible_data = possible_data, comp = .x, mu_formula = mu_formula, maxiter_survreg = maxiter_survreg)) %>% return()
+  purrr::map(1:ncomp, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula, maxiter_survreg = maxiter_survreg)) %>% return()
 }
