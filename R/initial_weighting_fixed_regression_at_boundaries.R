@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-initial_weighting_fixed_regression_at_boundaries = function(visible_data, ncomp){
+initial_weighting_fixed_regression_at_boundaries = function(visible_data, ncomp, sd_parameter = 0.2){
 
   if(ncomp != 2){
     errorCondition("This initial weighting scheme is appropriate for 2 component models")
@@ -52,8 +52,8 @@ initial_weighting_fixed_regression_at_boundaries = function(visible_data, ncomp)
       `E[Y|t,c]` = case_when(c == "1" ~ low_con,
                              c == "2" ~ high_con,
                              TRUE ~ NaN),
-      `sd[Y|t,c]` = case_when(c == "1" ~ 0.2 * (high_con - low_con),
-                              c == "2" ~  0.2 * (high_con - low_con),
+      `sd[Y|t,c]` = case_when(c == "1" ~ sd_parameter * (high_con - low_con),
+                              c == "2" ~  sd_parameter * (high_con - low_con),
                               TRUE ~ NaN),
       `P(Y|t,c)` = case_when(
         left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),

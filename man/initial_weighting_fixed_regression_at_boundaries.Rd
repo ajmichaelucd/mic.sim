@@ -5,7 +5,11 @@
 \alias{initial_weighting_fixed_regression_at_boundaries}
 \title{Intial Weighting Scheme: Fixed Regression at Boundaries}
 \usage{
-initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp)
+initial_weighting_fixed_regression_at_boundaries(
+  visible_data,
+  ncomp,
+  sd_parameter = 0.2
+)
 }
 \arguments{
 \item{visible_data}{the data frame passed into the EM algorithm, at minimum consists of: an id column, a time column, left_bound, right_bound, low_con, and high_con}
