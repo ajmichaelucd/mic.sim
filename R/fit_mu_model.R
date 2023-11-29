@@ -18,6 +18,6 @@ fit_mu_model = function(possible_data, pred_comp, mu_formula, maxiter_survreg = 
       weights = `P(C=c|y,t)`,
       data = .,
       dist = "gaussian",
-      control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3)) %>%
+      control = survreg.control(maxiter = maxiter_survreg)) %>%
     return()
 }

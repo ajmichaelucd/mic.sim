@@ -1,8 +1,8 @@
 #' fit_model_pi
 #'
 #' @param visible_data
-#' @param formula
-#' @param formula2
+#' @param mu_formula
+#' @param pi_formula
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
@@ -28,10 +28,10 @@
 fit_model_pi = function(
     visible_data,
 
-    formula = Surv(time = left_bound,
+    mu_formula = Surv(time = left_bound,
                    time2 = right_bound,
                    type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-    formula2 = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
+    pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -57,280 +57,28 @@ fit_model_pi = function(
   #verbose = 0:
 
   if(ncomp == 1){
-    possible_data <-
-      visible_data %>%
-      mutate(#visible data with c for component
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) #%>%  ##this is probably only accurate for scale = "log"
-    #print()
-
-    mu_model  <- survival::survreg(
-      formula,  ##Make this chunk into an argument of the function
-      data = possible_data,
-      dist = "gaussian",
-      control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
-
-    return(list(possible_data = possible_data,
-                newmodel = mu_model,
-                converge = "YES",
-                ncomp = ncomp))
+    fit_single_component_model(visible_data, mu_formula, maxiter_survreg, verbose) %>% return()
 
   }else{
 
 
-  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_con[1], visible_data$high_con[1])))
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
   #first E step-----
   if(initial_weighting == 1){
-    possible_data <-
-      visible_data %>% #visible data with c for component
-   #   group_by_all() %>%
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-        c = as.character(1:2) #fir a logistic regression on c earlier #########
-        # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
- #       .groups = "drop"
-      ) %>%
-      #     mutate(
-      #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-      #                              left_bound > median_y & c == "2" ~ 0.4,
-      #                              left_bound <= median_y & c == "1" ~ 0.4,
-      #                              left_bound <= median_y & c == "2" ~ 0.6)
-      #     ) %>%
-      mutate(
-        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
-                                 right_bound == Inf & c == "1" ~ 0.0001,
-                                 left_bound > median_y & c == "2" ~ ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
-                                 left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
-                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
-                                 left_bound == -Inf & c == "2" ~ 0.0001,
-                                 left_bound == -Inf & c == "1" ~ 0.9999),
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) %>% ungroup() #%>%  ##this is probably only accurate for scale = "log"
-    #print()
-
+  possible_data = initial_weighting_staggered_weighting_by_distance_from_median_and_boundary(visible_data)
   } else if(initial_weighting == 2){
-    possible_data <-
-      visible_data %>% #visible data with c for component
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>%
-
-      mutate(
-        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
-                                 left_bound > median_y & c == "1" ~ NaN,
-                                 left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5) ,
-                                 left_bound <= median_y & left_bound != -Inf & c == "1" ~ NaN,
-                                 left_bound == -Inf & c == "2" ~ 0.01,
-                                 left_bound == -Inf & c == "1" ~ NaN),
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) %>% ungroup
-
-    possible_data <- possible_data %>% select(obs_id, `P(C=c|y,t)`) %>% rename(prelim = `P(C=c|y,t)`) %>% filter(!is.na(prelim)) %>% right_join(., possible_data, by = "obs_id") %>% mutate(
-      `P(C=c|y,t)` = case_when(
-        c == "2" ~ prelim,
-        c == "1" ~ 1 - prelim,
-        TRUE ~ NaN
-      )
-    ) %>% select(!prelim)
-
+    possible_data = initial_weighting_staggered_weighting_by_distance_from_median_and_boundary_plus_random_variation(visible_data)
   }else if(initial_weighting == 3){
-
-
-
-
-
-    possible_data <-
-      visible_data %>% #visible data with c for component
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>% #rowwise %>%
-
-      mutate(
-        `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "2" ~ .99,
-                                  left_bound != -Inf & right_bound != Inf & c == "1" ~ .01,
-                                  left_bound == -Inf & c == "2" ~ 0,
-                                  left_bound == -Inf & c == "1" ~ 1,
-                                  right_bound == Inf & c == "2" ~ 1,
-                                  right_bound == Inf & c == "1" ~ 0,
-                                  TRUE ~ NaN),
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) %>% ungroup
-
-    #cases:
-    ##left_bound -Inf c ==1, c==2
-    ##right_bound Inf, c==1, c==2
-    ##else
-
-
+    possible_data = initial_weighting_flat_interval_censored_full_weight_left_right_censored(visible_data)
   } else if(initial_weighting == 4){
-
-    possible_data <-
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>%
-
-      mutate(
-        `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ 0.55,
-                                 left_bound > median_y & c == "1" ~ 0.45,
-                                 left_bound < median_y  & c == "2" ~ 0.45,
-                                 left_bound < median_y  & c == "1" ~ 0.55,
-                                 left_bound == median_y ~ 0.5,
-                                 TRUE ~ NaN),
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) %>% ungroup
-
+    possible_data = initial_weighting_slight_shift_at_median(visible_data)
   }else if(initial_weighting == 5){
-    possible_data <-
-    visible_data %>% #visible data with c for component
-      #   group_by_all() %>%
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>%
-      #     mutate(
-      #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-      #                              left_bound > median_y & c == "2" ~ 0.4,
-      #                              left_bound <= median_y & c == "1" ~ 0.4,
-      #                              left_bound <= median_y & c == "2" ~ 0.6)
-      #     ) %>%
-      mutate(
-        m =  floor(((high_con - low_con) - 1)/ 2),
-        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
-                                 right_bound == Inf & c == "1" ~ 0.0001,
-                                 left_bound == -Inf & c == "2" ~ 0.0001,
-                                 left_bound == -Inf & c == "1" ~ 0.9999,
-                                 low_con + m >= right_bound & c == "2" ~ 0.1,
-                                 low_con + m >= right_bound & c == "1" ~ 0.9,
-                                 high_con - m <= left_bound & c == "2" ~ 0.9,
-                                 high_con - m <= left_bound & c == "1" ~ 0.1,
-                                 TRUE ~ 0.5),
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) %>% ungroup()
+    possible_data = initial_weighting_flat_center_band_of_heavy_weights_at_ends(visible_data)
   }else if(initial_weighting == 6){
-    possible_data <-
-    visible_data %>% #visible data with c for component
-      #   group_by_all() %>%
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>%
-      #     mutate(
-      #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-      #                              left_bound > median_y & c == "2" ~ 0.4,
-      #                              left_bound <= median_y & c == "1" ~ 0.4,
-      #                              left_bound <= median_y & c == "2" ~ 0.6)
-      #     ) %>%
-      mutate(
-        m =  floor(((high_con - low_con) - 1)/ 2),
-        mm = floor(((high_con - low_con))/ 2),
-        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
-                                 right_bound == Inf & c == "1" ~ 0.0001,
-                                 left_bound == -Inf & c == "2" ~ 0.0001,
-                                 left_bound == -Inf & c == "1" ~ 0.9999,
-                                 low_con + m >= right_bound & c == "2" ~ 0.1,
-                                 low_con + m >= right_bound & c == "1" ~ 0.9,
-                                 high_con - m <= left_bound & c == "2" ~ 0.9,
-                                 high_con - m <= left_bound & c == "2" ~ 0.1,
-                                 mm > m & low_con + mm >= right_bound & c == "2" ~ 0.3,
-                                 mm > m & low_con + mm >= right_bound & c == "1" ~ 0.7,
-                                 mm > m & high_con - mm <= left_bound & c == "2" ~ 0.7,
-                                 mm > m & high_con - mm <= left_bound & c == "1" ~ 0.3,
-                                 TRUE ~ 0.5),
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) %>% ungroup()
-  }else if(initial_weighting == 7){#warningCondition("Select a weight between 1 and 4 please, defaulting to 1")
-    possible_data <-
-      visible_data %>% #visible data with c for component
-      #   group_by_all() %>%
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>%
-      #     mutate(
-      #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
-      #                              left_bound > median_y & c == "2" ~ 0.4,
-      #                              left_bound <= median_y & c == "1" ~ 0.4,
-      #                              left_bound <= median_y & c == "2" ~ 0.6)
-      #     ) %>%
-      mutate(
-        m =  floor(((high_con - low_con) - 1)/ 2),
-        mm = floor(((high_con - low_con))/ 2),
-        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 1,
-                                 right_bound == Inf & c == "1" ~ 0,
-                                 left_bound == -Inf & c == "2" ~ 0,
-                                 left_bound == -Inf & c == "1" ~ 1,
-                                 low_con + m >= right_bound & c == "2" ~ 0.1,
-                                 low_con + m >= right_bound & c == "1" ~ 0.9,
-                                 high_con - m <= left_bound & c == "2" ~ 0.9,
-                                 high_con - m <= left_bound & c == "2" ~ 0.1,
-                                 mm > m & low_con + mm >= right_bound & c == "2" ~ 0.1,
-                                 mm > m & low_con + mm >= right_bound & c == "1" ~ 0.9,
-                                 mm > m & high_con - mm <= left_bound & c == "2" ~ 0.9,
-                                 mm > m & high_con - mm <= left_bound & c == "1" ~ 0.1,
-                                 TRUE ~ 0.5),
-        mid =
-          case_when(
-            left_bound == -Inf ~ right_bound - 0.5,
-            right_bound == Inf ~ left_bound + 0.5,
-            TRUE ~ (left_bound + right_bound) / 2
-          ),
-        rc = ifelse(right_bound == Inf, TRUE, FALSE)
-      ) %>% ungroup()
+    possible_data = initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends(visible_data)
   } else{
 
   possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp)
-
 
 if(plot_visuals){
     plot_initial_weighting_regression(possible_data)
@@ -364,11 +112,11 @@ if(plot_visuals){
       possible_data_old = possible_data
     }
 
-   mu_models_new = fit_all_mu_models(possible_data, ncomp, formula, maxiter_survreg)
+   mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
 
   likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
 
-pi_model_new = fit_pi_model(pi_formula = formula2, pi_link = pi_link, possible_data = possible_data)
+  pi_model_new = fit_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
 if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
   converge = "NO"
@@ -485,10 +233,6 @@ if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2])
 
   if(browse_at_end){browser()}
 
-if(i == max_it & !(check_ll < tol_ll & param_checks)){
-  converge = "iterations"
-}
-
   if(i == 1){
     mu_models_old = NA
     pi_model_old = NA
@@ -590,4 +334,211 @@ calculate_log_likelihood = function(possible_data){
     mutate(log_likelihood_i = log(likelihood_i))
   log_likelihood <- sum(log_likelihood_obs$log_likelihood_i)
   return(log_likelihood)
+}
+
+fit_single_component_model = function(visible_data, mu_formula, maxiter_survreg, verbose){
+  possible_data <-
+    visible_data %>%
+    mutate(#visible data with c for component
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    )
+
+  mu_model  <- survival::survreg(
+    mu_formula,  ##Make this chunk into an argument of the function
+    data = possible_data,
+    dist = "gaussian",
+    control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
+
+  return(list(possible_data = possible_data,
+              newmodel = mu_model,
+              converge = "YES",
+              ncomp = ncomp))
+}
+
+initial_weighting_staggered_weighting_by_distance_from_median_and_boundary  = function(visible_data){
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
+    visible_data %>%
+    reframe(.by = everything(),    #implement for other intial weighting options too ##########
+            c = as.character(1:2) #fir a logistic regression on c earlier #########
+            # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+            #       .groups = "drop"
+    ) %>%
+    mutate(
+      `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
+                               right_bound == Inf & c == "1" ~ 0.0001,
+                               left_bound > median_y & c == "2" ~ ((((left_bound - median_y) / (high_cons - median_y)) * 0.5) + 0.5),
+                               left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_cons - median_y)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_cons + 1)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ ((((median_y - left_bound) / (median_y - low_cons + 1)) * 0.5) + 0.5),
+                               left_bound == -Inf & c == "2" ~ 0.0001,
+                               left_bound == -Inf & c == "1" ~ 0.9999),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% return()
+}
+
+initial_weighting_staggered_weighting_by_distance_from_median_and_boundary_plus_random_variation = function(visible_data){
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
+
+  visible_data %>% #visible data with c for component
+    reframe(.by = everything(),    #implement for other intial weighting options too ##########
+            c = as.character(1:2) #fir a logistic regression on c earlier #########
+            # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+            #       .groups = "drop"
+    ) %>%
+
+    mutate(
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_cons - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
+                               left_bound > median_y & c == "1" ~ NaN,
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_cons + 1)) * 0.5) + 0.5) ,
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ NaN,
+                               left_bound == -Inf & c == "2" ~ 0.01,
+                               left_bound == -Inf & c == "1" ~ NaN),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% ungroup
+
+  possible_data <- possible_data %>% select(obs_id, `P(C=c|y,t)`) %>% rename(prelim = `P(C=c|y,t)`) %>% filter(!is.na(prelim)) %>% right_join(., possible_data, by = "obs_id") %>% mutate(
+    `P(C=c|y,t)` = case_when(
+      c == "2" ~ prelim,
+      c == "1" ~ 1 - prelim,
+      TRUE ~ NaN
+    )
+  ) %>% select(!prelim) %>% return()
+
+}
+
+initial_weighting_flat_interval_censored_full_weight_left_right_censored = function(visible_data){
+
+  visible_data %>% #visible data with c for component
+    reframe(.by = everything(),    #implement for other intial weighting options too ##########
+            c = as.character(1:2) #fir a logistic regression on c earlier #########
+            # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+            #       .groups = "drop"
+    ) %>% #rowwise %>%
+
+    mutate(
+      `P(C=c|y,t)` = case_when( left_bound != -Inf & right_bound != Inf & c == "2" ~ 0.5,
+                                left_bound != -Inf & right_bound != Inf & c == "1" ~ 0.5,
+                                left_bound == -Inf & c == "2" ~ 0,
+                                left_bound == -Inf & c == "1" ~ 1,
+                                right_bound == Inf & c == "2" ~ 1,
+                                right_bound == Inf & c == "1" ~ 0,
+                                TRUE ~ NaN),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% return()
+}
+
+initial_weighting_slight_shift_at_median = function(visible_data){
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
+
+  reframe(.by = everything(),    #implement for other intial weighting options too ##########
+          c = as.character(1:2) #fir a logistic regression on c earlier #########
+          # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+          #       .groups = "drop"
+  ) %>%
+
+    mutate(
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ 0.55,
+                               left_bound > median_y & c == "1" ~ 0.45,
+                               left_bound < median_y  & c == "2" ~ 0.45,
+                               left_bound < median_y  & c == "1" ~ 0.55,
+                               left_bound == median_y ~ 0.5,
+                               TRUE ~ NaN),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% return()
+}
+
+initial_weighting_flat_center_band_of_heavy_weights_at_ends = function(visible_data){
+  visible_data %>%
+    reframe(.by = everything(),
+            c = as.character(1:2)
+    ) %>%
+    mutate(
+      m =  floor(((high_cons - low_cons) - 1)/ 2),
+      `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
+                               right_bound == Inf & c == "1" ~ 0.0001,
+                               left_bound == -Inf & c == "2" ~ 0.0001,
+                               left_bound == -Inf & c == "1" ~ 0.9999,
+                               low_cons + m >= right_bound & c == "2" ~ 0.1,
+                               low_cons + m >= right_bound & c == "1" ~ 0.9,
+                               high_cons - m <= left_bound & c == "2" ~ 0.9,
+                               high_cons - m <= left_bound & c == "1" ~ 0.1,
+                               TRUE ~ 0.5),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% return()
+}
+
+initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends = function(visible_data){
+  visible_data %>% #visible data with c for component
+    #   group_by_all() %>%
+    reframe(.by = everything(),    #implement for other intial weighting options too ##########
+            c = as.character(1:2) #fir a logistic regression on c earlier #########
+            # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
+            #       .groups = "drop"
+    ) %>%
+    #     mutate(
+    #     `P(C=c|y,t)` = case_when(left_bound > median_y & c == "1" ~ 0.6,
+    #                              left_bound > median_y & c == "2" ~ 0.4,
+    #                              left_bound <= median_y & c == "1" ~ 0.4,
+    #                              left_bound <= median_y & c == "2" ~ 0.6)
+    #     ) %>%
+    mutate(
+      m =  floor(((high_cons - low_cons) - 1)/ 2),
+      mm = floor(((high_cons - low_cons))/ 2),
+      `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
+                               right_bound == Inf & c == "1" ~ 0.0001,
+                               left_bound == -Inf & c == "2" ~ 0.0001,
+                               left_bound == -Inf & c == "1" ~ 0.9999,
+                               low_cons + m >= right_bound & c == "2" ~ 0.1,
+                               low_cons + m >= right_bound & c == "1" ~ 0.9,
+                               high_cons - m <= left_bound & c == "2" ~ 0.9,
+                               high_cons - m <= left_bound & c == "2" ~ 0.1,
+                               mm > m & low_cons + mm >= right_bound & c == "2" ~ 0.3,
+                               mm > m & low_cons + mm >= right_bound & c == "1" ~ 0.7,
+                               mm > m & high_cons - mm <= left_bound & c == "2" ~ 0.7,
+                               mm > m & high_cons - mm <= left_bound & c == "1" ~ 0.3,
+                               TRUE ~ 0.5),
+      mid =
+        case_when(
+          left_bound == -Inf ~ right_bound - 0.5,
+          right_bound == Inf ~ left_bound + 0.5,
+          TRUE ~ (left_bound + right_bound) / 2
+        ),
+      rc = ifelse(right_bound == Inf, TRUE, FALSE)
+    ) %>% return()
 }

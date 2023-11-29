@@ -120,12 +120,12 @@ primary_model_parameters = list(formula = Surv(time = left_bound,
                                 initial_weighting = 8,
                                 browse_each_step = FALSE,
                                 plot_visuals = FALSE,
-                                stop_on_likelihood_drop = TRUE)
+                                stop_on_likelihood_drop = FALSE)
 
 
 
 
-drug = "TULATH"
+drug = "GENTAM"
 bug = "pm"
 if(bug == "mh"){
   set = brd_mh
@@ -192,8 +192,8 @@ prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %
 
 single_model_output_fm_2 <- visible_data %>%
   fit_model_pi(visible_data = .,
-               formula = primary_model_parameters$formula,
-               formula2 = primary_model_parameters$formula2,
+               mu_formula = primary_model_parameters$formula,
+               pi_formula = primary_model_parameters$formula2,
                max_it = primary_model_parameters$max_it,
                ncomp = 2,
                tol_ll = primary_model_parameters$tol_ll,
@@ -207,8 +207,8 @@ single_model_output_fm_2 <- visible_data %>%
 
 single_model_output_fm_1 <- visible_data %>%
   fit_model_pi(visible_data = .,
-               formula = primary_model_parameters$formula,
-               formula2 = primary_model_parameters$formula2,
+               mu_formula = primary_model_parameters$formula,
+               pi_formula = primary_model_parameters$formula2,
                max_it = primary_model_parameters$max_it,
                ncomp = 1,
                tol_ll = primary_model_parameters$tol_ll,
