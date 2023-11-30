@@ -62,7 +62,7 @@ fit_model_pi = function(
   }else{
 
 
-  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_con[1], visible_data$high_con[1])))
   #first E step-----
   if(initial_weighting == 1){
   possible_data = initial_weighting_staggered_weighting_by_distance_from_median_and_boundary(visible_data)
@@ -362,7 +362,7 @@ fit_single_component_model = function(visible_data, mu_formula, maxiter_survreg,
 }
 
 initial_weighting_staggered_weighting_by_distance_from_median_and_boundary  = function(visible_data){
-  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_con[1], visible_data$high_con[1])))
     visible_data %>%
     reframe(.by = everything(),    #implement for other intial weighting options too ##########
             c = as.character(1:2) #fir a logistic regression on c earlier #########
@@ -372,10 +372,10 @@ initial_weighting_staggered_weighting_by_distance_from_median_and_boundary  = fu
     mutate(
       `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
                                right_bound == Inf & c == "1" ~ 0.0001,
-                               left_bound > median_y & c == "2" ~ ((((left_bound - median_y) / (high_cons - median_y)) * 0.5) + 0.5),
-                               left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_cons - median_y)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_cons + 1)) * 0.5) + 0.5),
-                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ ((((median_y - left_bound) / (median_y - low_cons + 1)) * 0.5) + 0.5),
+                               left_bound > median_y & c == "2" ~ ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                               left_bound > median_y & c == "1" ~ 1 - ((((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
+                               left_bound <= median_y & left_bound != -Inf & c == "1" ~ ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5),
                                left_bound == -Inf & c == "2" ~ 0.0001,
                                left_bound == -Inf & c == "1" ~ 0.9999),
       mid =
@@ -389,7 +389,7 @@ initial_weighting_staggered_weighting_by_distance_from_median_and_boundary  = fu
 }
 
 initial_weighting_staggered_weighting_by_distance_from_median_and_boundary_plus_random_variation = function(visible_data){
-  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_con[1], visible_data$high_con[1])))
 
   visible_data %>% #visible data with c for component
     reframe(.by = everything(),    #implement for other intial weighting options too ##########
@@ -399,9 +399,9 @@ initial_weighting_staggered_weighting_by_distance_from_median_and_boundary_plus_
     ) %>%
 
     mutate(
-      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_cons - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
+      `P(C=c|y,t)` = case_when(left_bound > median_y & c == "2" ~ (((left_bound - median_y) / (high_con - median_y)) * 0.5) + 0.5 + (0.05 * sample(c(-1, 0, 1), 1)),
                                left_bound > median_y & c == "1" ~ NaN,
-                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_cons + 1)) * 0.5) + 0.5) ,
+                               left_bound <= median_y & left_bound != -Inf & c == "2" ~ 1 - ((((median_y - left_bound) / (median_y - low_con + 1)) * 0.5) + 0.5) ,
                                left_bound <= median_y & left_bound != -Inf & c == "1" ~ NaN,
                                left_bound == -Inf & c == "2" ~ 0.01,
                                left_bound == -Inf & c == "1" ~ NaN),
@@ -452,7 +452,7 @@ initial_weighting_flat_interval_censored_full_weight_left_right_censored = funct
 }
 
 initial_weighting_slight_shift_at_median = function(visible_data){
-  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_cons[1], visible_data$high_cons[1])))
+  median_y = ifelse(median(visible_data$left_bound) < Inf & median(visible_data$left_bound) > -Inf, median(visible_data$left_bound), mean(c(visible_data$low_con[1], visible_data$high_con[1])))
 
   reframe(.by = everything(),    #implement for other intial weighting options too ##########
           c = as.character(1:2) #fir a logistic regression on c earlier #########
@@ -483,15 +483,15 @@ initial_weighting_flat_center_band_of_heavy_weights_at_ends = function(visible_d
             c = as.character(1:2)
     ) %>%
     mutate(
-      m =  floor(((high_cons - low_cons) - 1)/ 2),
+      m =  floor(((high_con - low_con) - 1)/ 2),
       `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
                                right_bound == Inf & c == "1" ~ 0.0001,
                                left_bound == -Inf & c == "2" ~ 0.0001,
                                left_bound == -Inf & c == "1" ~ 0.9999,
-                               low_cons + m >= right_bound & c == "2" ~ 0.1,
-                               low_cons + m >= right_bound & c == "1" ~ 0.9,
-                               high_cons - m <= left_bound & c == "2" ~ 0.9,
-                               high_cons - m <= left_bound & c == "1" ~ 0.1,
+                               low_con + m >= right_bound & c == "2" ~ 0.1,
+                               low_con + m >= right_bound & c == "1" ~ 0.9,
+                               high_con - m <= left_bound & c == "2" ~ 0.9,
+                               high_con - m <= left_bound & c == "1" ~ 0.1,
                                TRUE ~ 0.5),
       mid =
         case_when(
@@ -518,20 +518,20 @@ initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends
     #                              left_bound <= median_y & c == "2" ~ 0.6)
     #     ) %>%
     mutate(
-      m =  floor(((high_cons - low_cons) - 1)/ 2),
-      mm = floor(((high_cons - low_cons))/ 2),
+      m =  floor(((high_con - low_con) - 1)/ 2),
+      mm = floor(((high_con - low_con))/ 2),
       `P(C=c|y,t)` = case_when(right_bound == Inf & c == "2" ~ 0.9999,
                                right_bound == Inf & c == "1" ~ 0.0001,
                                left_bound == -Inf & c == "2" ~ 0.0001,
                                left_bound == -Inf & c == "1" ~ 0.9999,
-                               low_cons + m >= right_bound & c == "2" ~ 0.1,
-                               low_cons + m >= right_bound & c == "1" ~ 0.9,
-                               high_cons - m <= left_bound & c == "2" ~ 0.9,
-                               high_cons - m <= left_bound & c == "2" ~ 0.1,
-                               mm > m & low_cons + mm >= right_bound & c == "2" ~ 0.3,
-                               mm > m & low_cons + mm >= right_bound & c == "1" ~ 0.7,
-                               mm > m & high_cons - mm <= left_bound & c == "2" ~ 0.7,
-                               mm > m & high_cons - mm <= left_bound & c == "1" ~ 0.3,
+                               low_con + m >= right_bound & c == "2" ~ 0.1,
+                               low_con + m >= right_bound & c == "1" ~ 0.9,
+                               high_con - m <= left_bound & c == "2" ~ 0.9,
+                               high_con - m <= left_bound & c == "2" ~ 0.1,
+                               mm > m & low_con + mm >= right_bound & c == "2" ~ 0.3,
+                               mm > m & low_con + mm >= right_bound & c == "1" ~ 0.7,
+                               mm > m & high_con - mm <= left_bound & c == "2" ~ 0.7,
+                               mm > m & high_con - mm <= left_bound & c == "1" ~ 0.3,
                                TRUE ~ 0.5),
       mid =
         case_when(

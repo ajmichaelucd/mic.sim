@@ -20,8 +20,8 @@ plot_initial_weighting_regression = function(possible_data){
       )
   )
 
-  lb = min(data.plot$low_cons) - 2.1 * max(data.plot$`sd[Y|t,c]`)
-  ub = max(data.plot$high_cons) + 2.1 * max(data.plot$`sd[Y|t,c]`)
+  lb = min(data.plot$low_con) - 2.1 * max(data.plot$`sd[Y|t,c]`)
+  ub = max(data.plot$high_con) + 2.1 * max(data.plot$`sd[Y|t,c]`)
   #mean <-
   data.plot %>% ggplot() +
     ylim(lb, ub) +
@@ -29,8 +29,8 @@ plot_initial_weighting_regression = function(possible_data){
     # geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = data.plot %>% filter(c == "2"), alpha = 0) +
     geom_ribbon(
       aes(
-        ymin = low_cons - 1.96 * `sd[Y|t,c]`,
-        ymax = low_cons + 1.96 * `sd[Y|t,c]`,
+        ymin = low_con - 1.96 * `sd[Y|t,c]`,
+        ymax = low_con + 1.96 * `sd[Y|t,c]`,
         x = t,
         fill = "Component 1 Mu"
       ),
@@ -38,15 +38,15 @@ plot_initial_weighting_regression = function(possible_data){
     ) +
     geom_ribbon(
       aes(
-        ymin = high_cons - 1.96 * `sd[Y|t,c]`,
-        ymax = high_cons + 1.96 * `sd[Y|t,c]`,
+        ymin = high_con - 1.96 * `sd[Y|t,c]`,
+        ymax = high_con + 1.96 * `sd[Y|t,c]`,
         x = t,
         fill = "Component 2 Mu"
       ),
       alpha = 0.25
     ) +
-    geom_hline(aes(yintercept = high_cons, color = "Component 2 Mean")) +
-    geom_hline(aes(yintercept = low_cons, color = "Component 1 Mean")) +
+    geom_hline(aes(yintercept = high_con, color = "Component 2 Mean")) +
+    geom_hline(aes(yintercept = low_con, color = "Component 1 Mean")) +
     ggnewscale::new_scale_color() +
     # scale_color_gradient2(low = "purple", high = "darkorange", mid = "green", midpoint = 0.5) +
     scale_color_gradient2(

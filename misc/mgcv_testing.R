@@ -70,6 +70,7 @@ data$yi = cbind(data$left_bound_mgcv, data$right_bound_mgcv)
   b$scale.estimated
   b$sig2
   b$control
+  b$family$getTheta(TRUE)
 detach("package:mgcv", unload = TRUE)
 
 data %>%
