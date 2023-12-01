@@ -31,7 +31,7 @@ initial_weighting_fixed_regression_at_boundaries = function(visible_data, ncomp,
     visible_data %>%
     summarize(.by = cens,
               n = n()
-    ) %>% right_join(., full_set) %>% mutate(n = case_when(
+    ) %>% right_join(., full_set, by = join_by(cens)) %>% mutate(n = case_when(
       is.na(n) ~ 0,
       TRUE ~ n
     )) %>% pivot_wider(

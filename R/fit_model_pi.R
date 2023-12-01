@@ -16,7 +16,6 @@
 #' @param initial_weighting
 #'
 #' @importFrom survival pspline survreg Surv coxph.wtest
-#' @importFrom gam gam s lo
 #' @importFrom splines ns
 #' @importFrom ggplot2 geom_function aes ggplot
 #' @importFrom tidyr pivot_wider
@@ -55,6 +54,8 @@ fit_model_pi = function(
   #verbose = 3: print run number, iteration number, and iteration results --done
   #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
   #verbose = 0:
+
+  converge = NA_character_
 
   if(ncomp == 1){
     fit_single_component_model(visible_data, mu_formula, maxiter_survreg, verbose) %>% return()
@@ -228,10 +229,19 @@ if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2])
     }
 
 
-
   }
 
   if(browse_at_end){browser()}
+
+
+  if(i > 1){
+    if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){
+      converge = "iterations"
+    }
+  }
+  if(i == 1 & i == max_it & is.na(converge)){
+    converge = "iterations"
+  }
 
   if(i == 1){
     mu_models_old = NA

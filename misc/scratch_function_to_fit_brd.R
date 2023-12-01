@@ -125,7 +125,7 @@ primary_model_parameters = list(formula = Surv(time = left_bound,
 
 
 
-drug = "GENTAM"
+drug = "FLORFE"
 bug = "pm"
 if(bug == "mh"){
   set = brd_mh
@@ -189,6 +189,8 @@ prelim_cens_check <- visible_data %>%
   )
 prelim_cens_check %>% pull(text_form) %>% cat(., sep = "\n")
 prelim_cens_check %>% filter(cens != "interval_censored") %>% pull(proportion) %>% sum %>% paste0("total sum of left-censored and right_censored observations is ", .) %>% print()
+
+
 
 single_model_output_fm_2 <- visible_data %>%
   fit_model_pi(visible_data = .,

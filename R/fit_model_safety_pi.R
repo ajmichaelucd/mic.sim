@@ -15,7 +15,6 @@
 #' @param maxiter_survreg
 #'
 #' @importFrom survival pspline survreg Surv coxph.wtest
-#' @importFrom gam gam s lo
 #' @importFrom splines ns
 #' @importFrom ggplot2 geom_function aes ggplot
 #' @importFrom tidyr pivot_wider

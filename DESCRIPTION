@@ -18,11 +18,21 @@ Imports:
     broom,
     readr,
     survival,
-    LearnBayes
+    LearnBayes,
+    fs,
+    gam,
+    ggnewscale,
+    ggplot2,
+    gridExtra,
+    patchwork,
+    stringr,
+    tibble,
+    tidyr,
+    tidyselect,
+    mgcv
 URL: https://github.com/ajmichaelucd/mic.sim
 BugReports: https://github.com/ajmichaelucd/mic.sim/issues
 Suggests: 
-    ggplot2,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

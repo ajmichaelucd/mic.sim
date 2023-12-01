@@ -262,7 +262,7 @@ EM_algorithm_mgcv = function(
     }
     if(browse_at_end){browser()}
 
-    if(i == max_it & !(check_ll < tol_ll & param_checks)){
+    if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){
       converge = "iterations"
     }
 
@@ -288,7 +288,7 @@ EM_algorithm_mgcv = function(
   }
 }
 
-EM_algorithm_mgcv(visible_data)
+EM_algorithm_mgcv(visible_data %>% mutate(obs_id = row_number()))
 
 
 plot = function(possible_data, mu_models_new, pi_model_new, mu_models_old, pi_model_old){
@@ -336,8 +336,8 @@ plot = function(possible_data, mu_models_new, pi_model_new, mu_models_old, pi_mo
 plot(possible_data, mu_models_new, pi_model_new, mu_models_old, pi_model_old)
 
 
-
-
+load("~/Desktop/scale_demo/example_data")
+visible_data = example_data
 
 
 
