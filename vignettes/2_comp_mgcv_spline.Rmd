@@ -1,0 +1,223 @@
+---
+title: "2_comp_mgcv_spline_example"
+output: html_document
+date: "2023-12-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r echo = FALSE}
+load_all()
+load("data-raw/example_data")
+covariate_effect_vector <- c(0)
+covariate_list <-  NULL
+covariate_names <- NULL
+n=300
+ncomp = 2
+pi = function(t) {
+  z <- 0.07 + 0.03 * t - 0.00045 * t^2
+  #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+  tibble("1" = 1 - z, "2" = z)
+}
+`E[X|T,C]` = function(t, c)
+{
+  case_when(
+    c == "1" ~ -4.0 + 0.2 * t,
+    c == "2" ~ 3 + 0.001 * t,
+    TRUE ~ NaN
+  )
+}
+t_dist = function(n){runif(n, min = 0, max = 16)}
+attr(t_dist, "min") = 0
+attr(t_dist, "max") = 16
+sd_vector = c("1" = 1, "2" = 1.05)
+low_con = -3
+high_con = 3
+scale = "log"
+example_data %>% 
+  mutate(verbose_comp = case_when(
+    comp == 1 ~ "Component 1",
+    TRUE ~ "Component 2"
+  )) %>% 
+  ggplot() +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(left_bound != -Inf & right_bound != Inf)), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = verbose_comp), data = (. %>% filter(left_bound == -Inf) %>% mutate(left_bound = low_con - 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_point(aes(x = t, y = left_bound, color = verbose_comp), data = . %>% filter(left_bound != -Inf), alpha = 0.3) +
+  geom_point(aes(x = t, y = right_bound, color = verbose_comp), data = . %>% filter(right_bound != Inf), alpha = 0.3) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, aes(color = "Component 1")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, aes(color = "Component 2")) +
+  xlim(attr(t_dist, "min") ,attr(t_dist, "max")) +
+  ylim(low_con - 2, high_con + 2)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r echo=FALSE}
+output = EM_algorithm_mgcv(example_data,
+                  mu_formula = yi ~ s(t),
+                  pi_formula = c == "2" ~ s(t),
+                  max_it = 21,
+                  ncomp = 2,
+                  tol_ll = 1e-6,
+                  browse_at_end = FALSE,
+                  browse_each_step = FALSE,
+                  plot_visuals = FALSE,
+                  prior_step_plot = FALSE,
+                  pause_on_likelihood_drop = FALSE,
+                  pi_link = "logit",
+                  verbose = 0,
+                  model_coefficient_tolerance = 0.00001,
+                  maxiter_survreg = 30,
+                  initial_weighting = 8)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r echo = FALSE}
+plot_likelihood(output$likelihood, format = "tibble")
+```
+
+```{r}
+initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
+  initial_weighting_fixed_regression_at_boundaries(., 2, 1)
+plot_initial_weighting_regression(initial_data)
+```
+
+```{r echo = FALSE}
+max_it = 25
+likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
+likelihood_documentation [,1] <- 1:max_it
+possible_data = initial_data %>% mutate(
+      left_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ right_bound,
+          TRUE ~ left_bound
+        ),
+      right_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ -Inf,
+          TRUE ~ right_bound
+        )
+    )
+
+models = list()
+
+for(i in 1:max_it){
+  print(i)
+    if(i != 1){
+        mu_models_old = mu_models_new
+        pi_model_old = pi_model_new
+        log_likelihood_old = log_likelihood_new
+        possible_data_old = possible_data
+    }
+  
+  mu_model = function(possible_data, pred_comp){
+    df = possible_data %>% filter(c == pred_comp & `P(C=c|y,t)` > 0)
+    df$yi = cbind(df$left_bound_mgcv, df$right_bound_mgcv)
+    mgcv::gam(yi ~ s(t), family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML")      %>% return()
+  }
+  
+  mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
+  
+  pi_model_new = mgcv::gam(c == "2" ~ s(t), family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
+  
+  possible_data %<>%
+        mutate(
+          `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
+                                 c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
+                                 TRUE ~ NaN),
+          `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c == "2" ~ mu_models_new[[2]]$family$getTheta(TRUE), #1,
+                                  TRUE ~ NaN),
+          `P(Y|t,c)` = case_when(
+            left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+  
+  log_likelihood_obs = possible_data %>%
+          summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
+          mutate(log_likelihood_i = log(likelihood_i))
+  log_likelihood_new = sum(log_likelihood_obs$log_likelihood_i)
+  likelihood_documentation[i, 2] = log_likelihood_new
+  
+  models[[i]] = list(mu = mu_models_new, pi = pi_model_new, data = possible_data)
+}
+
+plot_likelihood(likelihood_documentation, format = "matrix")
+
+```
+
+```{r}
+
+plot = function(possible_data, mu_models_new, pi_model_new){
+  possible_data = possible_data %>% mutate(cens =
+                                    case_when(
+                                      left_bound == -Inf ~ "lc",
+                                      right_bound == Inf ~ "rc",
+                                      TRUE ~ "int"
+                                    ),
+                                  c1_sigma_lb = predict(mu_models_new[[1]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c1_sigma_ub = predict(mu_models_new[[1]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c2_sigma_lb = predict(mu_models_new[[2]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[2]]$family$getTheta(TRUE),
+                                  c2_sigma_ub = predict(mu_models_new[[2]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[2]]$family$getTheta(TRUE)
+                                  )
+  mean = possible_data %>%
+    ggplot() +
+    geom_function(fun = function(t){predict(mu_models_new[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+    geom_function(fun = function(t){predict(mu_models_new[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+#    geom_ribbon(aes(ymin = c2_lb, ymax = c2_ub, x = t, fill = "Component 2 Mu"), alpha = 0.25) +
+    geom_ribbon(aes(ymin = c1_sigma_lb, ymax = c1_sigma_ub, x = t, fill = "Component 1 Mu"), alpha = 0.1) +
+    geom_ribbon(aes(ymin = c2_sigma_lb, ymax = c2_sigma_ub, x = t, fill = "Component 2 Mu"), alpha = 0.1) +
+    ggnewscale::new_scale_color() +
+    scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = -5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = 7)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+    geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+    #ggtitle(paste0("Iteration ", i, ": Ribbons are the CI for the mean estimates")) +
+    xlab("Time") +
+    ylab("MIC") +
+    ylim(-11, 15)
+
+  pi = ggplot() +
+    geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+    geom_function(fun = function(t){predict(pi_model_new, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+    xlim(0, 16) +
+    ylim(0,1)
+
+  return(mean/pi)
+}
+
+for(i in 1:length(models)){
+plot(models[[i]]$data, models[[i]]$mu, models[[i]]$pi) %>% suppressMessages()
+}
+
+#plot_fm(output_surv, title = "surv")
+
+```
+

@@ -48,6 +48,10 @@ EM_algorithm_mgcv = function(
   #verbose = 3: print run number, iteration number, and iteration results --done
   #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
   #verbose = 0:
+ if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
+   visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
+ }
+
 converge = NA_character_
 
   if(ncomp == 1){
