@@ -1,7 +1,7 @@
 Package: mic.sim
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.1.0
+Version: 0.2.1
 Author: Who wrote it
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
@@ -18,11 +18,21 @@ Imports:
     broom,
     readr,
     survival,
-    LearnBayes
+    LearnBayes,
+    fs,
+    gam,
+    ggnewscale,
+    ggplot2,
+    gridExtra,
+    patchwork,
+    stringr,
+    tibble,
+    tidyr,
+    tidyselect,
+    mgcv
 URL: https://github.com/ajmichaelucd/mic.sim
 BugReports: https://github.com/ajmichaelucd/mic.sim/issues
 Suggests: 
-    ggplot2,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

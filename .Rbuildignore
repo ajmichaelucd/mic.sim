@@ -3,3 +3,4 @@
 ^mic.sim\.Rcheck$
 ^mic.sim.*\.tar\.gz$
 ^mic.sim.*\.tgz$
+^misc$

@@ -89,7 +89,7 @@ array_results <-
       number_of_batches = number_of_batches
     )
   ) %>%
-  rbindlist() %>% tibble()
+  rbindlist(use.names = TRUE) %>% tibble()
 
 array_results %>% summarize(.by = c(overall_censoring, fm_convergence, sigma_check, censor_fm_check, fms_convergence), n = n())
 
@@ -97,9 +97,9 @@ array_results %>% filter(sigma_check == "go")
 
 array_results %>% group_by(cross) %>% summarise(n = n())
 
-array_results %>% summarise(.by = scenario, n = n())
+array_results %>% summarise(.by = situation, n = n())
 
-array_results %>% summarise(.by = scenario,
+array_results %>% summarise(.by = situation,
                             cens_2_rc = mean(model_cens_2_right),
                             se_cens_2_rc = sd(model_cens_2_right),
                             true_cens_2_rc = mean(true_cens_2_right),
@@ -114,10 +114,10 @@ array_results %>% summarise(.by = scenario,
 array_results %>% summarise(.by = scenario,
                             n = n())
 
-array_results %>% View
+#array_results %>% View
 
 
-save(array_results, file = "~/Desktop/july_2023/analysis/test_run_2.Rdata")
+save(array_results, file = "~/Desktop/july_2023/analysis/mh_clinda.Rdata")
 
 
 

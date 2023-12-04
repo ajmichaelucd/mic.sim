@@ -224,6 +224,13 @@ full_sim_in_1_function <- function(i,
 
     #}
 
+    if(ncomp == 1){
+      fm_convergence = TRUE
+      sigma_check = NA_character_
+      censor_fm_check = NA_character_
+      fms_convergence = NA
+    }else{
+
     if (length(single_model_output_fm) == 1) {
       fm_convergence = FALSE
       sigma_check = NA_character_
@@ -233,7 +240,7 @@ full_sim_in_1_function <- function(i,
         print("fit_model failed to converge")
       }
     } else {
-      fm_convergence = case_when(single_model_output_fm$converge == "YES" ~ TRUE,
+      fm_convergence = case_when(single_model_output_fm$converge %in% c("YES", "iterations")  ~ TRUE,
                                  TRUE ~ FALSE)
 
       if (verbose > 1 & fm_convergence) {
@@ -314,7 +321,7 @@ full_sim_in_1_function <- function(i,
     } else{
           print("skipping checks")
         }
-      }
+      }}
 
   if(!is.na(fms_convergence)){
 

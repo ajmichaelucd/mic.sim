@@ -18,7 +18,10 @@ fit_model_safety_pi(
   plot_visuals = FALSE,
   pi_link = "logit",
   verbose = 3,
-  maxiter_survreg = 30
+  model_coefficient_tolerance = 1e-05,
+  maxiter_survreg = 30,
+  stop_on_likelihood_drop = TRUE,
+  extra_row = FALSE
 )
 }
 \arguments{
