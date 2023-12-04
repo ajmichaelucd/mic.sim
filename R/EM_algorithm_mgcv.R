@@ -55,7 +55,7 @@ EM_algorithm_mgcv = function(
 converge = NA_character_
 
   if(ncomp == 1){
-    fit_single_component_model(visible_data, mu_formula, maxiter_survreg, verbose) %>% return()
+    fit_single_component_model(visible_data, mu_formula, verbose) %>% return()
 
   }else{
 
@@ -124,7 +124,7 @@ converge = NA_character_
 
 
       mu_models_new = #fit_all_mu_models(possible_data, ncomp, formula, maxiter_survreg)
-        purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula, maxiter_survreg = maxiter_survreg))
+        purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
 
 
 

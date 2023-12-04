@@ -17,6 +17,8 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 
 ```{r setup}
 library(mic.sim)
+library(dplyr)
+library(ggplot2)
 ```
 
 ##The data
@@ -25,6 +27,7 @@ Our data degenerating mechanism is a gaussian mixture with two components, with 
 ```{r echo = FALSE}
 #load("data-raw/example_data")
 set.seed(150)
+n = 300
 ncomp = 2
 pi = function(t) {
   z <- 0.07 + 0.03 * t - 0.00045 * t^2
@@ -46,7 +49,7 @@ sd_vector = c("1" = 1, "2" = 1.05)
 low_con = -3
 high_con = 3
 scale = "log"
-simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log")
+example_data = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log")
 
 example_data %>% 
   mutate(verbose_comp = case_when(
@@ -82,7 +85,6 @@ output = EM_algorithm_mgcv(example_data,
                   pi_link = "logit",
                   verbose = 0,
                   model_coefficient_tolerance = 0.00001,
-                  maxiter_survreg = 30,
                   initial_weighting = 8)
 
 ```
