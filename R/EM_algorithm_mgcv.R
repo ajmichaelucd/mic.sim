@@ -18,6 +18,7 @@
 #' @param initial_weighting
 #'
 #' @import mgcv
+#' @importFrom magrittr %>%
 #'
 #' @return
 #' @export
