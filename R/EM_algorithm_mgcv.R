@@ -17,6 +17,8 @@
 #' @param maxiter_survreg
 #' @param initial_weighting
 #'
+#' @import mgcv
+#'
 #' @return
 #' @export
 #'

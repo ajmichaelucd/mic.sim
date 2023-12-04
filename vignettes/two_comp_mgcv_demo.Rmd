@@ -20,12 +20,6 @@ library(mic.sim)
 ```
 
 ```{r echo = FALSE}
-# library(magrittr)
-# library(ggplot2)
-# library(mgcv)
-# library(ggnewscale)
-# library(dplyr)
-# library(mic.sim)
 load("data-raw/example_data")
 covariate_effect_vector <- c(0)
 covariate_list <-  NULL
