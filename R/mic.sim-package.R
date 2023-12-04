@@ -6,5 +6,6 @@
 #' @importFrom magrittr %>%
 #' @importFrom mgcv cnorm
 #' @importFrom mgcv gam
+#' @importFrom tibble tibble
 ## usethis namespace: end
 NULL

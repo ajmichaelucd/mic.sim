@@ -14,11 +14,11 @@
 #' @param pi_link
 #' @param verbose
 #' @param model_coefficient_tolerance
-#' @param maxiter_survreg
 #' @param initial_weighting
 #'
 #' @import mgcv
 #' @importFrom magrittr %>%
+#' @importFrom purrr safely
 #'
 #' @return
 #' @export
@@ -40,9 +40,6 @@ EM_algorithm_mgcv = function(
     #silent = FALSE,
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
-    #low_con = 2^-3,
-    #high_con = 2^3,
-    maxiter_survreg = 30,
     initial_weighting = 8
 ){
   #verbose = 0: print nothing
@@ -297,8 +294,8 @@ if(i == 1 & i == max_it & is.na(converge)){
       list(
         likelihood = tibble_like(likelihood_documentation),
         possible_data = possible_data,
-        binom_model = pi_model_new,
-        newmodel = mu_models_new,
+        pi_model = pi_model_new,
+        mu_model = mu_models_new,
         steps = i,
         converge = converge,
         ncomp = ncomp,
@@ -308,10 +305,35 @@ if(i == 1 & i == max_it & is.na(converge)){
   }
 }
 
-fit_mgcv_mu_model = function(possible_data, pred_comp, mu_formula, maxiter_survreg = 30){
+fit_mgcv_mu_model = function(possible_data, pred_comp, mu_formula){
   df = possible_data %>% filter(`P(C=c|y,t)` > 0 & c == pred_comp)
   df$yi = cbind(df$left_bound_mgcv, df$right_bound_mgcv)
   mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML") %>% return()
+}
+
+fit_single_component_mgcv_mu_model = function(visible_data, mu_formula){
+
+  possible_data = visible_data %>%
+    mutate(left_bound_mgcv =
+             case_when(
+               left_bound == -Inf ~ right_bound,
+               TRUE ~ left_bound
+             ),
+           right_bound_mgcv =
+             case_when(
+               left_bound == -Inf ~ -Inf,
+               TRUE ~ right_bound
+             ),
+           `P(C=c|y,t)` = 1,
+           c = 1
+           )
+  fit_mgcv_mu_model_safely = purrr::safely(fit_mgcv_mu_model, "NO")
+  mu_model = fit_mgcv_mu_model_safely(possible_data, pred_comp = 1, mu_formula)
+
+  return(list(possible_data = possible_data,
+              mu_model = mu_model,
+              converge = ifelse(length(mu_model) > 1, "YES", mu_model),
+              ncomp = ncomp))
 }
 
 fit_mgcv_pi_model = function(pi_formula, pi_link, possible_data){
