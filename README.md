@@ -5,5 +5,5 @@ What the Package Does (Title Case)
 
 ```r
 library(devtools)
-install_github('ajmichalucd/mic.sim')
+install_github('ajmichalucd/mic.sim', build_vignettes = TRUE)
 ```
