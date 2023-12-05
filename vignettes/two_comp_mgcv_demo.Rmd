@@ -19,6 +19,8 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 library(mic.sim)
 library(dplyr)
 library(ggplot2)
+library(ggnewscale)
+library(mgcv)
 ```
 
 ##The data
@@ -26,7 +28,7 @@ Our data degenerating mechanism is a gaussian mixture with two components, with 
 
 ```{r echo = FALSE}
 #load("data-raw/example_data")
-set.seed(150)
+set.seed(1)
 n = 300
 ncomp = 2
 pi = function(t) {
@@ -47,7 +49,7 @@ attr(t_dist, "min") = 0
 attr(t_dist, "max") = 16
 sd_vector = c("1" = 1, "2" = 1.05)
 low_con = -3
-high_con = 3
+high_con = 5
 scale = "log"
 example_data = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log")
 
@@ -68,13 +70,15 @@ example_data %>%
   ylim(low_con - 2, high_con + 2)
 ```
 
+##Model Fit
+Here we try to fit the full model and run into issues with log likelihood decreasing or we see an error that reads:
+Fitting terminated with step failure - check results carefullyError in gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS
 
-
-```{r echo=FALSE}
+```{r}
 output = EM_algorithm_mgcv(example_data,
                   mu_formula = yi ~ s(t),
                   pi_formula = c == "2" ~ s(t),
-                  max_it = 21,
+                  max_it = 25,
                   ncomp = 2,
                   tol_ll = 1e-6,
                   browse_at_end = FALSE,
@@ -83,23 +87,398 @@ output = EM_algorithm_mgcv(example_data,
                   prior_step_plot = FALSE,
                   pause_on_likelihood_drop = FALSE,
                   pi_link = "logit",
-                  verbose = 0,
+                  verbose = 2,
                   model_coefficient_tolerance = 0.00001,
                   initial_weighting = 8)
 
 ```
 
+And we plot the log likelihood of each step, the EM algorithm should be monotonically increasing but we see drops early, then also some later. 
+
 ```{r echo = FALSE}
 plot_likelihood(output$likelihood, format = "tibble")
 ```
 
-```{r}
+Then i'll try to fit it all without any nonlinear trends
+
+
+##No Nonlinear Trends
+```{r echo = FALSE}
 initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
   initial_weighting_fixed_regression_at_boundaries(., 2, 1)
-plot_initial_weighting_regression(initial_data)
+max_it = 25
+likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
+likelihood_documentation [,1] <- 1:max_it
+models = list()
+possible_data = initial_data
+
+for(i in 1:max_it){
+  print(i)
+    if(i != 1){
+        mu_models_old = mu_models_new
+        pi_model_old = pi_model_new
+        log_likelihood_old = log_likelihood_new
+        possible_data_old = possible_data
+    }
+  
+  mu_model = function(possible_data, pred_comp){
+    possible_data %>% filter(c == pred_comp & `P(C=c|y,t)` > 0) %>% 
+      survival::survreg(Surv(time = left_bound,
+                   time2 = right_bound,
+                   type = "interval2") ~ t, 
+                   weights = `P(C=c|y,t)`,
+                   data = .,
+                   dist = "gaussian") %>% return()
+  }
+  
+  mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
+  
+  pi_model_new = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) 
+  
+  possible_data %<>%
+        mutate(
+          `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
+                                 c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
+                                 TRUE ~ NaN),
+          `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$scale,
+                                  c == "2" ~ mu_models_new[[2]]$scale, #1,
+                                  TRUE ~ NaN),
+          `P(Y|t,c)` = case_when(
+            left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+  
+  log_likelihood_obs = possible_data %>%
+          summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
+          mutate(log_likelihood_i = log(likelihood_i))
+  log_likelihood_new = sum(log_likelihood_obs$log_likelihood_i)
+  likelihood_documentation[i, 2] = log_likelihood_new
+  
+  models[[i]] = list(mu = mu_models_new, pi = pi_model_new, data = possible_data)
+}
+
+plot_likelihood(likelihood_documentation, format = "matrix")
 ```
+So the algorithm increases monotonically here, that's a good sign
 
 ```{r echo = FALSE}
+plot = function(possible_data, mu_models_new, pi_model_new){
+  possible_data = possible_data %>% mutate(cens =
+                                    case_when(
+                                      left_bound == -Inf ~ "lc",
+                                      right_bound == Inf ~ "rc",
+                                      TRUE ~ "int"
+                                    ),
+                                  c1_sigma_lb = predict(mu_models_new[[1]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[1]]$scale,
+                                  c1_sigma_ub = predict(mu_models_new[[1]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[1]]$scale,
+                                  c2_sigma_lb = predict(mu_models_new[[2]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[2]]$scale,
+                                  c2_sigma_ub = predict(mu_models_new[[2]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[2]]$scale
+                                  )
+  mean = possible_data %>%
+    ggplot() +
+    geom_function(fun = function(t){predict(mu_models_new[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+    geom_function(fun = function(t){predict(mu_models_new[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+#    geom_ribbon(aes(ymin = c2_lb, ymax = c2_ub, x = t, fill = "Component 2 Mu"), alpha = 0.25) +
+    geom_ribbon(aes(ymin = c1_sigma_lb, ymax = c1_sigma_ub, x = t, fill = "Component 1 Mu"), alpha = 0.1) +
+    geom_ribbon(aes(ymin = c2_sigma_lb, ymax = c2_sigma_ub, x = t, fill = "Component 2 Mu"), alpha = 0.1) +
+    ggnewscale::new_scale_color() +
+    scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = -5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = 7)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+    geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+    #ggtitle(paste0("Iteration ", i, ": Ribbons are the CI for the mean estimates")) +
+    xlab("Time") +
+    ylab("MIC")
+
+  pi = ggplot() +
+    geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+    geom_function(fun = function(t){predict(pi_model_new, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+    xlim(0, 16) +
+    ylim(0,1)
+
+  return(mean/pi)
+}
+plot(possible_data, mu_models_new, pi_model_new)
+```
+And the plot looks good
+Now let's try to add them back in, starting with mu
+
+##Nonlinear trend in mu only
+
+```{r echo = FALSE}
+initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
+  initial_weighting_fixed_regression_at_boundaries(., 2, 0.2)
+max_it = 25
+likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
+likelihood_documentation [,1] <- 1:max_it
+possible_data = initial_data %>% mutate(
+      left_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ right_bound,
+          TRUE ~ left_bound
+        ),
+      right_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ -Inf,
+          TRUE ~ right_bound
+        )
+    )
+
+models = list()
+
+for(i in 1:max_it){
+  print(i)
+    if(i != 1){
+        mu_models_old = mu_models_new
+        pi_model_old = pi_model_new
+        log_likelihood_old = log_likelihood_new
+        possible_data_old = possible_data
+    }
+  
+  mu_model = function(possible_data, pred_comp){
+    df = possible_data %>% filter(c == pred_comp & `P(C=c|y,t)` > 0)
+    df$yi = cbind(df$left_bound_mgcv, df$right_bound_mgcv)
+    mgcv::gam(yi ~ s(t), family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML")      %>% return()
+  }
+  
+  mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
+  
+  pi_model_new = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) 
+  
+  possible_data %<>%
+        mutate(
+          `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
+                                 c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
+                                 TRUE ~ NaN),
+          `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c == "2" ~ mu_models_new[[2]]$family$getTheta(TRUE), #1,
+                                  TRUE ~ NaN),
+          `P(Y|t,c)` = case_when(
+            left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+  
+  log_likelihood_obs = possible_data %>%
+          summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
+          mutate(log_likelihood_i = log(likelihood_i))
+  log_likelihood_new = sum(log_likelihood_obs$log_likelihood_i)
+  likelihood_documentation[i, 2] = log_likelihood_new
+  
+  models[[i]] = list(mu = mu_models_new, pi = pi_model_new, data = possible_data)
+  
+}
+
+plot_likelihood(likelihood_documentation, format = "matrix")
+```
+Not what we'd like, now we got warnings reading: Fitting terminated with step failure - check results carefully in iterations 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, and 25
+And we definitely have decreases in likelihood through the 25 iterations
+
+```{r echo = FALSE}
+plot = function(possible_data, mu_models_new, pi_model_new){
+  possible_data = possible_data %>% mutate(cens =
+                                    case_when(
+                                      left_bound == -Inf ~ "lc",
+                                      right_bound == Inf ~ "rc",
+                                      TRUE ~ "int"
+                                    ),
+                                  c1_sigma_lb = predict(mu_models_new[[1]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c1_sigma_ub = predict(mu_models_new[[1]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c2_sigma_lb = predict(mu_models_new[[2]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[2]]$family$getTheta(TRUE),
+                                  c2_sigma_ub = predict(mu_models_new[[2]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[2]]$family$getTheta(TRUE)
+                                  )
+  mean = possible_data %>%
+    ggplot() +
+    geom_function(fun = function(t){predict(mu_models_new[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+    geom_function(fun = function(t){predict(mu_models_new[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+#    geom_ribbon(aes(ymin = c2_lb, ymax = c2_ub, x = t, fill = "Component 2 Mu"), alpha = 0.25) +
+    geom_ribbon(aes(ymin = c1_sigma_lb, ymax = c1_sigma_ub, x = t, fill = "Component 1 Mu"), alpha = 0.1) +
+    geom_ribbon(aes(ymin = c2_sigma_lb, ymax = c2_sigma_ub, x = t, fill = "Component 2 Mu"), alpha = 0.1) +
+    ggnewscale::new_scale_color() +
+    scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = -5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = 7)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+    geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+    #ggtitle(paste0("Iteration ", i, ": Ribbons are the CI for the mean estimates")) +
+    xlab("Time") +
+    ylab("MIC")
+
+  pi = ggplot() +
+    geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+    geom_function(fun = function(t){predict(pi_model_new, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+    xlim(0, 16) +
+    ylim(0,1)
+
+  return(mean/pi)
+}
+plot(possible_data, mu_models_new, pi_model_new)
+```
+And the plot doesn't look too good either, Component 2 should be the upper component and here it is lower than component 1
+
+Next we'll do nonlinear trends in pi only
+
+```{r echo = FALSE}
+initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
+  initial_weighting_fixed_regression_at_boundaries(., 2, 1)
+
+max_it = 25
+likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
+likelihood_documentation [,1] <- 1:max_it
+possible_data = initial_data %>% mutate(
+      left_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ right_bound,
+          TRUE ~ left_bound
+        ),
+      right_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ -Inf,
+          TRUE ~ right_bound
+        )
+    )
+
+models = list()
+
+for(i in 1:max_it){
+  print(i)
+    if(i != 1){
+        mu_models_old = mu_models_new
+        pi_model_old = pi_model_new
+        log_likelihood_old = log_likelihood_new
+        possible_data_old = possible_data
+    }
+  
+  mu_model = function(possible_data, pred_comp){
+    possible_data %>% filter(c == pred_comp & `P(C=c|y,t)` > 0) %>% 
+      mutate(`P(C=c|y,t)` =  paste0(`P(C=c|y,t)`) %>% as.numeric) %>% 
+      survival::survreg(Surv(time = left_bound,
+                   time2 = right_bound,
+                   type = "interval2") ~ t, 
+                   weights = `P(C=c|y,t)`,
+                   data = .,
+                   dist = "gaussian") %>% return()
+  }
+  
+  mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
+  
+  pi_model_new = mgcv::gam(c == "2" ~ s(t), family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
+  
+  possible_data %<>%
+        mutate(
+          `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
+                                 c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
+                                 TRUE ~ NaN),
+          `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$scale,
+                                  c == "2" ~ mu_models_new[[2]]$scale, #1,
+                                  TRUE ~ NaN),
+          `P(Y|t,c)` = case_when(
+            left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+  
+  log_likelihood_obs = possible_data %>%
+          summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
+          mutate(log_likelihood_i = log(likelihood_i))
+  log_likelihood_new = sum(log_likelihood_obs$log_likelihood_i)
+  likelihood_documentation[i, 2] = log_likelihood_new
+  
+  models[[i]] = list(mu = mu_models_new, pi = pi_model_new, data = possible_data)
+}
+
+plot_likelihood(likelihood_documentation, format = "matrix")
+
+```
+No decreases in likelihood, that's a good sign
+```{r}
+plot = function(possible_data, mu_models_new, pi_model_new){
+  possible_data = possible_data %>% mutate(cens =
+                                    case_when(
+                                      left_bound == -Inf ~ "lc",
+                                      right_bound == Inf ~ "rc",
+                                      TRUE ~ "int"
+                                    ),
+                                  c1_sigma_lb = predict(mu_models_new[[1]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[1]]$scale,
+                                  c1_sigma_ub = predict(mu_models_new[[1]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[1]]$scale,
+                                  c2_sigma_lb = predict(mu_models_new[[2]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[2]]$scale,
+                                  c2_sigma_ub = predict(mu_models_new[[2]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[2]]$scale
+                                  )
+  mean = possible_data %>%
+    ggplot() +
+    geom_function(fun = function(t){predict(mu_models_new[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+    geom_function(fun = function(t){predict(mu_models_new[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+#    geom_ribbon(aes(ymin = c2_lb, ymax = c2_ub, x = t, fill = "Component 2 Mu"), alpha = 0.25) +
+    geom_ribbon(aes(ymin = c1_sigma_lb, ymax = c1_sigma_ub, x = t, fill = "Component 1 Mu"), alpha = 0.1) +
+    geom_ribbon(aes(ymin = c2_sigma_lb, ymax = c2_sigma_ub, x = t, fill = "Component 2 Mu"), alpha = 0.1) +
+    ggnewscale::new_scale_color() +
+    scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = -5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = 7)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+    geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+    #ggtitle(paste0("Iteration ", i, ": Ribbons are the CI for the mean estimates")) +
+    xlab("Time") +
+    ylab("MIC")
+
+  pi = ggplot() +
+    geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+    geom_function(fun = function(t){predict(pi_model_new, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+    xlim(0, 16) +
+    ylim(0,1)
+
+  return(mean/pi)
+}
+plot(possible_data, mu_models_new, pi_model_new)
+```
+
+And the plot looks good too. So our issue with the likelihood decreases likely lies with the mu models
+
+
+##How the EM algorithm works
+Initial Weighting/First E step
+```{r}
+initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
+  initial_weighting_fixed_regression_at_boundaries(., 2, 0.2)
+plot_initial_weighting_regression(initial_data)
+```
+Then we run a for loop for the EM algorithm, starting with the first M step, where we separate our data by component and fit weighted gams with the cnorm family for the component means, E(Y|t,c) and a binomial gam with a logit link for the component weights, P(C=c|t). Then in the next E step we use these models to calculate P(C=c|y,t), which we use as the observation weights in the next M step, and repeat.
+```{r}
 max_it = 25
 likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
 likelihood_documentation [,1] <- 1:max_it
@@ -174,9 +553,9 @@ plot_likelihood(likelihood_documentation, format = "matrix")
 
 ```
 
-```{r}
+```{r echo=FALSE}
 
-plot = function(possible_data, mu_models_new, pi_model_new){
+plot = function(possible_data, mu_models_new, pi_model_new, i){
   possible_data = possible_data %>% mutate(cens =
                                     case_when(
                                       left_bound == -Inf ~ "lc",
@@ -204,8 +583,7 @@ plot = function(possible_data, mu_models_new, pi_model_new){
     geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
     #ggtitle(paste0("Iteration ", i, ": Ribbons are the CI for the mean estimates")) +
     xlab("Time") +
-    ylab("MIC") +
-    ylim(-11, 15)
+    ylab("MIC") + + ggtitle(paste0("Iteration ", i))
 
   pi = ggplot() +
     geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
@@ -215,12 +593,12 @@ plot = function(possible_data, mu_models_new, pi_model_new){
 
   return(mean/pi)
 }
-
+plots = list()
 for(i in 1:length(models)){
-plot(models[[i]]$data, models[[i]]$mu, models[[i]]$pi) %>% suppressMessages()
+plots[[i]] = plot(models[[i]]$data, models[[i]]$mu, models[[i]]$pi, i = i) %>% suppressMessages()
 }
 
 #plot_fm(output_surv, title = "surv")
-
+plots[[25]]
 ```
 

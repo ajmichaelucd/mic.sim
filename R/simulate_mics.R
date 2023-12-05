@@ -64,7 +64,7 @@ simulate_mics <- function(n = 100,
     censored_obs <- censor_values(simulated_obs, #simulated_obs$observed_value, #low_con, high_con,
                                   #tested_concentrations,
                                   scale)
-    df <- inner_join(simulated_obs, censored_obs) %>% mutate(low_con = as.numeric(low_cons), high_con = as.numeric(high_cons))
+    df <- inner_join(simulated_obs, censored_obs, by = join_by(t, p, comp, x, sd, epsilon, observed_value, low_cons, high_cons)) %>% mutate(low_con = as.numeric(low_cons), high_con = as.numeric(high_cons))
     attr(df, "scale") <- scale
     return(df)
   } else{
