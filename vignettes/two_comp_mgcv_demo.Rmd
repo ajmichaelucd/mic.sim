@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
 
-```{r setup}
+```{r setup, echo = FALSE}
 library(mic.sim)
 library(mgcv)
 library(dplyr)
@@ -24,10 +24,10 @@ library(ggnewscale)
 library(survival)
 ```
 
-##The data
-Our data degenerating mechanism is a gaussian mixture with two components, with nonlinear trends in the component means, fixed component standard deviations, and nonlinear trends trends in the component weights. The data is interval censored within the range of tested concentrations, and 
+## The data  
+Our data degenerating mechanism is a Gaussian mixture with two components, with nonlinear trends in the component means, fixed component standard deviations, and nonlinear trends trends in the component weights. The data is interval censored within the range of tested concentrations between tested concentrations (integer values), right censored above the upper bound (here 5), and left censored below the lower bound (here -3)  
 
-```{r echo = FALSE}
+```{r echo = FALSE, fig.width=8, fig.height=6}
 #load("data-raw/example_data")
 set.seed(1)
 n = 300
@@ -52,7 +52,7 @@ sd_vector = c("1" = 1, "2" = 1.05)
 low_con = -3
 high_con = 5
 scale = "log"
-example_data = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log")
+example_data = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log") %>% suppressMessages()
 
 example_data %>% 
   mutate(verbose_comp = case_when(
@@ -71,9 +71,11 @@ example_data %>%
   ylim(low_con - 2, high_con + 2)
 ```
 
-##Model Fit
-Here we try to fit the full model and run into issues with log likelihood decreasing or we see an error that reads:
-Fitting terminated with step failure - check results carefullyError in gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS
+## Model Fit  
+Our model uses an EM algorithm to estimate trends in mu for each component and trends in the weights of components. We use the mgcv package's gam function to fit these, using the cnorm family for the mu models and a binomial model with a logit link for the pi model. Then we compute weights for each observation that we plug into the next model fit in the next iteration. As a note, we do split the data by component before fitting the mu models because of some issues we'd run into in previous attempts to fit a stratified model that also contains splines while still using the survival package for the mu models.  
+We'll look more at the EM algorithm later, first I'd like to demonstrate the current issue we are encountering  
+Here we try to fit the full model and run into the primary issue that we've been having: the log likelihood decreases between steps of the EM algorithm instead of increasing monotonically. In some other instances (though not this one), we also get an error with some other data sets that reads:  
+Fitting terminated with step failure - check results carefully Error in gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS  
 
 ```{r}
 output = EM_algorithm_mgcv(example_data,
@@ -94,17 +96,18 @@ output = EM_algorithm_mgcv(example_data,
 
 ```
 
-And we plot the log likelihood of each step, the EM algorithm should be monotonically increasing but we see drops early, then also some later. 
+And we plot the log likelihood of each step, the EM algorithm should be monotonically increasing but we see drops early, then also some later.  
 
-```{r echo = FALSE}
+```{r echo = FALSE, fig.width=8, fig.height=6}
 plot_likelihood(output$likelihood, format = "tibble")
 ```
 
-Then i'll try to fit it all without any nonlinear trends
+So now I thought I'd remove the splines and see if the rest of the algorithm is working as intended. First, I'll try to fit it all without any nonlinear trends in mu or pi 
 
+## No Nonlinear Trends  
+I used survreg with a gaussian distribution and no splines for mu models and a glm for the logistic regression. Previously, using survreg with pspline for nonlinear trends in our EM algorithm also resulted in log likelihood decreases which is why we tried switching to mgcv  
 
-##No Nonlinear Trends
-```{r echo = FALSE}
+```{r echo = FALSE, fig.width=8, fig.height=6}
 initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
   initial_weighting_fixed_regression_at_boundaries(., 2, 1)
 max_it = 25
@@ -114,7 +117,7 @@ models = list()
 possible_data = initial_data
 
 for(i in 1:max_it){
-  print(i)
+  #print(i)
     if(i != 1){
         mu_models_old = mu_models_new
         pi_model_old = pi_model_new
@@ -134,7 +137,7 @@ for(i in 1:max_it){
   
   mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
   
-  pi_model_new = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) 
+  pi_model_new = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
   
   possible_data %<>%
         mutate(
@@ -171,9 +174,10 @@ for(i in 1:max_it){
 
 plot_likelihood(likelihood_documentation, format = "matrix")
 ```
-So the algorithm increases monotonically here, that's a good sign
 
-```{r echo = FALSE}
+So the log likelihood increases monotonically here, that's a good sign  
+
+```{r echo = FALSE, fig.width=8, fig.height=6}
 plot = function(possible_data, mu_models_new, pi_model_new){
   possible_data = possible_data %>% mutate(cens =
                                     case_when(
@@ -214,12 +218,13 @@ plot = function(possible_data, mu_models_new, pi_model_new){
 }
 plot(possible_data, mu_models_new, pi_model_new)
 ```
-And the plot looks good
-Now let's try to add them back in, starting with mu
 
-##Nonlinear trend in mu only
+And the plot looks good  
+Now let's try to add them back in, starting with mu  
 
-```{r echo = FALSE}
+## Nonlinear trend in mu only  
+
+```{r echo = FALSE, fig.width=8, fig.height=6}
 initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
   initial_weighting_fixed_regression_at_boundaries(., 2, 0.2)
 max_it = 25
@@ -257,7 +262,7 @@ for(i in 1:max_it){
   
   mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
   
-  pi_model_new = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) 
+  pi_model_new = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
   
   possible_data %<>%
         mutate(
@@ -295,10 +300,11 @@ for(i in 1:max_it){
 
 plot_likelihood(likelihood_documentation, format = "matrix")
 ```
-Not what we'd like, now we got warnings reading: Fitting terminated with step failure - check results carefully in iterations 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, and 25
-And we definitely have decreases in likelihood through the 25 iterations
 
-```{r echo = FALSE}
+Not what we'd like, now we got warnings reading: Fitting terminated with step failure - check results carefully
+And we definitely have decreases in likelihood through the 25 iterations  
+
+```{r echo = FALSE, fig.width=8, fig.height=6}
 plot = function(possible_data, mu_models_new, pi_model_new){
   possible_data = possible_data %>% mutate(cens =
                                     case_when(
@@ -339,11 +345,12 @@ plot = function(possible_data, mu_models_new, pi_model_new){
 }
 plot(possible_data, mu_models_new, pi_model_new)
 ```
-And the plot doesn't look too good either, Component 2 should be the upper component and here it is lower than component 1
 
-Next we'll do nonlinear trends in pi only
+And the plot doesn't look too good either, Component 2 should be the upper component and here it is lower than component 1  
 
-```{r echo = FALSE}
+Next we'll do nonlinear trends in pi only  
+
+```{r echo = FALSE, fig.width=8, fig.height=6}
 initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
   initial_weighting_fixed_regression_at_boundaries(., 2, 1)
 
@@ -366,7 +373,7 @@ possible_data = initial_data %>% mutate(
 models = list()
 
 for(i in 1:max_it){
-  print(i)
+  #print(i)
     if(i != 1){
         mu_models_old = mu_models_new
         pi_model_old = pi_model_new
@@ -425,8 +432,10 @@ for(i in 1:max_it){
 plot_likelihood(likelihood_documentation, format = "matrix")
 
 ```
-No decreases in likelihood, that's a good sign
-```{r}
+
+No decreases in likelihood, that's a good sign  
+
+```{r echo = FALSE, fig.width=8, fig.height=6}
 plot = function(possible_data, mu_models_new, pi_model_new){
   possible_data = possible_data %>% mutate(cens =
                                     case_when(
@@ -468,18 +477,20 @@ plot = function(possible_data, mu_models_new, pi_model_new){
 plot(possible_data, mu_models_new, pi_model_new)
 ```
 
-And the plot looks good too. So our issue with the likelihood decreases likely lies with the mu models
+And the plot looks good too. So our issue with the likelihood decreases likely lies with the mu models  
 
+## How the EM algorithm works  
+Initial Weighting/First E step weights observations by their proximity to the upper and lower boundaries  
 
-##How the EM algorithm works
-Initial Weighting/First E step
-```{r}
+```{r, fig.width=8, fig.height=6}
 initial_data = example_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% 
   initial_weighting_fixed_regression_at_boundaries(., 2, 0.2)
 plot_initial_weighting_regression(initial_data)
 ```
-Then we run a for loop for the EM algorithm, starting with the first M step, where we separate our data by component and fit weighted gams with the cnorm family for the component means, E(Y|t,c) and a binomial gam with a logit link for the component weights, P(C=c|t). Then in the next E step we use these models to calculate P(C=c|y,t), which we use as the observation weights in the next M step, and repeat.
-```{r}
+
+Then we run a for loop for the EM algorithm, starting with the first M step, where we separate our data by component and fit weighted GAMs with the cnorm family for the component means, E(Y|t,c) and a binomial GAM with a logit link for the component weights, P(C=c|t). Then in the next E step we use these models to calculate P(C=c|y,t), which we use as the observation weights in the next M step, and repeat.  
+
+```{r, fig.width=8, fig.height=6}
 max_it = 25
 likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
 likelihood_documentation [,1] <- 1:max_it
@@ -553,8 +564,9 @@ for(i in 1:max_it){
 plot_likelihood(likelihood_documentation, format = "matrix")
 
 ```
-
-```{r echo=FALSE}
+  
+  
+```{r echo=FALSE, fig.width=8, fig.height=6}
 
 plot = function(possible_data, mu_models_new, pi_model_new, i){
   possible_data = possible_data %>% mutate(cens =
@@ -584,7 +596,7 @@ plot = function(possible_data, mu_models_new, pi_model_new, i){
     geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
     #ggtitle(paste0("Iteration ", i, ": Ribbons are the CI for the mean estimates")) +
     xlab("Time") +
-    ylab("MIC") + + ggtitle(paste0("Iteration ", i))
+    ylab("MIC") + ggtitle(paste0("Iteration ", i))
 
   pi = ggplot() +
     geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
@@ -594,6 +606,7 @@ plot = function(possible_data, mu_models_new, pi_model_new, i){
 
   return(mean/pi)
 }
+
 plots = list()
 for(i in 1:length(models)){
 plots[[i]] = plot(models[[i]]$data, models[[i]]$mu, models[[i]]$pi, i = i) %>% suppressMessages()

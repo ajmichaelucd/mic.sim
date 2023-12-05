@@ -9,6 +9,8 @@
 #' @return
 #' @export
 #'
+#' @importFrom stats vcov
+#'
 #' @examples
 sim_pi_survreg_boot_mgcv = function (df, fit, alpha = 0.05, nSims = 10000, distr = "gaussian")
 {
@@ -20,7 +22,7 @@ sim_pi_survreg_boot_mgcv = function (df, fit, alpha = 0.05, nSims = 10000, distr
   upr <- apply(sim_response, 1, FUN = quantile, probs = 1 -
                  alpha/2, type = 1)
   #df %>% mutate(out, lwr, upr) %>% return
-  df %>% mutate(lwr, upr) %>% return
+  df %>% mutate(lwr, upr) %>% return()
 }
 
 sim_surv_coefs_mgcv = function (df, fit, nSims, distr)
@@ -34,7 +36,7 @@ sim_surv_coefs_mgcv = function (df, fit, nSims, distr)
   beta.hat <- coef(fit)
   params <- matrix(NA, nrow = nSims, ncol = length(beta.hat))
   params <- MASS::mvrnorm(nSims, beta.hat, vcov.hat) ##read up to see if p-spline coefs are approx normal
-  params
+  params %>% return()
 }
 
 get_sim_response_surv_boot_mgcv = function (df, fit, params, distr)
@@ -43,7 +45,7 @@ get_sim_response_surv_boot_mgcv = function (df, fit, params, distr)
   nPreds <- NROW(df)
   modmat <- model.matrix(fit, data = df)
   sim_response <- matrix(0, ncol = nSims, nrow = nPreds)
-  scale <- fit$scale
+  scale <- fit$family$getTheta(TRUE)
   for (i in 1:nSims) {
     linear_pred <- modmat %*% params[i, 1:dim(params)[2]]
     if ((distr == "lognormal") || (distr == "loggaussian")) {

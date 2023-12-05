@@ -9,6 +9,8 @@
 #' @return
 #' @export
 #'
+#' @importFrom MASS mvrnorm
+#'
 #' @examples
 sim_pi_survreg_boot = function (df, fit, alpha = 0.05, nSims = 10000)
 {
@@ -21,7 +23,7 @@ sim_pi_survreg_boot = function (df, fit, alpha = 0.05, nSims = 10000)
   upr <- apply(sim_response, 1, FUN = quantile, probs = 1 -
                  alpha/2, type = 1)
   #df %>% mutate(out, lwr, upr) %>% return
-  df %>% mutate(lwr, upr) %>% return
+  df %>% mutate(lwr, upr) %>% return()
 }
 
 sim_surv_coefs = function (df, fit, nSims, distr)
