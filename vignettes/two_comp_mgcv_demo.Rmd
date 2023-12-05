@@ -17,10 +17,11 @@ knitr::opts_knit$set(root.dir = normalizePath(".."))
 
 ```{r setup}
 library(mic.sim)
+library(mgcv)
 library(dplyr)
 library(ggplot2)
 library(ggnewscale)
-library(mgcv)
+library(survival)
 ```
 
 ##The data
