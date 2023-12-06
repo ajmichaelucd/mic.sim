@@ -25,7 +25,7 @@ library(survival)
 ```
 
 ## The data  
-Our data degenerating mechanism is a Gaussian mixture with two components, with nonlinear trends in the component means, fixed component standard deviations, and nonlinear trends trends in the component weights. The data is interval censored within the range of tested concentrations between tested concentrations (integer values), right censored above the upper bound (here 5), and left censored below the lower bound (here -3)  
+Our data generating mechanism is a Gaussian mixture with two components, with nonlinear trends in the component means, fixed component standard deviations, and nonlinear trends trends in the component weights. The data is interval censored within the range of tested concentrations between tested concentrations (integer values), right censored above the upper bound (here 5), and left censored below the lower bound (here -3)  
 
 ```{r echo = FALSE, fig.width=8, fig.height=6}
 #load("data-raw/example_data")
