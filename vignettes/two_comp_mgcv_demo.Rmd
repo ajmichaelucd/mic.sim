@@ -617,7 +617,7 @@ plots[[25]]
 ```
 
 Here's something else interesting, if I change yi ~ s(t) to just yi ~ t, I still get decreases in the likelihood  
-So the difference between this and the nonlinear trends in pi model is just that I'm using gam instead of survreg, which makes me think I must be doing something wrong with how I'm using gam()  
+So the difference between this and the nonlinear trends in pi model is just that I'm using gam instead of survreg, which makes me think I must be doing something wrong with how I'm using gam(), especially in the mu component portion  
 
 ```{r, fig.width=8, fig.height=6}
 max_it = 20
