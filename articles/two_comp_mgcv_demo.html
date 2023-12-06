@@ -394,7 +394,8 @@ the observation weights in the next M step, and repeat.</p>
 t, I still get decreases in the likelihood<br>
 So the difference between this and the nonlinear trends in pi model is
 just that I’m using gam instead of survreg, which makes me think I must
-be doing something wrong with how I’m using gam()</p>
+be doing something wrong with how I’m using gam(), especially in the mu
+component portion</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">max_it</span> <span class="op">=</span> <span class="fl">20</span></span>
 <span><span class="va">likelihood_documentation</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span>data <span class="op">=</span> <span class="cn">NA</span>, nrow <span class="op">=</span> <span class="va">max_it</span>, ncol <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
