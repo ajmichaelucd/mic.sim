@@ -616,8 +616,9 @@ plots[[i]] = plot(models[[i]]$data, models[[i]]$mu, models[[i]]$pi, i = i) %>% s
 plots[[25]]
 ```
 
+## An Observation on the Specific Issue
 Here's something else interesting, if I change yi ~ s(t) to just yi ~ t, I still get decreases in the likelihood  
-So the difference between this and the nonlinear trends in pi model is just that I'm using gam instead of survreg, which makes me think I must be doing something wrong with how I'm using gam(), especially in the mu component portion  
+So the difference between this and the "nonlinear trends in pi only" model is just that I'm using gam instead of survreg, which makes me think I must be doing something wrong with how I'm using gam(), especially in the mu component portion  
 
 ```{r, fig.width=8, fig.height=6}
 max_it = 20
