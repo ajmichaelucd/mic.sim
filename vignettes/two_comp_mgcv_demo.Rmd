@@ -616,3 +616,82 @@ plots[[i]] = plot(models[[i]]$data, models[[i]]$mu, models[[i]]$pi, i = i) %>% s
 plots[[25]]
 ```
 
+Here's something else interesting, if I change yi ~ s(t) to just yi ~ t, I still get decreases in the likelihood  
+So the difference between this and the nonlinear trends in pi model is just that I'm using gam instead of survreg, which makes me think I must be doing something wrong with how I'm using gam()  
+
+```{r, fig.width=8, fig.height=6}
+max_it = 20
+likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
+likelihood_documentation [,1] <- 1:max_it
+possible_data = initial_data %>% mutate(
+      left_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ right_bound,
+          TRUE ~ left_bound
+        ),
+      right_bound_mgcv =
+        case_when(
+          left_bound == -Inf ~ -Inf,
+          TRUE ~ right_bound
+        )
+    )
+
+models = list()
+
+for(i in 1:max_it){
+  print(i)
+    if(i != 1){
+        mu_models_old = mu_models_new
+        pi_model_old = pi_model_new
+        log_likelihood_old = log_likelihood_new
+        possible_data_old = possible_data
+    }
+  
+  mu_model = function(possible_data, pred_comp){
+    df = possible_data %>% filter(c == pred_comp & `P(C=c|y,t)` > 0)
+    df$yi = cbind(df$left_bound_mgcv, df$right_bound_mgcv)
+    mgcv::gam(yi ~ t, family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML")      %>% return()
+  }
+  
+  mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
+  
+  pi_model_new = mgcv::gam(c == "2" ~ s(t), family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
+  
+  possible_data %<>%
+        mutate(
+          `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
+                                 c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
+                                 TRUE ~ NaN),
+          `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c == "2" ~ mu_models_new[[2]]$family$getTheta(TRUE), #1,
+                                  TRUE ~ NaN),
+          `P(Y|t,c)` = case_when(
+            left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
+        mutate(.by = obs_id,
+               `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
+        mutate(
+          `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
+  
+  log_likelihood_obs = possible_data %>%
+          summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
+          mutate(log_likelihood_i = log(likelihood_i))
+  log_likelihood_new = sum(log_likelihood_obs$log_likelihood_i)
+  likelihood_documentation[i, 2] = log_likelihood_new
+  
+  models[[i]] = list(mu = mu_models_new, pi = pi_model_new, data = possible_data)
+}
+
+plot_likelihood(likelihood_documentation, format = "matrix")
+
+```
+
+
