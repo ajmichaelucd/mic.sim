@@ -4,3 +4,7 @@
 ^mic.sim.*\.tar\.gz$
 ^mic.sim.*\.tgz$
 ^misc$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
