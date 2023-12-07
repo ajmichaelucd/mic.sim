@@ -40,7 +40,8 @@ EM_algorithm_mgcv = function(
     #silent = FALSE,
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
-    initial_weighting = 8
+    initial_weighting = 8,
+    sd_initial = 0.25
 ){
   #verbose = 0: print nothing
   #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
@@ -75,7 +76,7 @@ converge = NA_character_
       possible_data = initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends(visible_data)
     } else{
 
-      possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp)
+      possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp, sd_parameter = sd_initial)
 
       if(plot_visuals){
         plot_initial_weighting_regression(possible_data)

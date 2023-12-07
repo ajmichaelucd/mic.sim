@@ -19,7 +19,8 @@ EM_algorithm_mgcv(
   pi_link = "logit",
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
-  initial_weighting = 8
+  initial_weighting = 8,
+  sd_initial = 0.25
 )
 }
 \arguments{

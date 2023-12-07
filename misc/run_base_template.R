@@ -66,10 +66,7 @@ attr(t_dist, "max") = 16
 sd_vector = c("1" = 2, "2" = 1) #0.5, 0.75, 1, 1.25
 
 low_con = -2
-high_con = 4 #errored out when this was 2^3
-#RUN 1 : 2
-#RUN 2: 3
-#RUN 3: 4
+high_con = 4
 
 scale = "log"
 
