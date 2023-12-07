@@ -3,7 +3,7 @@ pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
   two_comp_mgcv_demo: two_comp_mgcv_demo.html
-last_built: 2023-12-06T07:17Z
+last_built: 2023-12-07T04:43Z
 urls:
   reference: https://ajmichaelucd.github.io/mic.sim/reference
   article: https://ajmichaelucd.github.io/mic.sim/articles

@@ -194,15 +194,14 @@ gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS</p>
 <span><span class="co">#&gt; starting iteration number 21</span></span>
 <span><span class="co">#&gt; starting iteration number 22</span></span>
 <span><span class="co">#&gt; starting iteration number 23</span></span>
-<span><span class="co">#&gt; Warning in EM_algorithm_mgcv(example_data, mu_formula = yi ~ s(t), pi_formula =</span></span>
-<span><span class="co">#&gt; c == : Log Likelihood decreased</span></span>
-<span><span class="co">#&gt; starting iteration number 24</span></span>
-<span><span class="co">#&gt; starting iteration number 25</span></span>
 <span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
 <span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span>
-<span></span>
+<span><span class="co">#&gt; starting iteration number 24</span></span>
+<span><span class="co">#&gt; Warning in EM_algorithm_mgcv(example_data, mu_formula = yi ~ s(t), pi_formula =</span></span>
+<span><span class="co">#&gt; c == : Log Likelihood decreased</span></span>
+<span><span class="co">#&gt; starting iteration number 25</span></span>
 <span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
-<span><span class="co">#&gt; : Log Likelihood decreased</span></span></code></pre></div>
+<span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span></code></pre></div>
 <p>And we plot the log likelihood of each step, the EM algorithm should
 be monotonically increasing but we see drops early, then also some
 later.</p>
