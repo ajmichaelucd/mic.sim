@@ -119,7 +119,7 @@ if(plot_visuals){
 
   pi_model_new = fit_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
-if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
+if(check_mu_models_convergence_surv(mu_models_new, ncomp) %>% unlist %>% any){
   converge = "NO"
   break
 }
@@ -127,7 +127,7 @@ if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
 
     if(i != 1){
 
-      model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp)
+      model_coefficient_checks_results = model_coefficient_checks_surv(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp)
 
       }
 
@@ -314,11 +314,11 @@ fit_pi_model = function(pi_formula, pi_link, possible_data){
   return(pi_model)
 }
 
-check_mu_models_convergence = function(mu_models, ncomp){
+check_mu_models_convergence_surv = function(mu_models, ncomp){
   purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$scale), is.na(mu_models[[.x]]$coefficients)))
 }
 
-model_coefficient_checks = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
+model_coefficient_checks_surv = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
   #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
   pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
 

@@ -92,7 +92,7 @@ initial_weighting_safety(visible_data, censored_side, extra_row)
 
     pi_model_new = fit_pi_model(pi_formula = formula2, pi_link = pi_link, possible_data = possible_data)
 
-    if(check_mu_model_convergence(mu_model_new, ncomp) %>% unlist %>% any){
+    if(check_mu_model_convergence_surv(mu_model_new, ncomp) %>% unlist %>% any){
       converge = "NO"
       break
     }

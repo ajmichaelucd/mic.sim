@@ -1,4 +1,4 @@
-#' EM_algorithm_mgcv
+#' Title
 #'
 #' @param visible_data
 #' @param mu_formula
@@ -15,16 +15,14 @@
 #' @param verbose
 #' @param model_coefficient_tolerance
 #' @param initial_weighting
-#'
-#' @import mgcv
-#' @importFrom magrittr %>%
-#' @importFrom purrr safely
+#' @param sd_initial
+#' @param maxiter_survreg
 #'
 #' @return
 #' @export
 #'
 #' @examples
-EM_algorithm_mgcv = function(
+EM_algorithm_surv = function(
     visible_data,
     mu_formula = yi ~ s(t),
     pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
@@ -41,25 +39,18 @@ EM_algorithm_mgcv = function(
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
     initial_weighting = 8,
-    sd_initial = 0.25
+    sd_initial = 0.25,
+    maxiter_survreg = 30
 ){
-  #verbose = 0: print nothing
-  #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
-  #verbose = 2: print run number and iteration number --done
-  #verbose = 3: print run number, iteration number, and iteration results --done
-  #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
-  #verbose = 0:
- if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
-   visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
- }
+  if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
+    visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
+  }
 
-converge = NA_character_
+  converge = NA_character_
 
   if(ncomp == 1){
-    fit_single_component_model_mgcv(visible_data, mu_formula, verbose) %>% return()
-
+    fit_single_component_model_surv(visible_data, mu_formula, verbose) %>% return()
   }else{
-
 
     #first E step-----
     if(initial_weighting == 1){
@@ -88,22 +79,8 @@ converge = NA_character_
 
     }
 
-
     likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 5)
     likelihood_documentation [,1] <- 1:max_it
-
-    possible_data = possible_data %>% mutate(
-      left_bound_mgcv =
-        case_when(
-          left_bound == -Inf ~ right_bound,
-          TRUE ~ left_bound
-        ),
-      right_bound_mgcv =
-        case_when(
-          left_bound == -Inf ~ -Inf,
-          TRUE ~ right_bound
-        )
-    )
 
 
     for(i in 1:max_it){
@@ -122,14 +99,11 @@ converge = NA_character_
         possible_data_old = possible_data
       }
 
-
-
-      mu_models_new = #fit_all_mu_models(possible_data, ncomp, formula, maxiter_survreg)
-        purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
+      fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
 
       pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
-      if(check_mu_models_convergence_mgcv(mu_models_new, ncomp) %>% unlist %>% any){
+      if(check_mu_models_convergence_surv(mu_models_new, ncomp) %>% unlist %>% any){
         converge = "NO"
         break
       }
@@ -137,7 +111,7 @@ converge = NA_character_
 
       if(i != 1){
 
-        model_coefficient_checks_results = model_coefficient_checks_mgcv(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp)
+        model_coefficient_checks_results = model_coefficient_checks_surv(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp)
 
       }
 
@@ -158,8 +132,8 @@ converge = NA_character_
                                  c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
                                  TRUE ~ NaN),
           #predict(model, newdata = possible_data),
-          `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$family$getTheta(TRUE),
-                                  c == "2" ~ mu_models_new[[2]]$family$getTheta(TRUE), #1,
+          `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$scale,
+                                  c == "2" ~ mu_models_new[[2]]$scale, #1,
                                   TRUE ~ NaN),
           #model$scale[c], #####QUESTION HERE????????????????????????????
           # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
@@ -243,14 +217,14 @@ converge = NA_character_
     }
     if(browse_at_end){browser()}
 
-if(i > 1){
-    if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){
+    if(i > 1){
+      if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){
+        converge = "iterations"
+      }
+    }
+    if(i == 1 & i == max_it & is.na(converge)){
       converge = "iterations"
     }
-}
-if(i == 1 & i == max_it & is.na(converge)){
-  converge = "iterations"
-}
 
 
     if(i == 1){
@@ -273,81 +247,4 @@ if(i == 1 & i == max_it & is.na(converge)){
       )
     )
   }
-}
-
-fit_mgcv_mu_model = function(possible_data, pred_comp, mu_formula){
-  df = possible_data %>% filter(`P(C=c|y,t)` > 0 & c == pred_comp)
-  df$yi = cbind(df$left_bound_mgcv, df$right_bound_mgcv)
-  mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML") %>% return()
-}
-
-check_mu_models_convergence_mgcv = function(mu_models, n_comp){
-  purrr::map(1:n_comp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients))) %>% return()
-}
-
-fit_single_component_model_mgcv = function(visible_data, mu_formula){
-
-  possible_data = visible_data %>%
-    mutate(left_bound_mgcv =
-             case_when(
-               left_bound == -Inf ~ right_bound,
-               TRUE ~ left_bound
-             ),
-           right_bound_mgcv =
-             case_when(
-               left_bound == -Inf ~ -Inf,
-               TRUE ~ right_bound
-             ),
-           `P(C=c|y,t)` = 1,
-           c = 1
-           )
-  fit_mgcv_mu_model_safely = purrr::safely(fit_mgcv_mu_model, "NO")
-  mu_model = fit_mgcv_mu_model_safely(possible_data, pred_comp = 1, mu_formula)
-  if((mu_model %>% length) > 1){
-    mu_model = list(mu_model)
-  }
-
-  return(list(possible_data = possible_data,
-              mu_model = mu_model,
-              converge = ifelse(length(mu_model) > 1, "YES", mu_model),
-              ncomp = ncomp))
-}
-
-fit_mgcv_pi_model = function(pi_formula, pi_link, possible_data){
-
-  if(pi_link == "logit"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
-  } else if(pi_link == "identity"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
-  }
-  if(pi_link == "logit_simple"){
-    pi_model = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
-  }else{ errorCondition("pick logit or identity link function")}
-
-
-  return(pi_model)
-}
-
-model_coefficient_checks_mgcv = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
-  #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
-  pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
-
-  #these are the actual smoothing things for every observation I believe
-  #pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
-
-  #check if the number of coefficients in the mu models changes
-  mu_number_of_coef_check = purrr::map(1:ncomp, ~(length(na.omit(mu_models_new[[.x]]$coefficients)) == length(na.omit(mu_models_old[[.x]]$coefficients)))) %>%
-    unlist %>% all
-
-  mu_coefficient_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$coefficients - mu_models_old[[.x]]$coefficients) %>% abs %>% sum)) %>% unlist %>% max < model_coefficient_tolerance
-
-  mu_sigma_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$family$getTheta(TRUE) - mu_models_old[[.x]]$family$getTheta(TRUE)) %>% abs)) %>% unlist %>% max < model_coefficient_tolerance
-
-  #check likelihood at end of E step
-
-  return(all(pi_parametric_coef_check,
-             #pi_nonparametric_check,
-             mu_number_of_coef_check,
-             mu_coefficient_check,
-             mu_sigma_check))
 }
