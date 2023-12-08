@@ -138,7 +138,8 @@ gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS</p>
 <span>                  pi_link <span class="op">=</span> <span class="st">"logit"</span>,</span>
 <span>                  verbose <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>                  model_coefficient_tolerance <span class="op">=</span> <span class="fl">0.00001</span>,</span>
-<span>                  initial_weighting <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
+<span>                  initial_weighting <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>                  sd_initial <span class="op">=</span> <span class="fl">0.25</span><span class="op">)</span></span>
 <span><span class="co">#&gt; starting iteration number 1</span></span>
 <span><span class="co">#&gt; starting iteration number 2</span></span>
 <span><span class="co">#&gt; Warning in EM_algorithm_mgcv(example_data, mu_formula = yi ~ s(t), pi_formula =</span></span>
@@ -183,25 +184,15 @@ gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS</p>
 <span><span class="co">#&gt; Warning in EM_algorithm_mgcv(example_data, mu_formula = yi ~ s(t), pi_formula =</span></span>
 <span><span class="co">#&gt; c == : Log Likelihood decreased</span></span>
 <span><span class="co">#&gt; starting iteration number 16</span></span>
-<span><span class="co">#&gt; Warning in EM_algorithm_mgcv(example_data, mu_formula = yi ~ s(t), pi_formula =</span></span>
-<span><span class="co">#&gt; c == : Log Likelihood decreased</span></span>
 <span><span class="co">#&gt; starting iteration number 17</span></span>
-<span><span class="co">#&gt; Warning in EM_algorithm_mgcv(example_data, mu_formula = yi ~ s(t), pi_formula =</span></span>
-<span><span class="co">#&gt; c == : Log Likelihood decreased</span></span>
 <span><span class="co">#&gt; starting iteration number 18</span></span>
 <span><span class="co">#&gt; starting iteration number 19</span></span>
 <span><span class="co">#&gt; starting iteration number 20</span></span>
 <span><span class="co">#&gt; starting iteration number 21</span></span>
 <span><span class="co">#&gt; starting iteration number 22</span></span>
 <span><span class="co">#&gt; starting iteration number 23</span></span>
-<span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
-<span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span>
 <span><span class="co">#&gt; starting iteration number 24</span></span>
-<span><span class="co">#&gt; Warning in EM_algorithm_mgcv(example_data, mu_formula = yi ~ s(t), pi_formula =</span></span>
-<span><span class="co">#&gt; c == : Log Likelihood decreased</span></span>
-<span><span class="co">#&gt; starting iteration number 25</span></span>
-<span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
-<span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span></code></pre></div>
+<span><span class="co">#&gt; starting iteration number 25</span></span></code></pre></div>
 <p>And we plot the log likelihood of each step, the EM algorithm should
 be monotonically increasing but we see drops early, then also some
 later.</p>
@@ -250,14 +241,8 @@ Now let’s try to add them back in, starting with mu</p>
 <span><span class="co">#&gt; [1] 21</span></span>
 <span><span class="co">#&gt; [1] 22</span></span>
 <span><span class="co">#&gt; [1] 23</span></span>
-<span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
-<span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span>
 <span><span class="co">#&gt; [1] 24</span></span>
-<span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
-<span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span>
-<span><span class="co">#&gt; [1] 25</span></span>
-<span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
-<span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span></code></pre>
+<span><span class="co">#&gt; [1] 25</span></span></code></pre>
 <p><img src="two_comp_mgcv_demo_files/figure-html/unnamed-chunk-7-1.png" width="768"></p>
 <p>Not what we’d like, now we got warnings reading: Fitting terminated
 with step failure - check results carefully And we definitely have
@@ -383,8 +368,6 @@ the observation weights in the next M step, and repeat.</p>
 <span><span class="co">#&gt; [1] 23</span></span>
 <span><span class="co">#&gt; [1] 24</span></span>
 <span><span class="co">#&gt; [1] 25</span></span>
-<span><span class="co">#&gt; Warning in newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,</span></span>
-<span><span class="co">#&gt; : Fitting terminated with step failure - check results carefully</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/plot_likelihood.html">plot_likelihood</a></span><span class="op">(</span><span class="va">likelihood_documentation</span>, format <span class="op">=</span> <span class="st">"matrix"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="two_comp_mgcv_demo_files/figure-html/unnamed-chunk-12-1.png" width="768"></p>

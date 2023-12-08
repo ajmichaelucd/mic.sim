@@ -19,7 +19,16 @@
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_mgcv.html</loc>
   </url>
   <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_safety_mgcv.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_surv.html</loc>
+  </url>
+  <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/add_covariate.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_log_likelihood.html</loc>
   </url>
   <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_mu_area.html</loc>
@@ -85,6 +94,9 @@
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_pi_model.html</loc>
   </url>
   <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_single_component_model_surv.html</loc>
+  </url>
+  <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/fm_checks.html</loc>
   </url>
   <url>
@@ -104,6 +116,12 @@
   </url>
   <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_fixed_regression_at_boundaries.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_safety.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_staggered_weighting_by_distance_from_median_and_boundary.html</loc>
   </url>
   <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/loadRData.html</loc>
