@@ -1,8 +1,9 @@
-#' EM_algorithm_mgcv
+#' EM_algorithm_safety_mgcv
 #'
 #' @param visible_data
 #' @param mu_formula
 #' @param pi_formula
+#' @param censored_side
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
@@ -14,7 +15,7 @@
 #' @param pi_link
 #' @param verbose
 #' @param model_coefficient_tolerance
-#' @param initial_weighting
+#' @param extra_row
 #'
 #' @import mgcv
 #' @importFrom magrittr %>%
@@ -24,7 +25,7 @@
 #' @export
 #'
 #' @examples
-EM_algorithm_mgcv = function(
+EM_algorithm_safety_mgcv = function(
     visible_data,
     mu_formula = yi ~ s(t),
     pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
@@ -40,7 +41,6 @@ EM_algorithm_mgcv = function(
     pi_link = "logit",
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
-    initial_weighting = 8,
     extra_row = FALSE
 ){
   #verbose = 0: print nothing
