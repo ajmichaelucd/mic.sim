@@ -3,7 +3,7 @@
 #' @param visible_data
 #' @param formula
 #' @param formula2
-#' @param fm_check
+#' @param censored_side
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
@@ -29,7 +29,7 @@ fit_model_safety_pi = function(
                    time2 = right_bound,
                    type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
     formula2 = c == "2" ~ s(t),
-    fm_check = "RC",
+    censored_side = "RC",
     max_it = 3000,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -54,67 +54,8 @@ fit_model_safety_pi = function(
   median_y = median(visible_data$left_bound)
   #first E step-----
   #possible_data = case_when(
-    if(fm_check == "RC" & !extra_row){
-      possible_data =
-      visible_data %>% #visible data with c for component
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>%
-      mutate(
-        `P(C=c|y,t)` = case_when(right_bound == Inf & c == "1"~ 0.01 ,
-                                 right_bound == Inf & c == "2"~ 0.99 ,
-                                 right_bound != Inf & c == "1"~ 1 ,
-                                 right_bound != Inf & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
-        ###Also only works with scale == "log"
-      )} else if(fm_check == "LC" & !extra_row){ #%>%
-      possible_data =
-      visible_data %>% #visible data with c for component
-      reframe(.by = everything(),    #implement for other intial weighting options too ##########
-              c = as.character(1:2) #fir a logistic regression on c earlier #########
-              # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-              #       .groups = "drop"
-      ) %>%
-      mutate(
-        `P(C=c|y,t)` = case_when(right_bound == low_con & c == "1"~ 0.99 ,
-                                 right_bound == low_con & c == "2"~ 0.01 ,
-                                 right_bound != low_con & c == "1"~ 0 ,
-                                 right_bound != low_con & c == "2"~ 1) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
-        ###Also only works with scale == "log"
-      )}else if(fm_check == "LC" & extra_row){ #%>%
-        possible_data =
-          visible_data %>% #visible data with c for component
-          reframe(.by = everything(),    #implement for other intial weighting options too ##########
-                  c = as.character(1:2) #fir a logistic regression on c earlier #########
-                  # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-                  #       .groups = "drop"
-          ) %>%
-          mutate(
-            `P(C=c|y,t)` = case_when((right_bound == low_con | left_bound == low_con) & c == "1"~ 0.99 ,
-                                     (right_bound == low_con | left_bound == low_con) & c == "2"~ 0.01 ,
-                                     right_bound != low_con & left_bound != low_con & c == "1"~ 0 ,
-                                     right_bound != low_con & left_bound != low_con & c == "2"~ 1) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
-            ###Also only works with scale == "log"
-          )}else if(fm_check == "RC" & extra_row){
-            possible_data =
-              visible_data %>% #visible data with c for component
-              reframe(.by = everything(),    #implement for other intial weighting options too ##########
-                      c = as.character(1:2) #fir a logistic regression on c earlier #########
-                      # `P(C=c|y,t)` = LearnBayes::rdirichlet(1, rep(.1, ncomp)) %>% as.vector(),
-                      #       .groups = "drop"
-              ) %>%
-              mutate(
-                `P(C=c|y,t)` = case_when((right_bound == Inf | right_bound == high_con) & c == "1"~ 0.01 ,
-                                         (right_bound == Inf | right_bound == high_con) & c == "2"~ 0.99 ,
-                                         right_bound != Inf & right_bound != high_con & c == "1"~ 1 ,
-                                         right_bound != Inf & right_bound != high_con & c == "2"~ 0) #could mess with the cutoff to redefine which observations go in the abnormal group, e.g. new cutoff instead of right_bound == Inf could be left_bound  == ?
-                ###Also only works with scale == "log"
-              )}else{
-    TRUE ~ "Error"
-  }
 
-  if(length(possible_data) == 1){errorCondition("invalid fm_check value")}
+initial_weighting_safety(visible_data, censored_side, extra_row)
 
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
@@ -138,9 +79,9 @@ fit_model_safety_pi = function(
       possible_data_old = possible_data
     }
 
-    if(fm_check == "RC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 1, mu_formula = formula, maxiter_survreg = maxiter_survreg)
-    }else if(fm_check == "LC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 2, mu_formula = formula, maxiter_survreg = maxiter_survreg)
-    }else{errorCondition("Invalid fm_check value")}
+    if(censored_side == "RC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 1, mu_formula = formula, maxiter_survreg = maxiter_survreg)
+    }else if(censored_side == "LC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 2, mu_formula = formula, maxiter_survreg = maxiter_survreg)
+    }else{errorCondition("Invalid censored_side value")}
 
 
     if (mu_model_new$iter[1] == maxiter_survreg){
@@ -164,7 +105,7 @@ fit_model_safety_pi = function(
 
 
     #Next E step-------------
-    if(fm_check == "RC" & !extra_row){
+    if(censored_side == "RC" & !extra_row){
     possible_data %<>%
       mutate(
         `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new, newdata = possible_data), NA_real_),
@@ -187,7 +128,7 @@ fit_model_safety_pi = function(
                `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
         mutate(
           `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
-    } else if(fm_check == "LC" & !extra_row){
+    } else if(censored_side == "LC" & !extra_row){
       possible_data %<>%
         #select(-any_of("P(C = c)")) %>%
         #left_join(pi, by = "c") %>%
@@ -212,7 +153,7 @@ fit_model_safety_pi = function(
                `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
         mutate(
           `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
-    } else if(fm_check == "RC" & extra_row){
+    } else if(censored_side == "RC" & extra_row){
       possible_data %<>%
         mutate(
           `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new, newdata = possible_data), NA_real_),

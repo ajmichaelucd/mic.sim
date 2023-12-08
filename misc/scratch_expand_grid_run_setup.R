@@ -131,3 +131,23 @@ sd_vector = c("1" = 2, "2" = 1) #0.5, 0.75, 1, 1.25
 
 low_con = -2
 high_con = 4
+
+
+scale = "log"
+
+mu_formula = yi ~ s(t)
+pi_formula = c == "2" ~ s(t)
+max_it = 3000
+ncomp = 2
+tol_ll = 1e-6
+maxiter_survreg = 30
+pause_on_likelihood_drop = TRUE
+pi_link = "logit"
+verbose = 2
+allow_safety = TRUE
+cutoff = 0.8
+fms_only = FALSE
+initial_weighting = 1
+keep_true_values = TRUE
+conc_limits_table = NULL
+max_cens_tolerance = 0.8

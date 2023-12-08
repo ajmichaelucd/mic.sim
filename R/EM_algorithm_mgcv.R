@@ -56,7 +56,7 @@ EM_algorithm_mgcv = function(
 converge = NA_character_
 
   if(ncomp == 1){
-    fit_single_component_model(visible_data, mu_formula, verbose) %>% return()
+    fit_single_component_model_mgcv(visible_data, mu_formula, verbose) %>% return()
 
   }else{
 
@@ -127,46 +127,15 @@ converge = NA_character_
       mu_models_new = #fit_all_mu_models(possible_data, ncomp, formula, maxiter_survreg)
         purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
 
-
-
-
       pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
-      check_mu_models_convergence = function(mu_models, ncomp){
-        purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients)))
-      }
-
-      if(check_mu_models_convergence(mu_models_new, ncomp) %>% unlist %>% any){
+      if(check_mu_models_convergence_mgcv(mu_models_new, ncomp) %>% unlist %>% any){
         converge = "NO"
         break
       }
 
 
       if(i != 1){
-
-        model_coefficient_checks = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
-          #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
-          pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
-
-          #these are the actual smoothing things for every observation I believe
-          #pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
-
-          #check if the number of coefficients in the mu models changes
-          mu_number_of_coef_check = purrr::map(1:ncomp, ~(length(na.omit(mu_models_new[[.x]]$coefficients)) == length(na.omit(mu_models_old[[.x]]$coefficients)))) %>%
-            unlist %>% all
-
-          mu_coefficient_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$coefficients - mu_models_old[[.x]]$coefficients) %>% abs %>% sum)) %>% unlist %>% max < model_coefficient_tolerance
-
-          mu_sigma_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$family$getTheta(TRUE) - mu_models_old[[.x]]$family$getTheta(TRUE)) %>% abs)) %>% unlist %>% max < model_coefficient_tolerance
-
-          #check likelihood at end of E step
-
-          return(all(pi_parametric_coef_check,
-                     #pi_nonparametric_check,
-                     mu_number_of_coef_check,
-                     mu_coefficient_check,
-                     mu_sigma_check))
-        }
 
         model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp)
 
@@ -312,7 +281,11 @@ fit_mgcv_mu_model = function(possible_data, pred_comp, mu_formula){
   mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML") %>% return()
 }
 
-fit_single_component_mgcv_mu_model = function(visible_data, mu_formula){
+check_mu_models_convergence_mgcv = function(mu_models, n_comp){
+  purrr::map(1:n_comp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients))) %>% return()
+}
+
+fit_single_component_model_mgcv = function(visible_data, mu_formula){
 
   possible_data = visible_data %>%
     mutate(left_bound_mgcv =
@@ -330,6 +303,9 @@ fit_single_component_mgcv_mu_model = function(visible_data, mu_formula){
            )
   fit_mgcv_mu_model_safely = purrr::safely(fit_mgcv_mu_model, "NO")
   mu_model = fit_mgcv_mu_model_safely(possible_data, pred_comp = 1, mu_formula)
+  if((mu_model %>% length) > 1){
+    mu_model = list(mu_model)
+  }
 
   return(list(possible_data = possible_data,
               mu_model = mu_model,
@@ -350,4 +326,28 @@ fit_mgcv_pi_model = function(pi_formula, pi_link, possible_data){
 
 
   return(pi_model)
+}
+
+model_coefficient_checks = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
+  #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
+  pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
+
+  #these are the actual smoothing things for every observation I believe
+  #pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
+
+  #check if the number of coefficients in the mu models changes
+  mu_number_of_coef_check = purrr::map(1:ncomp, ~(length(na.omit(mu_models_new[[.x]]$coefficients)) == length(na.omit(mu_models_old[[.x]]$coefficients)))) %>%
+    unlist %>% all
+
+  mu_coefficient_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$coefficients - mu_models_old[[.x]]$coefficients) %>% abs %>% sum)) %>% unlist %>% max < model_coefficient_tolerance
+
+  mu_sigma_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$family$getTheta(TRUE) - mu_models_old[[.x]]$family$getTheta(TRUE)) %>% abs)) %>% unlist %>% max < model_coefficient_tolerance
+
+  #check likelihood at end of E step
+
+  return(all(pi_parametric_coef_check,
+             #pi_nonparametric_check,
+             mu_number_of_coef_check,
+             mu_coefficient_check,
+             mu_sigma_check))
 }
