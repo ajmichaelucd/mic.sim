@@ -6,7 +6,8 @@
 \usage{
 EM_algorithm_surv(
   visible_data,
-  mu_formula = yi ~ s(t),
+  mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
+    pspline(t, df = 0, caic = TRUE),
   pi_formula = c == "2" ~ s(t),
   max_it = 3000,
   ncomp = 2,

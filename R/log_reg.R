@@ -104,5 +104,5 @@ log_reg <- function(data, data_type, drug, date_col, date_type, first_year, s_br
       sir %in% c("I", "R") ~ 1,
       TRUE ~ 0
     )) %>%
-    gam::gam(formula = dichot_res ~ lo(t), family = binomial(link = "logit")) %>% return()
+    mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
 }

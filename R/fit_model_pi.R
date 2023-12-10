@@ -117,7 +117,7 @@ if(plot_visuals){
 
   likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
 
-  pi_model_new = fit_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
+  pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
 if(check_mu_models_convergence_surv(mu_models_new, ncomp) %>% unlist %>% any){
   converge = "NO"
@@ -304,10 +304,10 @@ m_step_check_maximizing = function(possible_data, mu_models, pi_model){
 fit_pi_model = function(pi_formula, pi_link, possible_data){
 
   if(pi_link == "logit"){
-    pi_model = gam::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
+    pi_model = gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`)
   } else if(pi_link == "identity"){
 
-    pi_model = gam::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
+    pi_model = gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`)
   }else{ errorCondition("pick logit or identity link function")}
 
 
@@ -322,9 +322,6 @@ model_coefficient_checks_surv = function(mu_models_new, pi_model_new, mu_models_
   #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
   pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
 
-  #these are the actual smoothing things for every observation I believe
-  pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
-
   #check if the number of coefficients in the mu models changes
   mu_number_of_coef_check = purrr::map(1:ncomp, ~(length(na.omit(mu_models_new[[.x]]$coefficients)) == length(na.omit(mu_models_old[[.x]]$coefficients)))) %>%
     unlist %>% all
@@ -335,6 +332,6 @@ model_coefficient_checks_surv = function(mu_models_new, pi_model_new, mu_models_
 
   #check likelihood at end of E step
 
-  return(all(pi_parametric_coef_check, pi_nonparametric_check, mu_number_of_coef_check, mu_coefficient_check, mu_sigma_check))
+  return(all(pi_parametric_coef_check, mu_number_of_coef_check, mu_coefficient_check, mu_sigma_check))
 }
 

@@ -6,9 +6,9 @@
 \usage{
 fit_model_safety_pi(
   visible_data = prep_sim_data_for_em(),
-  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t,
-    df = 0, calc = TRUE),
-  formula2 = c == "2" ~ s(t),
+  mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
+    pspline(t, df = 0, calc = TRUE),
+  pi_formula2 = c == "2" ~ s(t),
   censored_side = "RC",
   max_it = 3000,
   ncomp = 2,
@@ -16,6 +16,8 @@ fit_model_safety_pi(
   browse_at_end = FALSE,
   browse_each_step = FALSE,
   plot_visuals = FALSE,
+  prior_step_plot = FALSE,
+  pause_on_likelihood_drop = TRUE,
   pi_link = "logit",
   verbose = 3,
   model_coefficient_tolerance = 1e-05,

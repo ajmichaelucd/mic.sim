@@ -25,10 +25,10 @@
 #' @examples
 fit_model_safety_pi = function(
     visible_data = prep_sim_data_for_em(),
-    formula = Surv(time = left_bound,
+    mu_formula = Surv(time = left_bound,
                    time2 = right_bound,
                    type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-    formula2 = c == "2" ~ s(t),
+    pi_formula2 = c == "2" ~ s(t),
     censored_side = "RC",
     max_it = 3000,
     ncomp = 2,
@@ -36,6 +36,8 @@ fit_model_safety_pi = function(
     browse_at_end = FALSE,
     browse_each_step = FALSE,
     plot_visuals = FALSE,
+    prior_step_plot = FALSE,
+    pause_on_likelihood_drop = TRUE,
     pi_link = "logit",
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
@@ -48,14 +50,16 @@ fit_model_safety_pi = function(
   #verbose = 3: print run number, iteration number, and iteration results --done
   #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
   #verbose = 0:
-
+  if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
+    visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
+  }
 
 
   median_y = median(visible_data$left_bound)
   #first E step-----
   #possible_data = case_when(
 
-initial_weighting_safety(visible_data, censored_side, extra_row)
+possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
 
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
@@ -79,27 +83,27 @@ initial_weighting_safety(visible_data, censored_side, extra_row)
       possible_data_old = possible_data
     }
 
-    if(censored_side == "RC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 1, mu_formula = formula, maxiter_survreg = maxiter_survreg)
-    }else if(censored_side == "LC") {mu_model_new = fit_mu_model(possible_data = possible_data, comp = 2, mu_formula = formula, maxiter_survreg = maxiter_survreg)
+    if(censored_side == "RC") {mu_model_new = list(fit_mu_model(possible_data = possible_data, pred_comp = 1, mu_formula = mu_formula, maxiter_survreg = maxiter_survreg))
+    }else if(censored_side == "LC") {mu_model_new = list(fit_mu_model(possible_data = possible_data, pred_comp = 2, mu_formula = mu_formula, maxiter_survreg = maxiter_survreg))
     }else{errorCondition("Invalid censored_side value")}
 
 
-    if (mu_model_new$iter[1] == maxiter_survreg){
+    if (mu_model_new[[1]]$iter[1] == maxiter_survreg){
       likelihood_documentation[i,3] <- TRUE
     } else{
       likelihood_documentation[i,3] <- FALSE
     }
 
-    pi_model_new = fit_pi_model(pi_formula = formula2, pi_link = pi_link, possible_data = possible_data)
+    pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
-    if(check_mu_model_convergence_surv(mu_model_new, ncomp) %>% unlist %>% any){
+    if(check_mu_models_convergence_surv(mu_model_new, ncomp - 1) %>% unlist %>% any){
       converge = "NO"
       break
     }
 
     if(i != 1){
 
-      model_coefficient_checks_results = model_coefficient_checks_safety(mu_model_new, pi_model_new, mu_model_old, pi_model_old, model_coefficient_tolerance, ncomp)
+      model_coefficient_checks_results = model_coefficient_checks_surv(mu_model_new, pi_model_new, mu_model_old, pi_model_old, model_coefficient_tolerance, ncomp - 1)
 
     }
 
@@ -108,8 +112,8 @@ initial_weighting_safety(visible_data, censored_side, extra_row)
     if(censored_side == "RC" & !extra_row){
     possible_data %<>%
       mutate(
-        `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new, newdata = possible_data), NA_real_),
-        `sd[Y|t,c]` = if_else(c == 1, mu_model_new$scale, NA_real_),
+        `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new[[1]], newdata = possible_data), NA_real_),
+        `sd[Y|t,c]` = if_else(c == 1, mu_model_new[[1]]$scale, NA_real_),
         `P(Y|t,c)` = case_when(
           c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
           c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
@@ -133,8 +137,8 @@ initial_weighting_safety(visible_data, censored_side, extra_row)
         #select(-any_of("P(C = c)")) %>%
         #left_join(pi, by = "c") %>%
         mutate(
-          `E[Y|t,c]` = if_else(c == 2, predict(mu_model_new, newdata = possible_data), NA_real_),
-          `sd[Y|t,c]` = if_else(c == 2, mu_model_new$scale, NA_real_),
+          `E[Y|t,c]` = if_else(c == 2, predict(mu_model_new[[1]], newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else(c == 2, mu_model_new[[1]]$scale, NA_real_),
           `P(Y|t,c)` = case_when(
             c == 2 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
             c == 2 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
@@ -156,8 +160,8 @@ initial_weighting_safety(visible_data, censored_side, extra_row)
     } else if(censored_side == "RC" & extra_row){
       possible_data %<>%
         mutate(
-          `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new, newdata = possible_data), NA_real_),
-          `sd[Y|t,c]` = if_else(c == 1, mu_model_new$scale, NA_real_),
+          `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new[[1]], newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else(c == 1, mu_model_new[[1]]$scale, NA_real_),
           `P(Y|t,c)` = case_when(
             c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
             c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
@@ -181,8 +185,8 @@ initial_weighting_safety(visible_data, censored_side, extra_row)
         #select(-any_of("P(C = c)")) %>%
         #left_join(pi, by = "c") %>%
         mutate(
-          `E[Y|t,c]` = if_else(c == 2, predict(mu_model_new, newdata = possible_data), NA_real_),
-          `sd[Y|t,c]` = if_else(c == 2, mu_model_new$scale, NA_real_),
+          `E[Y|t,c]` = if_else(c == 2, predict(mu_model_new[[1]], newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else(c == 2, mu_model_new[[1]]$scale, NA_real_),
           `P(Y|t,c)` = case_when(
             c == 2 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
             c == 2 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
@@ -253,7 +257,7 @@ initial_weighting_safety(visible_data, censored_side, extra_row)
   }
   if(browse_at_end){browser()}
 
-  if(i == max_it & !(check_ll < tol_ll & param_checks)){
+  if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){
     converge = "iterations"
   }
 

@@ -56,7 +56,7 @@ EM_algorithm_safety_mgcv = function(
   converge = NA_character_
 
     #first E step-----
-  initial_weighting_safety(visible_data, censored_side, extra_row)
+  possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
 
 
     likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 5)

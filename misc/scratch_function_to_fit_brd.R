@@ -110,9 +110,9 @@ dublin_bopo <- dublin_bopo %>% rename_at(vars(dublin_bopo %>% select(ampicillin_
 ##Modeling-----------
 primary_model_parameters = list(formula = Surv(time = left_bound,
                                                time2 = right_bound,
-                                               type = "interval2") ~ pspline(t, df = 0,  calc = TRUE, method = "aic"),
+                                               type = "interval2") ~ pspline(t, df = 0,  caic = TRUE, method = "aic"),
                                 formula2 = c == "2" ~ s(t),
-                                max_it = 1000,
+                                max_it = 300,
                                 ncomp = 2,
                                 tol_ll = 1e-06,
                                 pi_link = "logit",
@@ -120,13 +120,14 @@ primary_model_parameters = list(formula = Surv(time = left_bound,
                                 initial_weighting = 8,
                                 browse_each_step = FALSE,
                                 plot_visuals = FALSE,
-                                stop_on_likelihood_drop = FALSE)
+                                stop_on_likelihood_drop = FALSE
+                                )
 
 
 
 
 drug = "FLORFE"
-bug = "pm"
+bug = "mh"
 if(bug == "mh"){
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
@@ -222,7 +223,7 @@ single_model_output_fm_1 <- visible_data %>%
   )
 
 
-#plot_likelihood(single_model_output_fm_2$likelihood, "tibble")
+plot_likelihood(single_model_output_fm_2$likelihood, "tibble")
 
 
 plot_fm(single_model_output_fm_2, paste0(drug, "-", stringr::str_to_upper(bug), " FM2"), add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint
@@ -242,10 +243,10 @@ extra_row = FALSE
 
 
 single_model_output_fms_2 <- fit_model_safety_pi(visible_data = visible_data,
-                                                 formula = primary_model_parameters$formula,
-                                                 formula2 = primary_model_parameters$formula2,
+                                                 mu_formula = primary_model_parameters$formula,
+                                                 pi_formula = primary_model_parameters$formula2,
                                                  max_it = primary_model_parameters$max_it,
-                                                 fm_check = cens_dir,
+                                                 censored_side = cens_dir,
                                                  ncomp = 2,
                                                  tol_ll = primary_model_parameters$tol_ll,
                                                  pi_link = primary_model_parameters$pi_link,
@@ -256,13 +257,15 @@ single_model_output_fms_2 <- fit_model_safety_pi(visible_data = visible_data,
                                                  extra_row = extra_row
 )
 
+EM_algorithm_surv()
+
 single_model_output_fms_2 %>%
   plot_fms(., title = paste0(drug, "-", stringr::str_to_upper(bug), " FMS"), cens_dir = cens_dir, add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
 ##figure out plotting
 
 
-
+plot_likelihood(single_model_output_fms_2$likelihood, format = "tibble")
 
 
 

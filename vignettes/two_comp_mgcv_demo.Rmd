@@ -81,7 +81,7 @@ Fitting terminated with step failure - check results carefully Error in gam.fit3
 output = EM_algorithm_mgcv(example_data,
                   mu_formula = yi ~ s(t),
                   pi_formula = c == "2" ~ s(t),
-                  max_it = 25,
+                  max_it = 100,
                   ncomp = 2,
                   tol_ll = 1e-6,
                   browse_at_end = FALSE,
@@ -97,7 +97,7 @@ output = EM_algorithm_mgcv(example_data,
 
 ```
 
-And we plot the log likelihood of each step, the EM algorithm should be monotonically increasing but we see drops early, then also some later.  
+And we plot the log likelihood of each step, the EM algorithm should be monotonically increasing but we see drops early, and in some other instances also some later.  
 
 ```{r echo = FALSE, fig.width=8, fig.height=6}
 plot_likelihood(output$likelihood, format = "tibble")
@@ -302,8 +302,7 @@ for(i in 1:max_it){
 plot_likelihood(likelihood_documentation, format = "matrix")
 ```
 
-Not what we'd like, now we got warnings reading: Fitting terminated with step failure - check results carefully
-And we definitely have decreases in likelihood through the 25 iterations  
+We definitely have decreases in likelihood through the 25 iterations, also its pretty much the same as the initial run 
 
 ```{r echo = FALSE, fig.width=8, fig.height=6}
 plot = function(possible_data, mu_models_new, pi_model_new){
@@ -347,7 +346,7 @@ plot = function(possible_data, mu_models_new, pi_model_new){
 plot(possible_data, mu_models_new, pi_model_new)
 ```
 
-And the plot doesn't look too good either, Component 2 should be the upper component and here it is lower than component 1  
+Here the standard deviation for component 2 is too small  
 
 Next we'll do nonlinear trends in pi only  
 

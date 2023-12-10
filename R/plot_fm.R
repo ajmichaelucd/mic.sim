@@ -242,11 +242,11 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
     }
 
 
-    if(ncomp == 1){
-      plot_min_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2
-    } else if(ncomp == 2){
+    if(ncomp == 2){
       plot_min_2 <- min(sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2,
                         sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2)
+    } else if(ncomp == 1){
+      plot_min_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2
     }else{
       plot_min_2 = plot_min_1
     }
