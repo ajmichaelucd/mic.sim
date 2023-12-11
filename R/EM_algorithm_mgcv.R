@@ -124,8 +124,7 @@ converge = NA_character_
 
 
 
-      mu_models_new = #fit_all_mu_models(possible_data, ncomp, formula, maxiter_survreg)
-        purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
+      mu_models_new = purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
 
       pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 

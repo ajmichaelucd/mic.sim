@@ -38,14 +38,13 @@ fit_model_pi = function(
     browse_each_step = FALSE,
     plot_visuals = FALSE,
     prior_step_plot = FALSE,
+    pause_on_likelihood_drop = TRUE,
     pi_link = "logit",
-    #silent = FALSE,
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
-    #low_con = 2^-3,
-    #high_con = 2^3,
     maxiter_survreg = 30,
     initial_weighting = 8,
+    sd_initial = 0.25,
     stop_on_likelihood_drop = TRUE
     ){
   #verbose = 0: print nothing
@@ -55,11 +54,14 @@ fit_model_pi = function(
   #verbose = 4: print run number, iteration number, iteration results, and run aft as verbose
   #verbose = 0:
 
+  if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
+    visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
+  }
+
   converge = NA_character_
 
   if(ncomp == 1){
     fit_single_component_model_surv(visible_data, mu_formula, maxiter_survreg, verbose) %>% return()
-
   }else{
 
 
@@ -79,7 +81,7 @@ fit_model_pi = function(
     possible_data = initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends(visible_data)
   } else{
 
-  possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp)
+  possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp, sd_parameter = sd_initial)
 
 if(plot_visuals){
     plot_initial_weighting_regression(possible_data)
@@ -119,10 +121,10 @@ if(plot_visuals){
 
   pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
-if(check_mu_models_convergence_surv(mu_models_new, ncomp) %>% unlist %>% any){
-  converge = "NO"
-  break
-}
+  if(check_mu_models_convergence_surv(mu_models_new, ncomp) %>% unlist %>% any){
+    converge = "NO"
+    break
+  }
 
 
     if(i != 1){
@@ -190,7 +192,7 @@ if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2] 
   break
 }
 
-if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2]){
+if(i > 1 & pause_on_likelihood_drop && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2]){
   browser("likelihood decreased")
 }
 
@@ -295,7 +297,7 @@ m_step_check_maximizing = function(possible_data, mu_models, pi_model){
       ),
       `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
     ) %>% select(obs_id, c, `P(c,y|t)`, `P(C=c|y,t)`) %>%
-    mutate(m_step_check = `P(C=c|y,t)` * log(`P(c,y|t)`)) %>% pull(m_step_check) %>% sum
+    mutate(m_step_check = `P(C=c|y,t)` * log(`P(c,y|t)`)) %>% pull(m_step_check) %>% sum %>% return()
 
 
 

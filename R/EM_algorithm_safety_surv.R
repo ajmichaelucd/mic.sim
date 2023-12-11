@@ -1,8 +1,8 @@
-#' fit_modek_safety_pi
+#' Title
 #'
 #' @param visible_data
-#' @param formula
-#' @param formula2
+#' @param mu_formula
+#' @param pi_formula
 #' @param censored_side
 #' @param max_it
 #' @param ncomp
@@ -10,14 +10,14 @@
 #' @param browse_at_end
 #' @param browse_each_step
 #' @param plot_visuals
+#' @param prior_step_plot
+#' @param pause_on_likelihood_drop
 #' @param pi_link
 #' @param verbose
+#' @param model_coefficient_tolerance
 #' @param maxiter_survreg
-#'
-#' @importFrom survival pspline survreg Surv coxph.wtest
-#' @importFrom splines ns
-#' @importFrom ggplot2 geom_function aes ggplot
-#' @importFrom tidyr pivot_wider
+#' @param stop_on_likelihood_drop
+#' @param extra_row
 #'
 #' @return
 #' @export
@@ -26,8 +26,8 @@
 fit_model_safety_pi = function(
     visible_data = prep_sim_data_for_em(),
     mu_formula = Surv(time = left_bound,
-                   time2 = right_bound,
-                   type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
+                      time2 = right_bound,
+                      type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
     pi_formula = c == "2" ~ s(t),
     censored_side = "RC",
     max_it = 3000,
@@ -54,12 +54,10 @@ fit_model_safety_pi = function(
     visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
   }
 
-
-  median_y = median(visible_data$left_bound)
   #first E step-----
   #possible_data = case_when(
 
-possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
+  possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
 
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
@@ -110,24 +108,24 @@ possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
 
     #Next E step-------------
     if(censored_side == "RC" & !extra_row){
-    possible_data %<>%
-      mutate(
-        `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new[[1]], newdata = possible_data), NA_real_),
-        `sd[Y|t,c]` = if_else(c == 1, mu_model_new[[1]]$scale, NA_real_),
-        `P(Y|t,c)` = case_when(
-          c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-          c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-            pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-          c == 1 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
-            pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
-          TRUE ~ (right_bound == Inf) %>% as.numeric()
-        ),
-        `P(C=c|t)` = case_when(
-          c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
-          c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
-        ),
-        `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
-      ) %>%
+      possible_data %<>%
+        mutate(
+          `E[Y|t,c]` = if_else(c == 1, predict(mu_model_new[[1]], newdata = possible_data), NA_real_),
+          `sd[Y|t,c]` = if_else(c == 1, mu_model_new[[1]]$scale, NA_real_),
+          `P(Y|t,c)` = case_when(
+            c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+              pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+            c == 1 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+              pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+            TRUE ~ (right_bound == Inf) %>% as.numeric()
+          ),
+          `P(C=c|t)` = case_when(
+            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
+            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+          ),
+          `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+        ) %>%
         mutate(.by = obs_id,
                `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
         mutate(
@@ -146,7 +144,7 @@ possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
             c == 2 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
               pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
             TRUE ~ (left_bound == -Inf ) %>% as.numeric()
-            ),
+          ),
           `P(C=c|t)` = case_when(
             c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
             c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
@@ -282,29 +280,4 @@ possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
     )
   )
 
-}
-
-
-
-check_mu_model_convergence = function(mu_model, ncomp){
-any(is.na(mu_model$scale), is.na(mu_model$coefficients))
-}
-
-model_coefficient_checks_safety = function(mu_model_new, pi_model_new, mu_model_old, pi_model_old, model_coefficient_tolerance, ncomp){
-  #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
-  pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
-
-  #these are the actual smoothing things for every observation I believe
-  pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
-
-  #check if the number of coefficients in the mu models changes
-  mu_number_of_coef_check = (length(na.omit(mu_model_new$coefficients)) == length(na.omit(mu_model_old$coefficients)))
-
-  mu_coefficient_check = ((mu_model_new$coefficients - mu_model_old$coefficients) %>% abs %>% sum) < model_coefficient_tolerance
-
-  mu_sigma_check = ((mu_model_new$scale - mu_model_old$scale) %>% abs) < model_coefficient_tolerance
-
-  #check likelihood at end of E step
-
-  return(all(pi_parametric_coef_check, pi_nonparametric_check, mu_number_of_coef_check, mu_coefficient_check, mu_sigma_check))
 }

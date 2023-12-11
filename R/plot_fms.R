@@ -30,7 +30,7 @@ plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint =
     plot_min_1 <- (df %>% pull(left_bound) %>% min(., na.rm = TRUE)) - 1
   }
 
-  plot_min_2 <- sim_pi_survreg_boot(df, fit = output$newmodel, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE)
+  plot_min_2 <- sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE)
 
 
   plot_min = min(plot_min_1, plot_min_2, na.rm = TRUE)
@@ -43,28 +43,28 @@ plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint =
   }
 
 
-  plot_max_2 <- sim_pi_survreg_boot(df, fit = output$newmodel, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max
+  plot_max_2 <- sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max
 
   plot_max = max(plot_max_1, plot_max_2)
 
   ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
     mutate(
-      c1pred = predict(output$newmodel, tibble(t), se = T)$fit,
-      c1pred_se = predict(output$newmodel, tibble(t), se = T)$se.fit,
+      c1pred = predict(output$newmodel[[1]], tibble(t), se = T)$fit,
+      c1pred_se = predict(output$newmodel[[1]], tibble(t), se = T)$se.fit,
       c1pred_lb = c1pred - 1.96 * c1pred_se,
       c1pred_ub = c1pred + 1.96 * c1pred_se
     )
 
-  mu.se.brd.safety <- function(t, z){predict(output$newmodel, data.frame(t = t)) + z * predict(output$newmodel, data.frame(t = t), se = TRUE)$se.fit}
+  mu.se.brd.safety <- function(t, z){predict(output$newmodel[[1]], data.frame(t = t)) + z * predict(output$newmodel[[1]], data.frame(t = t), se = TRUE)$se.fit}
 
   if(cens_dir == "LC"){color_comp = "Component 2 Mu"}else if(cens_dir == "RC"){color_comp = "Component 1 Mu"}else{errorCondition("Pick LC or RC for cens_dir")}
 
   mean <- df %>% ggplot() +
     geom_point(aes(x = 1, y = 1, color = "Component 1 Mu", fill = "Component 2 Mu"), alpha = 0) +
     geom_point(aes(x = 1, y = 1, color = "Component 2 Mu", fill = "Component 2 Mu"), alpha = 0) +
-    geom_function(fun = function(t){predict(output$newmodel, newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model")) +
+    geom_function(fun = function(t){predict(output$newmodel[[1]], newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model")) +
     geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = color_comp), data = ci_data, alpha = 0.25) +
-    geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = color_comp), data = sim_pi_survreg_boot(df, fit = output$newmodel, alpha = 0.05, nSims = 10000), alpha = 0.15) +
+    geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = color_comp), data = sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
     ggnewscale::new_scale_color() +
     scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
     #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +

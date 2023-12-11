@@ -37,12 +37,12 @@ EM_algorithm_surv = function(
     prior_step_plot = FALSE,
     pause_on_likelihood_drop = TRUE,
     pi_link = "logit",
-    #silent = FALSE,
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
+    maxiter_survreg = 30,
     initial_weighting = 8,
-    sd_initial = 0.25,
-    maxiter_survreg = 30
+    sd_initial = 0.2,
+    stop_on_likelihood_drop = TRUE
 ){
   if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
     visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
@@ -101,7 +101,9 @@ EM_algorithm_surv = function(
         possible_data_old = possible_data
       }
 
-      fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
+      mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
+
+      likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
 
       pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
@@ -175,6 +177,11 @@ EM_algorithm_surv = function(
 
       if(verbose > 2){
         message(log_likelihood_new)
+      }
+
+      if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2] & stop_on_likelihood_drop){
+        converge = "likelihood decreased"
+        break
       }
 
       if(i > 1 & pause_on_likelihood_drop && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2]){

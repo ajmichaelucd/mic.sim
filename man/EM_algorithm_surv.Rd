@@ -20,9 +20,10 @@ EM_algorithm_surv(
   pi_link = "logit",
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
+  maxiter_survreg = 30,
   initial_weighting = 8,
-  sd_initial = 0.25,
-  maxiter_survreg = 30
+  sd_initial = 0.2,
+  stop_on_likelihood_drop = TRUE
 )
 }
 \arguments{

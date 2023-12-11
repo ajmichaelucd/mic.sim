@@ -7,7 +7,7 @@
 fit_model_pi(
   visible_data,
   mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
-    pspline(t, df = 0, calc = TRUE),
+    pspline(t, df = 0, caic = TRUE),
   pi_formula = c == "2" ~ s(t),
   max_it = 3000,
   ncomp = 2,
@@ -16,11 +16,13 @@ fit_model_pi(
   browse_each_step = FALSE,
   plot_visuals = FALSE,
   prior_step_plot = FALSE,
+  pause_on_likelihood_drop = TRUE,
   pi_link = "logit",
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
   initial_weighting = 8,
+  sd_initial = 0.25,
   stop_on_likelihood_drop = TRUE
 )
 }
