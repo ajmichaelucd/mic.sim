@@ -281,7 +281,21 @@ single_model_output_fms_2 <- fit_model_safety_pi(visible_data = visible_data,
                                                  pause_on_likelihood_drop = FALSE
 )
 
-
+single_model_output_fms_2 <- EM_algorithm_safety_mgcv(visible_data = visible_data,
+                                                 mu_formula = primary_model_parameters$formula,
+                                                 pi_formula = primary_model_parameters$formula2,
+                                                 max_it = 100,
+                                                 censored_side = cens_dir,
+                                                 ncomp = 2,
+                                                 tol_ll = primary_model_parameters$tol_ll,
+                                                 pi_link = primary_model_parameters$pi_link,
+                                                 verbose = primary_model_parameters$verbose,
+                                                 browse_each_step = primary_model_parameters$browse_each_step,
+                                                 plot_visuals = primary_model_parameters$plot_visuals,
+                                                 #stop_on_likelihood_drop = primary_model_parameters$stop_on_likelihood_drop,
+                                                 extra_row = extra_row,
+                                                 pause_on_likelihood_drop = FALSE
+)
 
 
 

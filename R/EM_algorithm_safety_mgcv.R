@@ -116,9 +116,9 @@ EM_algorithm_safety_mgcv = function(
 
       #Next E step-------------
 
-      likelihood_documentation[i, 4] <- m_step_check_maximizing(possible_data, mu_model_new, pi_model_new)
+      #likelihood_documentation[i, 4] <- m_step_check_maximizing(possible_data, mu_model_new, pi_model_new)
       if(i > 1){
-        likelihood_documentation[i, 5] <- m_step_check_maximizing(possible_data, mu_model_old, pi_model_old)
+       # likelihood_documentation[i, 5] <- m_step_check_maximizing(possible_data, mu_model_old, pi_model_old)
       }else{
         likelihood_documentation[i, 5] <- NaN
       }

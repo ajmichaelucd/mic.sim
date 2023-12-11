@@ -23,7 +23,7 @@
 #' @export
 #'
 #' @examples
-fit_model_safety_pi = function(
+EM_algorithm_safety_surv = function(
     visible_data = prep_sim_data_for_em(),
     mu_formula = Surv(time = left_bound,
                       time2 = right_bound,

@@ -2,6 +2,7 @@
 
 export(EM_algorithm_mgcv)
 export(EM_algorithm_safety_mgcv)
+export(EM_algorithm_safety_surv)
 export(EM_algorithm_surv)
 export(add_covariate)
 export(calculate_log_likelihood)
