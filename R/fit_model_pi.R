@@ -29,7 +29,7 @@ fit_model_pi = function(
 
     mu_formula = Surv(time = left_bound,
                    time2 = right_bound,
-                   type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
+                   type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
     pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
     max_it = 3000,
     ncomp = 2,
