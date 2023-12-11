@@ -127,7 +127,7 @@ gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS</p>
 <code class="sourceCode R"><span><span class="va">output</span> <span class="op">=</span> <span class="fu"><a href="../reference/EM_algorithm_mgcv.html">EM_algorithm_mgcv</a></span><span class="op">(</span><span class="va">example_data</span>,</span>
 <span>                  mu_formula <span class="op">=</span> <span class="va">yi</span> <span class="op">~</span> <span class="fu">s</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>                  pi_formula <span class="op">=</span> <span class="va">c</span> <span class="op">==</span> <span class="st">"2"</span> <span class="op">~</span> <span class="fu">s</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>,</span>
-<span>                  max_it <span class="op">=</span> <span class="fl">25</span>,</span>
+<span>                  max_it <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>                  ncomp <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>                  tol_ll <span class="op">=</span> <span class="fl">1e-6</span>,</span>
 <span>                  browse_at_end <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -192,10 +192,32 @@ gam.fit3(x = X, y = y, sp = L %*% lsp + lsp0, Eb = Eb, UrS = UrS</p>
 <span><span class="co">#&gt; starting iteration number 22</span></span>
 <span><span class="co">#&gt; starting iteration number 23</span></span>
 <span><span class="co">#&gt; starting iteration number 24</span></span>
-<span><span class="co">#&gt; starting iteration number 25</span></span></code></pre></div>
+<span><span class="co">#&gt; starting iteration number 25</span></span>
+<span><span class="co">#&gt; starting iteration number 26</span></span>
+<span><span class="co">#&gt; starting iteration number 27</span></span>
+<span><span class="co">#&gt; starting iteration number 28</span></span>
+<span><span class="co">#&gt; starting iteration number 29</span></span>
+<span><span class="co">#&gt; starting iteration number 30</span></span>
+<span><span class="co">#&gt; starting iteration number 31</span></span>
+<span><span class="co">#&gt; starting iteration number 32</span></span>
+<span><span class="co">#&gt; starting iteration number 33</span></span>
+<span><span class="co">#&gt; starting iteration number 34</span></span>
+<span><span class="co">#&gt; starting iteration number 35</span></span>
+<span><span class="co">#&gt; starting iteration number 36</span></span>
+<span><span class="co">#&gt; starting iteration number 37</span></span>
+<span><span class="co">#&gt; starting iteration number 38</span></span>
+<span><span class="co">#&gt; starting iteration number 39</span></span>
+<span><span class="co">#&gt; starting iteration number 40</span></span>
+<span><span class="co">#&gt; starting iteration number 41</span></span>
+<span><span class="co">#&gt; starting iteration number 42</span></span>
+<span><span class="co">#&gt; starting iteration number 43</span></span>
+<span><span class="co">#&gt; starting iteration number 44</span></span>
+<span><span class="co">#&gt; starting iteration number 45</span></span>
+<span><span class="co">#&gt; starting iteration number 46</span></span>
+<span><span class="co">#&gt; Stopped on combined LL and parameters</span></span></code></pre></div>
 <p>And we plot the log likelihood of each step, the EM algorithm should
-be monotonically increasing but we see drops early, then also some
-later.</p>
+be monotonically increasing but we see drops early, and in some other
+instances also some later.</p>
 <p><img src="two_comp_mgcv_demo_files/figure-html/unnamed-chunk-4-1.png" width="768"></p>
 <p>So now I thought I’d remove the splines and see if the rest of the
 algorithm is working as intended. First, I’ll try to fit it all without
@@ -244,12 +266,10 @@ Now let’s try to add them back in, starting with mu</p>
 <span><span class="co">#&gt; [1] 24</span></span>
 <span><span class="co">#&gt; [1] 25</span></span></code></pre>
 <p><img src="two_comp_mgcv_demo_files/figure-html/unnamed-chunk-7-1.png" width="768"></p>
-<p>Not what we’d like, now we got warnings reading: Fitting terminated
-with step failure - check results carefully And we definitely have
-decreases in likelihood through the 25 iterations</p>
+<p>We definitely have decreases in likelihood through the 25 iterations,
+also its pretty much the same as the initial run</p>
 <p><img src="two_comp_mgcv_demo_files/figure-html/unnamed-chunk-8-1.png" width="768"></p>
-<p>And the plot doesn’t look too good either, Component 2 should be the
-upper component and here it is lower than component 1</p>
+<p>Here the standard deviation for component 2 is too small</p>
 <p>Next we’ll do nonlinear trends in pi only</p>
 <p><img src="two_comp_mgcv_demo_files/figure-html/unnamed-chunk-9-1.png" width="768"></p>
 <p>No decreases in likelihood, that’s a good sign</p>
