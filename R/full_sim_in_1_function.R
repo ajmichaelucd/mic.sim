@@ -40,6 +40,7 @@
 #'
 #' @examples
 full_sim_in_1_function <- function(i,
+                                   mode = "surv", # surv or mgcv
                                    n = 150,
                                    t_dist = function(n){runif(n, min = 0, max = 15)},
                                    #pi = function(t) {z <- 0.6 #0.5 + 0.2 * t
@@ -70,22 +71,24 @@ full_sim_in_1_function <- function(i,
                                    #               time2 = right_bound,
                                    #               type = "interval2") ~ 0 + c + strata(c) + t:c,
                                    #for split use this:
-                                   formula = Surv(time = left_bound,
+                                   mu_formula = Surv(time = left_bound,
                                                         time2 = right_bound,
-                                                        type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
-                                   formula2 = c == "2" ~ s(t),  ###if pi is defined as a function where we look at change in membership of group 1, then so should formula2
+                                                        type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
+                                   pi_formula = c == "2" ~ s(t),  ###if pi is defined as a function where we look at change in membership of group 1, then so should formula2
                                    max_it = 3000,
                                    ncomp = 2,
                                    tol_ll = 1e-6,
                                    #silent = FALSE,
                                    maxiter_survreg = 30,
+                                   model_coefficient_tolerance = 0.00001,
+                                   sd_initial = 0.2,
                                    #pi_function = TRUE,
                                    pi_link = "logit",
                                    verbose = 3,
                                    allow_safety = TRUE,
                                    cutoff = 0.9,
                                    fms_only = FALSE,
-                                   initial_weighting = 1,
+                                   initial_weighting = 8,
                                    keep_true_values = TRUE,
                                    max_cens_tolerance = 0.8,
                                    ...
@@ -99,36 +102,6 @@ full_sim_in_1_function <- function(i,
     errorCondition("Invalid combination of fms_only and allow_safety, cannot have fms_only == TRUE and allow_safety = FALSE")
   }
 
-  ##need i = i, n = n, t_dist = t_dist to create named list
-
-  # settings = list( #name all settings, at batch level: create settings and save along with results
-  #   i,
-  #   n,
-  #   t_dist,
-  #   pi,
-  #   `E[X|T,C]`,
-  #   sd_vector,
-  #   covariate_list,
-  #   covariate_effect_vector ,
-  #   covariate_names,
-  #   conc_limits_table,
-  #   low_con,
-  #   high_con,
-  #   scale,
-  #   formula,
-  #   formula2,
-  #   max_it,
-  #   ncomp,
-  #   tol_ll,
-  #   maxiter_survreg,
-  #   pi_link,
-  #   verbose,
-  #   allow_safety,
-  #   cutoff,
-  #   fms_only,
-  #   initial_weighting,
-  #   keep_true_values
-  # )
   #verbose = 0: print nothing
   #verbose = 1: print run number
   #verbose = 2: print run number and iteration number
@@ -139,7 +112,6 @@ full_sim_in_1_function <- function(i,
   #mem here
 
   data.sim <- simulate_mics(
-    #changed to test
     n = n,
     t_dist = t_dist,
     pi = pi,
@@ -207,22 +179,49 @@ full_sim_in_1_function <- function(i,
     #  single_model_output = poss_fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, initial_weighting = initial_weighting)
     #  #single_model_output = fit_model(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
     #} else{
-    poss_fit_model <-
-      purrr::possibly(.f = fit_model_pi, otherwise = "Error")
-    single_model_output_fm = poss_fit_model(
-      visible_data = visible_data,
-      formula = formula,
-      formula2 = formula2,
-      max_it = max_it,
-      ncomp = ncomp,
-      tol_ll = tol_ll,
-      pi_link = pi_link,
-      verbose = verbose,
-      maxiter_survreg = maxiter_survreg,
-      initial_weighting = initial_weighting,
-    )
-
-    #}
+    if(mode == "mgcv"){
+      poss_fit_model <-
+        purrr::possibly(.f = EM_algorithm_mgcv, otherwise = "Error")
+      single_model_output_fm = poss_fit_model(visible_data,
+                                              mu_formula = mu_formula,
+                                              pi_formula = pi_formula,
+                                              max_it = max_it,
+                                              ncomp = ncomp,
+                                              tol_ll = tol_ll,
+                                              browse_at_end = FALSE,
+                                              browse_each_step = FALSE,
+                                              plot_visuals = FALSE,
+                                              prior_step_plot = FALSE,
+                                              pause_on_likelihood_drop = FALSE,
+                                              pi_link = pi_link,
+                                              verbose = verbose,
+                                              model_coefficient_tolerance = model_coefficient_tolerance,
+                                              initial_weighting = initial_weighting,
+                                              sd_initial = sd_initial)
+    }else if(mode == "surv"){
+      poss_fit_model <-
+        purrr::possibly(.f = EM_algorithm_surv, otherwise = "Error")
+      single_model_output_fm = poss_fit_model(visible_data,
+                                              mu_formula = mu_formula,
+                                              pi_formula = pi_formula,
+                                              max_it = max_it,
+                                              ncomp = ncomp,
+                                              tol_ll = tol_ll,
+                                              browse_at_end = FALSE,
+                                              browse_each_step = FALSE,
+                                              plot_visuals = FALSE,
+                                              prior_step_plot = FALSE,
+                                              pause_on_likelihood_drop = FALSE,
+                                              pi_link = pi_link,
+                                              verbose = verbose,
+                                              model_coefficient_tolerance = model_coefficient_tolerance,
+                                              maxiter_survreg = maxiter_survreg,
+                                              initial_weighting = initial_weighting,
+                                              sd_initial = sd_initial,
+                                              stop_on_likelihood_drop = FALSE)
+    }else{
+      errorCondition("Choose 'mgcv' or 'surv'")
+    }
 
     if(ncomp == 1){
       fm_convergence = TRUE
@@ -249,12 +248,18 @@ full_sim_in_1_function <- function(i,
     }
 
     if(fm_convergence){
+      if(mode == "surv"){
       max_scale <-
-        max(single_model_output_fm$newmodel[[1]]$scale,
-            single_model_output_fm$newmodel[[2]]$scale)
+        max(single_model_output_fm$mu_model[[1]]$scale,
+            single_model_output_fm$mu_model[[2]]$scale)
+      }else{
+        max_scale <-
+          max(single_model_output_fm$mu_model[[1]]$family$getTheta(TRUE),
+              single_model_output_fm$mu_model[[2]]$family$getTheta(TRUE))
+      }
       max_difference_mu_hat <-
         max(abs(
-          predict(single_model_output_fm$newmodel[[2]], newdata = visible_data) - predict(single_model_output_fm$newmodel[[1]], newdata = visible_data)
+          predict(single_model_output_fm$mu_model[[2]], newdata = visible_data) - predict(single_model_output_fm$mu_model[[1]], newdata = visible_data)
         ))
       if (max_scale ^ 2 > max_difference_mu_hat) {
         sigma_check = "stop"
@@ -307,9 +312,9 @@ full_sim_in_1_function <- function(i,
       sigma_check = NA_character_ #can't sigma check because one scale is missing
       censor_fm_check =
         case_when(
-          is.na(single_model_output_fm$newmodel[[1]]$coefficients[1]) & is.na(single_model_output_fm$newmodel[[2]]$coefficients[1]) ~ "BOTH",
-          is.na(single_model_output_fm$newmodel[[1]]$coefficients[1]) ~ "LC",
-          is.na(single_model_output_fm$newmodel[[2]]$coefficients[1]) ~ "RC",
+          is.na(single_model_output_fm$mu_model[[1]]$coefficients[1]) & is.na(single_model_output_fm$mu_model[[2]]$coefficients[1]) ~ "BOTH",
+          is.na(single_model_output_fm$mu_model[[1]]$coefficients[1]) ~ "LC",
+          is.na(single_model_output_fm$mu_model[[2]]$coefficients[1]) ~ "RC",
           TRUE ~ "BOTH"
         )
       fms_convergence = case_when(
@@ -329,30 +334,52 @@ full_sim_in_1_function <- function(i,
           if (verbose > 1) {
             print(paste0("running fit_model_safety ", censor_fm_check))
           }
-          # formula = Surv(time = left_bound,
-          #                time2 = right_bound,
-          #                type = "interval2") ~ pspline(t, df = 0, calc = TRUE)  ####I think formula can remain unchanged?
+    if(mode == "surv"){
+      poss_fit_model_safety <-
+        purrr::possibly(.f = EM_algorithm_safety_surv, otherwise = "Error")
+      single_model_output_fms = poss_fit_model_safety(
+        visible_data = visible_data,
+        mu_formula = mu_formula,
+        pi_formula = pi_formula,
+        censored_side = censor_fm_check,
+        max_it = max_it,
+        ncomp = ncomp,
+        tol_ll = tol_ll,
+        browse_at_end = FALSE,
+        browse_each_step = FALSE,
+        plot_visuals = FALSE,
+        prior_step_plot = FALSE,
+        pause_on_likelihood_drop = FALSE,
+        pi_link = pi_link,
+        verbose = verbose,
+        model_coefficient_tolerance = model_coefficient_tolerance,
+        maxiter_survreg = maxiter_survreg,
+        stop_on_likelihood_drop = FALSE,
+        extra_row = FALSE
+      )
+    }else{
+      poss_fit_model_safety <-
+        purrr::possibly(.f = EM_algorithm_safety_mgcv, otherwise = "Error")
+      single_model_output_fms = poss_fit_model_safety(
+      visible_data,
+      mu_formula = mu_formula,
+      pi_formula = pi_formula, #or: c == "2" ~ lo(t)
+      censored_side = censor_fm_check,
+      max_it = max_it,
+      ncomp = ncomp,
+      tol_ll = tol_ll,
+      browse_at_end = FALSE,
+      browse_each_step = FALSE,
+      plot_visuals = FALSE,
+      prior_step_plot = FALSE,
+      pause_on_likelihood_drop = FALSE,
+      pi_link = pi_link,
+      verbose = verbose,
+      model_coefficient_tolerance = model_coefficient_tolerance,
+      extra_row = FALSE
+      )
+    }
 
-
-          #    if(!pi_function){
-          #    poss_fit_model_safety <- purrr::possibly(.f = fit_model_safety, otherwise = "Error")
-          #    #single_model_output = fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg, ...)
-          #    single_model_output = poss_fit_model_safety(visible_data = visible_data, formula = formula, max_it = max_it, ncomp = ncomp, tol_ll = tol_ll, verbose = verbose, maxiter_survreg = maxiter_survreg)
-          #    } else{
-          poss_fit_model_safety <-
-            purrr::possibly(.f = fit_model_safety_pi, otherwise = "Error")
-          single_model_output_fms = poss_fit_model_safety(
-            visible_data = visible_data,
-            formula = formula,
-            formula2 = formula2,
-            fm_check = censor_fm_check,
-            max_it = max_it,
-            ncomp = ncomp,
-            tol_ll = tol_ll,
-            pi_link = pi_link,
-            verbose = verbose,
-            maxiter_survreg = maxiter_survreg,
-          )
           #   }
 
           if (length(single_model_output_fms) == 1 &&
@@ -396,7 +423,8 @@ full_sim_in_1_function <- function(i,
   output <- list(
     single_model_output = list(single_model_output_fm = single_model_output_fm, single_model_output_fms = single_model_output_fms),
     i = i,
-    run_status_notes = run_status_notes
+    run_status_notes = run_status_notes,
+    mode = mode
   )
 
 

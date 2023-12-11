@@ -271,8 +271,8 @@ EM_algorithm_safety_surv = function(
     list(
       likelihood = likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)),
       possible_data = possible_data,
-      binom_model = pi_model_new,
-      newmodel = mu_model_new,
+      pi_model = pi_model_new,
+      mu_model = mu_model_new,
       steps = i,
       converge = converge,
       ncomp = ncomp,

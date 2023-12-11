@@ -42,7 +42,7 @@ EM_algorithm_surv = function(
     maxiter_survreg = 30,
     initial_weighting = 8,
     sd_initial = 0.2,
-    stop_on_likelihood_drop = TRUE
+    stop_on_likelihood_drop = FALSE
 ){
   if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
     visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())

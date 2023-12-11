@@ -127,7 +127,7 @@ primary_model_parameters = list(formula = Surv(time = left_bound,
 
 
 drug = "SPECT"
-bug = "mh"
+bug = "pm"
 if(bug == "mh"){
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
