@@ -6,6 +6,7 @@
 \usage{
 full_sim_in_1_function(
   i,
+  mode = "surv",
   n = 150,
   t_dist = function(n) {
      runif(n, min = 0, max = 15)
@@ -28,19 +29,21 @@ full_sim_in_1_function(
   low_con = -4,
   high_con = 4,
   scale = "log",
-  formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t,
-    df = 0, calc = TRUE),
-  formula2 = c == "2" ~ s(t),
+  mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
+    pspline(t, df = 0, caic = TRUE),
+  pi_formula = c == "2" ~ s(t),
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
   maxiter_survreg = 30,
+  model_coefficient_tolerance = 1e-05,
+  sd_initial = 0.2,
   pi_link = "logit",
   verbose = 3,
   allow_safety = TRUE,
   cutoff = 0.9,
   fms_only = FALSE,
-  initial_weighting = 1,
+  initial_weighting = 8,
   keep_true_values = TRUE,
   max_cens_tolerance = 0.8,
   ...

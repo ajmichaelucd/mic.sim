@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint = NULL, r_breakpoint = NULL){
+plot_fms = function(output, title, cens_dir, mode, add_log_reg = FALSE, s_breakpoint = NULL, r_breakpoint = NULL){
 
   df = output$possible_data %>% mutate(cens =
                                          case_when(
@@ -24,14 +24,25 @@ plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint =
 
 
 
+
   if(nrow(df %>% filter(left_bound == -Inf)) > 0){
     plot_min_1 <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min(., na.rm = TRUE)) - 1
   }else{
     plot_min_1 <- (df %>% pull(left_bound) %>% min(., na.rm = TRUE)) - 1
   }
 
-  plot_min_2 <- sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE)
-
+  if(mode == "surv"){
+    plot_min_2 <- sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE)
+  }else if(mode == "mgcv"){
+    if(cens_dir == "RC"){
+      df_mgcv = df %>% filter(c == "1")
+    }else{
+      df_mgcv = df %>% filter(c == "2")
+    }
+    plot_min_2 <- sim_pi_survreg_boot_mgcv(df_mgcv, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE)
+  }else{
+    errorCondition("mode should be either surv or mgcv")
+  }
 
   plot_min = min(plot_min_1, plot_min_2, na.rm = TRUE)
 
@@ -42,30 +53,47 @@ plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint =
     plot_max_1 <- (df %>% pull(right_bound) %>% max) + 1
   }
 
+  if(mode == "surv"){
+    plot_max_2 <- sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max
+  }else if(mode == "mgcv"){
+    if(cens_dir == "RC"){
+      df_mgcv = df %>% filter(c == "1")
+    }else{
+      df_mgcv = df %>% filter(c == "2")
+    }
+    plot_max_2 <- sim_pi_survreg_boot_mgcv(df_mgcv, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max
+  }else{
+    errorCondition("mode should be either surv or mgcv")
+  }
 
-  plot_max_2 <- sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max
 
   plot_max = max(plot_max_1, plot_max_2)
 
   ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
     mutate(
-      c1pred = predict(output$newmodel[[1]], tibble(t), se = T)$fit,
-      c1pred_se = predict(output$newmodel[[1]], tibble(t), se = T)$se.fit,
+      c1pred = predict(output$mu_model[[1]], tibble(t), se = T)$fit,
+      c1pred_se = predict(output$mu_model[[1]], tibble(t), se = T)$se.fit,
       c1pred_lb = c1pred - 1.96 * c1pred_se,
       c1pred_ub = c1pred + 1.96 * c1pred_se
     )
 
-  mu.se.brd.safety <- function(t, z){predict(output$newmodel[[1]], data.frame(t = t)) + z * predict(output$newmodel[[1]], data.frame(t = t), se = TRUE)$se.fit}
+  mu.se.brd.safety <- function(t, z){predict(output$mu_model[[1]], data.frame(t = t)) + z * predict(output$mu_model[[1]], data.frame(t = t), se = TRUE)$se.fit}
 
   if(cens_dir == "LC"){color_comp = "Component 2 Mu"}else if(cens_dir == "RC"){color_comp = "Component 1 Mu"}else{errorCondition("Pick LC or RC for cens_dir")}
 
   mean <- df %>% ggplot() +
     geom_point(aes(x = 1, y = 1, color = "Component 1 Mu", fill = "Component 2 Mu"), alpha = 0) +
     geom_point(aes(x = 1, y = 1, color = "Component 2 Mu", fill = "Component 2 Mu"), alpha = 0) +
-    geom_function(fun = function(t){predict(output$newmodel[[1]], newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model")) +
-    geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = color_comp), data = ci_data, alpha = 0.25) +
-    geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = color_comp), data = sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
-    ggnewscale::new_scale_color() +
+    geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model")) +
+    geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = color_comp), data = ci_data, alpha = 0.25)
+
+  if(mode =="surv"){
+    mean = mean + geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = color_comp), data = sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15)
+  }else{
+    mean = mean + geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = color_comp), data = sim_pi_survreg_boot_mgcv(df_mgcv, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15)
+  }
+  mean = mean +
+        ggnewscale::new_scale_color() +
     scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
     #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
     geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.2) +
@@ -87,20 +115,21 @@ plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint =
     #  geom_point(aes(x = t, y = pi_hat, color = "Fitted Model")) +
     geom_function(
       fun = function(t) {
-        predict(output$binom_model, data.frame(t), type = "response")
+        predict(output$pi_model, data.frame(t), type = "response")
       },
       aes(color = "Proportion non-WT")
     ) +
     geom_function(
       fun = function(t) {
-        (1 - predict(output$binom_model, data.frame(t), type = "response"))
+        (1 - predict(output$pi_model, data.frame(t), type = "response"))
       },
       aes(color = "Proportion WT")
     ) +
     xlim(min(output$possible_data$t), max(output$possible_data$t)) +
     ylim(0, 1)
 
-  if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint) & !is.na(s_breakpoint) & !is.na(r_breakpoint)){
+  if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint)){
+    if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
     lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
     pi = pi +
@@ -111,6 +140,7 @@ plot_fms = function(output, title, cens_dir, add_log_reg = FALSE, s_breakpoint =
       geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint"), alpha = 0.4) +
       geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint"), alpha = 0.4) +
       scale_color_viridis_d(option = "turbo")
+    }
   }
 
   return(mean/pi)

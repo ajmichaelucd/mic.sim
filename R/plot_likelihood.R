@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-plot_likelihood = function(likelihood_documentation, format){
+plot_likelihood = function(likelihood_documentation, format = "tibble"){
   if(format == "matrix"){
     like <- likelihood_documentation %>%
       as_tibble %>%

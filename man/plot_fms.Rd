@@ -8,6 +8,7 @@ plot_fms(
   output,
   title,
   cens_dir,
+  mode,
   add_log_reg = FALSE,
   s_breakpoint = NULL,
   r_breakpoint = NULL

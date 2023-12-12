@@ -4,7 +4,7 @@
 \alias{plot_likelihood}
 \title{Title}
 \usage{
-plot_likelihood(likelihood_documentation, format)
+plot_likelihood(likelihood_documentation, format = "tibble")
 }
 \arguments{
 \item{format}{}

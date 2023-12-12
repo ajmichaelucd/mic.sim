@@ -93,8 +93,8 @@ EM_algorithm_safety_mgcv = function(
       }
 
 
-      if(censored_side == "RC") {mu_model_new = list(fit_mgcv_mu_model(possible_data = possible_data, pred_comp = 1, mu_formula = formula))
-      }else if(censored_side == "LC") {mu_model_new = list(fit_mgcv_mu_model(possible_data = possible_data, pred_comp = 2, mu_formula = formula))
+      if(censored_side == "RC") {mu_model_new = list(fit_mgcv_mu_model(possible_data = possible_data, pred_comp = 1, mu_formula = mu_formula))
+      }else if(censored_side == "LC") {mu_model_new = list(fit_mgcv_mu_model(possible_data = possible_data, pred_comp = 2, mu_formula = mu_formula))
       }else{errorCondition("Invalid censored_side value")}
 
 
