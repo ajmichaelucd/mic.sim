@@ -24,6 +24,7 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/test_safety_versions.html">Safety Mode Tests</a>
     <a class="dropdown-item" href="../articles/two_comp_mgcv_demo.html">two_comp_mgcv_demo</a>
   </div>
 </li>
@@ -56,6 +57,7 @@
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">full_sim_in_1_function</span><span class="op">(</span></span>
 <span>  <span class="va">i</span>,</span>
+<span>  mode <span class="op">=</span> <span class="st">"surv"</span>,</span>
 <span>  n <span class="op">=</span> <span class="fl">150</span>,</span>
 <span>  t_dist <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="op">{</span></span>
 <span>     <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">n</span>, min <span class="op">=</span> <span class="fl">0</span>, max <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span>
@@ -78,19 +80,21 @@
 <span>  low_con <span class="op">=</span> <span class="op">-</span><span class="fl">4</span>,</span>
 <span>  high_con <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  scale <span class="op">=</span> <span class="st">"log"</span>,</span>
-<span>  formula <span class="op">=</span> <span class="fu">Surv</span><span class="op">(</span>time <span class="op">=</span> <span class="va">left_bound</span>, time2 <span class="op">=</span> <span class="va">right_bound</span>, type <span class="op">=</span> <span class="st">"interval2"</span><span class="op">)</span> <span class="op">~</span> <span class="fu">pspline</span><span class="op">(</span><span class="va">t</span>,</span>
-<span>    df <span class="op">=</span> <span class="fl">0</span>, calc <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>  formula2 <span class="op">=</span> <span class="va">c</span> <span class="op">==</span> <span class="st">"2"</span> <span class="op">~</span> <span class="fu">s</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>,</span>
+<span>  mu_formula <span class="op">=</span> <span class="fu">Surv</span><span class="op">(</span>time <span class="op">=</span> <span class="va">left_bound</span>, time2 <span class="op">=</span> <span class="va">right_bound</span>, type <span class="op">=</span> <span class="st">"interval2"</span><span class="op">)</span> <span class="op">~</span></span>
+<span>    <span class="fu">pspline</span><span class="op">(</span><span class="va">t</span>, df <span class="op">=</span> <span class="fl">0</span>, caic <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  pi_formula <span class="op">=</span> <span class="va">c</span> <span class="op">==</span> <span class="st">"2"</span> <span class="op">~</span> <span class="fu">s</span><span class="op">(</span><span class="va">t</span><span class="op">)</span>,</span>
 <span>  max_it <span class="op">=</span> <span class="fl">3000</span>,</span>
 <span>  ncomp <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  tol_ll <span class="op">=</span> <span class="fl">1e-06</span>,</span>
 <span>  maxiter_survreg <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  model_coefficient_tolerance <span class="op">=</span> <span class="fl">1e-05</span>,</span>
+<span>  sd_initial <span class="op">=</span> <span class="fl">0.2</span>,</span>
 <span>  pi_link <span class="op">=</span> <span class="st">"logit"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  allow_safety <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  cutoff <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  fms_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  initial_weighting <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  initial_weighting <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>  keep_true_values <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  max_cens_tolerance <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  <span class="va">...</span></span>
