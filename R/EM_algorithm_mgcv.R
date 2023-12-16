@@ -89,7 +89,7 @@ converge = NA_character_
     }
 
 
-    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 5)
+    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 7)
     likelihood_documentation [,1] <- 1:max_it
 
     possible_data = possible_data %>% mutate(
@@ -125,6 +125,9 @@ converge = NA_character_
 
 
       mu_models_new = purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
+
+      likelihood_documentation[i, 6] = mu_models_new[[1]]$family$getTheta(TRUE)
+      likelihood_documentation[i, 7] = mu_models_new[[2]]$family$getTheta(TRUE)
 
       pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 

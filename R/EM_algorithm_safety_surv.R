@@ -60,7 +60,7 @@ EM_algorithm_safety_surv = function(
   possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
 
 
-  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 3)
+  likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 4)
   likelihood_documentation [,1] <- 1:max_it
 
 
@@ -91,6 +91,8 @@ EM_algorithm_safety_surv = function(
     } else{
       likelihood_documentation[i,3] <- FALSE
     }
+
+    likelihood_documentation[i, 4] <- mu_model_new[[1]]$scale
 
     pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
@@ -214,6 +216,8 @@ EM_algorithm_safety_surv = function(
     log_likelihood_new = calculate_log_likelihood(possible_data)
     likelihood_documentation[i, 2] <- log_likelihood_new
 
+
+
     if(verbose > 2){
       message(log_likelihood_new)
     }
@@ -269,13 +273,15 @@ EM_algorithm_safety_surv = function(
 
   return(
     list(
-      likelihood = likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3) %>% filter(!is.na(likelihood)),
+      likelihood = likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, scale = V4) %>% filter(!is.na(likelihood)),
       possible_data = possible_data,
       pi_model = pi_model_new,
       mu_model = mu_model_new,
       steps = i,
       converge = converge,
       ncomp = ncomp,
+      censored_side = censored_side,
+      extra_row = extra_row,
       prior_step_models = list(mu_model = mu_model_old, pi_model = pi_model_old, log_likelihood = log_likelihood_old, possible_data = possible_data_old)
     )
   )

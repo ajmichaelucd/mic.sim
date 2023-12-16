@@ -42,10 +42,16 @@ EM_algorithm_surv = function(
     maxiter_survreg = 30,
     initial_weighting = 8,
     sd_initial = 0.2,
-    stop_on_likelihood_drop = FALSE
+    stop_on_likelihood_drop = FALSE,
+    n_models = 100,
+    seed = NULL
 ){
   if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
     visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
+  }
+
+  if(!is.null(seed)){
+    set.seed(seed)
   }
 
   converge = NA_character_
@@ -67,7 +73,9 @@ EM_algorithm_surv = function(
       possible_data = initial_weighting_flat_center_band_of_heavy_weights_at_ends(visible_data)
     }else if(initial_weighting == 6){
       possible_data = initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends(visible_data)
-    } else{
+    } else if(initial_weighting == 7){
+      possible_data = random_start(visible_data, ncomp, sd_parameter = sd_initial, n_models)
+    }else{
 
       possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp, sd_parameter = sd_initial)
 
@@ -81,7 +89,7 @@ EM_algorithm_surv = function(
 
     }
 
-    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 5)
+    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 7)
     likelihood_documentation [,1] <- 1:max_it
 
 
@@ -102,6 +110,9 @@ EM_algorithm_surv = function(
       }
 
       mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
+
+      likelihood_documentation[i, 6] = mu_models_new[[1]]$scale
+      likelihood_documentation[i, 7] = mu_models_new[[2]]$scale
 
       likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
 
@@ -175,6 +186,7 @@ EM_algorithm_surv = function(
       log_likelihood_new = calculate_log_likelihood(possible_data)
       likelihood_documentation[i, 2] <- log_likelihood_new
 
+
       if(verbose > 2){
         message(log_likelihood_new)
       }
@@ -224,7 +236,6 @@ EM_algorithm_surv = function(
 
 
     }
-    if(browse_at_end){browser()}
 
     if(i > 1){
       if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){

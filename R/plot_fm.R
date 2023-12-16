@@ -17,20 +17,20 @@
 plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE){
 
   if(!is.null(output$prior_step_models) & use_prior_step){
-    output$newmodel = output$prior_step_models$mu_models
+    output$mu_model = output$prior_step_models$mu_models
   }
 
     if(output$ncomp == "2"){
-      results <- tibble(c = 1:2, dnc = purrr::map_lgl(output$newmodel, ~check_comp_conv(.x)))
+      results <- tibble(c = 1:2, dnc = purrr::map_lgl(output$mu_model, ~check_comp_conv(.x)))
       if(nrow(results %>% filter(dnc)) > 0){
-        fitted_comp = output$newmodel[[results %>% filter(!dnc) %>% pull(c)]]
+        fitted_comp = output$mu_model[[results %>% filter(!dnc) %>% pull(c)]]
         ncomp = 1
       } else{
         ncomp = 2
         fitted_comp = NULL
       }
     }else{
-      fitted_comp = output$newmodel
+      fitted_comp = output$mu_model
       ncomp = 1
     }
 
@@ -53,38 +53,38 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
 
 
 
-  #ciTools::add_pi(df, output$newmodel[[1]], alpha = 0.05, names = c("lwr", "upr"))
+  #ciTools::add_pi(df, output$mu_model[[1]], alpha = 0.05, names = c("lwr", "upr"))
   #doesn't work with gaussian dist
 
 
-  mu.se.brd <- function(t, c, z){predict(output$newmodel[[c]], data.frame(t = t)) + z * predict(output$newmodel[[c]], data.frame(t = t), se = TRUE)$se.fit}
+  mu.se.brd <- function(t, c, z){predict(output$mu_model[[c]], data.frame(t = t)) + z * predict(output$mu_model[[c]], data.frame(t = t), se = TRUE)$se.fit}
   mu.se.brd.fms <- function(t, z){predict(fitted_comp, data.frame(t = t)) + z * predict(fitted_comp, data.frame(t = t), se = TRUE)$se.fit}
 
   if(ncomp == 2){
 
-    output$newmodel[[1]]$scale %>% print
-    output$newmodel[[2]]$scale %>% print
+    output$mu_model[[1]]$scale %>% print
+    output$mu_model[[2]]$scale %>% print
 
     ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
       mutate(
-        c1pred = predict(output$newmodel[[1]], tibble(t), se = T)$fit,
-        c1pred_se = predict(output$newmodel[[1]], tibble(t), se = T)$se.fit,
+        c1pred = predict(output$mu_model[[1]], tibble(t), se = T)$fit,
+        c1pred_se = predict(output$mu_model[[1]], tibble(t), se = T)$se.fit,
         c1pred_lb = c1pred - 1.96 * c1pred_se,
         c1pred_ub = c1pred + 1.96 * c1pred_se,
-        c2pred = predict(output$newmodel[[2]], tibble(t), se = T)$fit,
-        c2pred_se = predict(output$newmodel[[2]], tibble(t), se = T)$se.fit,
+        c2pred = predict(output$mu_model[[2]], tibble(t), se = T)$fit,
+        c2pred_se = predict(output$mu_model[[2]], tibble(t), se = T)$se.fit,
         c2pred_lb = c2pred - 1.96 * c2pred_se,
         c2pred_ub = c2pred + 1.96 * c2pred_se,
       )
 
     mean <- df %>% ggplot() +
       #geom_bar(aes(x = mid, fill = cens)) +
-      geom_function(fun = function(t){predict(output$newmodel[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
-      geom_function(fun = function(t){predict(output$newmodel[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){predict(output$mu_model[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
       geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.25) +
       geom_ribbon(aes(ymin = c2pred_lb, ymax = c2pred_ub, x = t, fill = "Component 2 Mu"), data = ci_data, alpha = 0.25) +
-      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
-      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
+      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
+      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
       ggnewscale::new_scale_color() +
       scale_colour_gradient2(high = "blue", low = "red", mid = "green", midpoint = 0.5) +
       #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
@@ -111,8 +111,8 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
     #do we need to account for weighting or anything?
 
     pi <- ggplot() +
-      geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Wild Type", linetype = "Fitted Model")) +
-      geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Non-Wild Type", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Wild Type", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Non-Wild Type", linetype = "Fitted Model")) +
       xlim(0, 16) +
       ylim(0,1)
     if(add_log_reg && !is.null(s_breakpoint) & !is.null(r_breakpoint)){
@@ -204,8 +204,8 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
 
 
       pi <- ggplot() +
-        geom_function(fun = function(t){(1 - predict(output$binom_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Wild Type", linetype = "Fitted Model")) +
-        geom_function(fun = function(t){predict(output$binom_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Non-Wild Type", linetype = "Fitted Model")) +
+        geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Wild Type", linetype = "Fitted Model")) +
+        geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Non-Wild Type", linetype = "Fitted Model")) +
         xlim(0, 16) +
         ylim(0,1)
 
@@ -243,8 +243,8 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
 
 
     if(ncomp == 2){
-      plot_min_2 <- min(sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2,
-                        sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2)
+      plot_min_2 <- min(sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2,
+                        sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2)
     } else if(ncomp == 1){
       plot_min_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2
     }else{
@@ -267,8 +267,8 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
     if(ncomp == 1){
       plot_max_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2
     } else if(ncomp == 2){
-      plot_max_2 <- max(sim_pi_survreg_boot(df, fit = output$newmodel[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2,
-                        sim_pi_survreg_boot(df, fit = output$newmodel[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2)
+      plot_max_2 <- max(sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2,
+                        sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2)
     }else{
       plot_max_2 = plot_max_1
     }

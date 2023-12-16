@@ -302,7 +302,7 @@ for(i in 1:max_it){
 plot_likelihood(likelihood_documentation, format = "matrix")
 ```
 
-We definitely have decreases in likelihood through the 25 iterations, also its pretty much the same as the initial run 
+We definitely have decreases in likelihood through the 25 iterations, also it's pretty much the same as the initial run 
 
 ```{r echo = FALSE, fig.width=8, fig.height=6}
 plot = function(possible_data, mu_models_new, pi_model_new){
@@ -568,7 +568,7 @@ plot_likelihood(likelihood_documentation, format = "matrix")
   
 ```{r echo=FALSE, fig.width=8, fig.height=6}
 
-plot = function(possible_data, mu_models_new, pi_model_new, i){
+plot_i = function(possible_data, mu_models_new, pi_model_new, i){
   possible_data = possible_data %>% mutate(cens =
                                     case_when(
                                       left_bound == -Inf ~ "lc",
@@ -609,12 +609,62 @@ plot = function(possible_data, mu_models_new, pi_model_new, i){
 
 plots = list()
 for(i in 1:length(models)){
-plots[[i]] = plot(models[[i]]$data, models[[i]]$mu, models[[i]]$pi, i = i) %>% suppressMessages()
+plots[[i]] = plot_i(models[[i]]$data, models[[i]]$mu, models[[i]]$pi, i = i) %>% suppressMessages()
 }
 
 #plot_fm(output_surv, title = "surv")
 plots[[25]]
 ```
+
+```{r}
+start = tibble(scale_1 = 1.6, scale_2 = 1.6, step = 0)
+
+scales = matrix(nrow = 25, ncol = 2)
+for(i in 1:max_it){
+  scales[i, 1] = models[[i]]$mu[[1]]$family$getTheta(TRUE)
+  scales[i, 2] = models[[i]]$mu[[2]]$family$getTheta(TRUE)
+}
+
+plot_2 = scales %>% as_tibble %>% suppressWarnings() %>% rename(scale_1 = V1, scale_2 = V2) %>% 
+  mutate(step = row_number()) %>% 
+    rbind(start, .) %>% 
+  mutate(truth = sd_vector[2]) %>% 
+  ggplot() +
+  geom_line(aes(x = step, y = scale_2, color = "Estimate")) +
+  geom_line(aes(x = step, y = truth, color = "Truth")) +
+  ggtitle("Component 2 Sigma Estimate") + ylim(0, 1.6)
+
+plot_1 = scales %>% as_tibble %>% suppressWarnings() %>% rename(scale_1 = V1, scale_2 = V2) %>% 
+  mutate(step = row_number()) %>% 
+    rbind(start, .) %>% 
+  mutate(truth = sd_vector[1]) %>% 
+  ggplot() +
+  geom_line(aes(x = step, y = scale_1, color = "Estimate")) + 
+    geom_line(aes(x = step, y = truth, color = "Truth")) +
+  ggtitle("Component 1 Sigma Estimate") + ylim(0, 1.6)
+
+plot_1/plot_2
+
+```
+
+
+```{r}
+plots[[1]]
+```
+
+```{r}
+plots[[2]]
+```
+
+```{r}
+plots[[3]]
+```
+
+```{r}
+plots[[4]]
+```
+
+
 
 ## An Observation on the Specific Issue
 Here's something else interesting, if I change yi ~ s(t) to just yi ~ t, I still get decreases in the likelihood  
@@ -695,4 +745,126 @@ plot_likelihood(likelihood_documentation, format = "matrix")
 
 ```
 
+## Increasing Component Separation  
+```{r}
+n = 300
+ncomp = 2
+pi = function(t) {
+  z <- 0.07 + 0.03 * t - 0.00045 * t^2
+  #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+  tibble("1" = 1 - z, "2" = z)
+}
+`E[X|T,C]` = function(t, c)
+{
+  case_when(
+    c == "1" ~ -4.0 + (0.24 * t) - (0.0055 * t^2),
+    c == "2" ~ 5 + 0.001 * t,
+    TRUE ~ NaN
+  )
+}
+t_dist = function(n){runif(n, min = 0, max = 16)}
+attr(t_dist, "min") = 0
+attr(t_dist, "max") = 16
+sd_vector = c("1" = 1, "2" = 1.05)
+low_con = -3
+high_con = 8
+scale = "log"
+example_data = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log") %>% suppressMessages()
 
+example_data %>% 
+  mutate(verbose_comp = case_when(
+    comp == 1 ~ "Component 1",
+    TRUE ~ "Component 2"
+  )) %>% 
+  ggplot() +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(left_bound != -Inf & right_bound != Inf)), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = verbose_comp), data = (. %>% filter(left_bound == -Inf) %>% mutate(left_bound = low_con - 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_point(aes(x = t, y = left_bound, color = verbose_comp), data = . %>% filter(left_bound != -Inf), alpha = 0.3) +
+  geom_point(aes(x = t, y = right_bound, color = verbose_comp), data = . %>% filter(right_bound != Inf), alpha = 0.3) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, aes(color = "Component 1 Mean")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, aes(color = "Component 2 Mean")) +
+  xlim(attr(t_dist, "min") ,attr(t_dist, "max")) +
+  ylim(low_con - 2, high_con + 2)
+```
+
+```{r}
+output = EM_algorithm_mgcv(example_data, pause_on_likelihood_drop = FALSE, verbose = 1)
+```
+```{r}
+plot_likelihood(output$likelihood, format = "tibble")
+```
+```{r}
+plot = function(possible_data, mu_models_new, pi_model_new){
+  possible_data = possible_data %>% mutate(cens =
+                                    case_when(
+                                      left_bound == -Inf ~ "lc",
+                                      right_bound == Inf ~ "rc",
+                                      TRUE ~ "int"
+                                    ),
+                                  c1_sigma_lb = predict(mu_models_new[[1]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c1_sigma_ub = predict(mu_models_new[[1]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[1]]$family$getTheta(TRUE),
+                                  c2_sigma_lb = predict(mu_models_new[[2]], tibble(t), se = T)$fit - 1.96 * mu_models_new[[2]]$family$getTheta(TRUE),
+                                  c2_sigma_ub = predict(mu_models_new[[2]], tibble(t), se = T)$fit + 1.96 * mu_models_new[[2]]$family$getTheta(TRUE)
+                                  )
+  mean = possible_data %>%
+    ggplot() +
+    geom_function(fun = function(t){predict(mu_models_new[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+    geom_function(fun = function(t){predict(mu_models_new[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+#    geom_ribbon(aes(ymin = c2_lb, ymax = c2_ub, x = t, fill = "Component 2 Mu"), alpha = 0.25) +
+    geom_ribbon(aes(ymin = c1_sigma_lb, ymax = c1_sigma_ub, x = t, fill = "Component 1 Mu"), alpha = 0.1) +
+    geom_ribbon(aes(ymin = c2_sigma_lb, ymax = c2_sigma_ub, x = t, fill = "Component 2 Mu"), alpha = 0.1) +
+    ggnewscale::new_scale_color() +
+    scale_color_gradient2(low = "red", high = "blue", mid = "green", midpoint = 0.5) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = -5)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (possible_data %>% filter(cens == "rc" & c == "2") %>% mutate(right_bound = 7)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+    geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
+    geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = possible_data %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+    #ggtitle(paste0("Iteration ", i, ": Ribbons are the CI for the mean estimates")) +
+    xlab("Time") +
+    ylab("MIC")
+
+  pi = ggplot() +
+    geom_function(fun = function(t){(1 - predict(pi_model_new, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1")) +
+    geom_function(fun = function(t){predict(pi_model_new, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2")) +
+    xlim(0, 16) +
+    ylim(0,1)
+
+  return(mean/pi)
+}
+plot(output$possible_data, output$mu_model, output$pi_model) %>% suppressMessages()
+```
+
+
+Plot Iteration 1:  
+
+```{r}
+output = EM_algorithm_mgcv(example_data, pause_on_likelihood_drop = FALSE, verbose = 1, max_it = 1)
+plot(output$possible_data, output$mu_model, output$pi_model) %>% suppressMessages()
+```
+  
+  
+Plot Iteration 2:  
+
+```{r}
+output = EM_algorithm_mgcv(example_data, pause_on_likelihood_drop = FALSE, verbose = 1, max_it = 2)
+plot(output$possible_data, output$mu_model, output$pi_model) %>% suppressMessages()
+```
+  
+  
+Plot Iteration 3:  
+
+```{r}
+output = EM_algorithm_mgcv(example_data, pause_on_likelihood_drop = FALSE, verbose = 1, max_it = 3)
+plot(output$possible_data, output$mu_model, output$pi_model) %>% suppressMessages()
+```
+
+ 
+  
+Plot Iteration 4:  
+
+```{r}
+output = EM_algorithm_mgcv(example_data, pause_on_likelihood_drop = FALSE, verbose = 1, max_it = 4)
+plot(output$possible_data, output$mu_model, output$pi_model) %>% suppressMessages()
+```

@@ -23,7 +23,9 @@ EM_algorithm_surv(
   maxiter_survreg = 30,
   initial_weighting = 8,
   sd_initial = 0.2,
-  stop_on_likelihood_drop = FALSE
+  stop_on_likelihood_drop = FALSE,
+  n_models = 100,
+  seed = NULL
 )
 }
 \arguments{

@@ -126,7 +126,7 @@ primary_model_parameters = list(formula = Surv(time = left_bound,
 
 
 
-drug = "SPECT"
+drug = "FLORFE"
 bug = "pm"
 if(bug == "mh"){
   set = brd_mh
