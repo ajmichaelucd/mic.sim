@@ -44,7 +44,8 @@ EM_algorithm_surv = function(
     sd_initial = 0.2,
     stop_on_likelihood_drop = FALSE,
     n_models = 100,
-    seed = NULL
+    seed = NULL,
+    randomize = "all"
 ){
   if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
     visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
@@ -74,7 +75,7 @@ EM_algorithm_surv = function(
     }else if(initial_weighting == 6){
       possible_data = initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends(visible_data)
     } else if(initial_weighting == 7){
-      possible_data = random_start(visible_data, ncomp, sd_parameter = sd_initial, n_models)
+      possible_data = random_start(visible_data, ncomp, sd_parameter = sd_initial, n_models, randomize)
     }else{
 
       possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp, sd_parameter = sd_initial)
@@ -254,6 +255,12 @@ EM_algorithm_surv = function(
       possible_data_old = NA
     }
 
+    if(initial_weighting == 7){
+      random_start_set = randomize
+    }else{
+      random_start_set = NA_character_
+    }
+
     return(
       list(
         likelihood = tibble_like(likelihood_documentation),
@@ -263,7 +270,10 @@ EM_algorithm_surv = function(
         steps = i,
         converge = converge,
         ncomp = ncomp,
-        prior_step_models = list(mu_models = mu_models_old, pi_model = pi_model_old, log_likelihood = log_likelihood_old, possible_data = possible_data_old)
+        prior_step_models = list(mu_models = mu_models_old, pi_model = pi_model_old, log_likelihood = log_likelihood_old, possible_data = possible_data_old),
+        seed = seed,
+        random_start_set = random_start_set,
+        sd_initial = sd_initial
       )
     )
   }

@@ -12,7 +12,7 @@ pi = function(t) {
 {
   case_when(
     c == "1" ~ -4.0 + (0.24 * t) - (0.0055 * t^2),
-    c == "2" ~ 3 + 0.001 * t,
+    c == "2" ~ 3 + 0.1 * t,
     TRUE ~ NaN
   )
 }
@@ -78,7 +78,8 @@ run = function(seed, iter, visible_data, mu_formula, pi_formula, max_it, ncomp, 
                       model_coefficient_tolerance = model_coefficient_tolerance,
                       maxiter_survreg = maxiter_survreg,
                       sd_initial = sd_initial,
-                      seed = seed
+                      seed = seed,
+                      randomize = "all"
     )
 
   if(length(single_model_output) > 1){
@@ -87,8 +88,6 @@ run = function(seed, iter, visible_data, mu_formula, pi_formula, max_it, ncomp, 
     final_like = tibble(step = NA_integer_, likelihood = NA_integer_, iter = iter, seed = seed, converge = "Error")
   }
   list(output = single_model_output, seed = seed, iter = iter, final_like = final_like)
-
-
 
 }
 

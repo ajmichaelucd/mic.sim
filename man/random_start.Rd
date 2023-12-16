@@ -4,10 +4,10 @@
 \alias{random_start}
 \title{Title}
 \usage{
-random_start(visible_data, ncomp, sd_parameter = 0.2, n_models)
+random_start(visible_data, ncomp, sd_parameter = 0.2, n_models, randomize)
 }
 \arguments{
-\item{sd_parameter}{}
+\item{randomize}{either "all" (default), "mu", "sigma", "pi"}
 }
 \description{
 Title

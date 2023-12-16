@@ -3,12 +3,13 @@
 #' @param visible_data
 #' @param ncomp
 #' @param sd_parameter
+#' @param randomize either "all" (default), "mu", "sigma", "pi"
 #'
 #' @return
 #' @export
 #'
 #' @examples
-random_start = function(visible_data, ncomp, sd_parameter = 0.2, n_models){
+random_start = function(visible_data, ncomp, sd_parameter = 0.2, n_models, randomize){
 
   if(ncomp != 2){
     errorCondition("This initial weighting scheme is appropriate for 2 component models")
@@ -41,22 +42,35 @@ random_start = function(visible_data, ncomp, sd_parameter = 0.2, n_models){
   int <- cens_counts %>% pull(int)
   rc <- cens_counts %>% pull(rc)
 
+  if(randomize %in% c("all", "pi")){
   `P(1)` = rbeta(n = 1, shape1 = (lc + (0.5 * int) + 1), shape2 = (rc + (0.5 * int) + 1))
   `P(2)` = 1 - `P(1)`
+  }else{
+    `P(1)` <- (lc + (0.5 * int) + 1) / (n_obs + 2)
+    `P(2)` <- (rc + (0.5 * int) + 1) / (n_obs + 2)
+  }
 
   mu_sd = (sd_parameter * (high_con - low_con)) / n_models
+  #mu_1_change = low_con + rnorm(1, 0, mu_sd)
+  #mu_2_change = high_con + rnorm(1, 0, mu_sd)
+  #sigma_1_change = exp(log(sd_parameter * (high_con - low_con)) + rnorm(1, 0, 0.25))
 
   visible_data %>%
     reframe(.by = everything(),
             c = as.character(1:2)
     ) %>%
     mutate(
-      `E[Y|t,c]` = case_when(c == "1" ~ low_con + rnorm(1, 0, mu_sd),
-                             c == "2" ~ high_con + rnorm(1, 0, mu_sd),
+      `E[Y|t,c]` = case_when(c == "1" & randomize %in% c("all", "mu") ~ low_con + rnorm(1, 0, mu_sd),
+                             c == "2" & randomize %in% c("all", "mu")  ~ high_con + rnorm(1, 0, mu_sd),
+                             c == "1" ~ low_con,
+                             c == "2" ~ high_con,
                              TRUE ~ NaN),
-      `sd[Y|t,c]` = case_when(c == "1" ~ exp(log(sd_parameter * (high_con - low_con)) + rnorm(10, 0, 0.25)),
-                              c == "2" ~  exp(log(sd_parameter * (high_con - low_con)) + rnorm(10, 0, 0.25)),
+      `sd[Y|t,c]` = case_when(c == "1" & randomize %in% c("all", "sigma") ~ exp(log(sd_parameter * (high_con - low_con)) + rnorm(1, 0, 0.25)),
+                              c == "2" & randomize %in% c("all", "sigma") ~ exp(log(sd_parameter * (high_con - low_con)) + rnorm(1, 0, 0.25)),
+                              c == "1" ~ sd_parameter * (high_con - low_con),
+                              c == "2" ~ sd_parameter * (high_con - low_con),
                               TRUE ~ NaN),
+      sigma_initial = `sd[Y|t,c]`,
       `P(Y|t,c)` = case_when(
         left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
         left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -

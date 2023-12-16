@@ -25,7 +25,8 @@ EM_algorithm_surv(
   sd_initial = 0.2,
   stop_on_likelihood_drop = FALSE,
   n_models = 100,
-  seed = NULL
+  seed = NULL,
+  randomize = "all"
 )
 }
 \arguments{
