@@ -11,6 +11,9 @@
 #' @examples
 random_start = function(visible_data, ncomp, sd_parameter = 0.2, n_models, randomize){
 
+  low_con = visible_data$low_con %>% unique
+  high_con = visible_data$high_con %>% unique
+
   if(ncomp != 2){
     errorCondition("This initial weighting scheme is appropriate for 2 component models")
   }
@@ -50,7 +53,7 @@ random_start = function(visible_data, ncomp, sd_parameter = 0.2, n_models, rando
     `P(2)` <- (rc + (0.5 * int) + 1) / (n_obs + 2)
   }
 
-  mu_sd = (sd_parameter * (high_con - low_con)) / n_models
+  mu_sd = (sd_parameter * (high_con - low_con)) / sqrt(n_models)
   #mu_1_change = low_con + rnorm(1, 0, mu_sd)
   #mu_2_change = high_con + rnorm(1, 0, mu_sd)
   #sigma_1_change = exp(log(sd_parameter * (high_con - low_con)) + rnorm(1, 0, 0.25))

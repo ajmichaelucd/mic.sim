@@ -7,7 +7,7 @@
 #' @export
 #'
 #' @examples
-plot_fms = function(output, title, cens_dir, mode, add_log_reg = FALSE, s_breakpoint = NULL, r_breakpoint = NULL){
+plot_fms = function(output, title, cens_dir, mode = "surv", add_log_reg = FALSE, s_breakpoint = NULL, r_breakpoint = NULL){
 
   df = output$possible_data %>% mutate(cens =
                                          case_when(
@@ -79,12 +79,18 @@ plot_fms = function(output, title, cens_dir, mode, add_log_reg = FALSE, s_breakp
 
   mu.se.brd.safety <- function(t, z){predict(output$mu_model[[1]], data.frame(t = t)) + z * predict(output$mu_model[[1]], data.frame(t = t), se = TRUE)$se.fit}
 
-  if(cens_dir == "LC"){color_comp = "Component 2 Mu"}else if(cens_dir == "RC"){color_comp = "Component 1 Mu"}else{errorCondition("Pick LC or RC for cens_dir")}
+  if(cens_dir == "LC"){
+    color_comp = "Component 2 Mu"
+  }else if(cens_dir == "RC"){
+    color_comp = "Component 1 Mu"
+  }else{
+      errorCondition("Pick LC or RC for cens_dir")
+    }
 
   mean <- df %>% ggplot() +
-    geom_point(aes(x = 1, y = 1, color = "Component 1 Mu", fill = "Component 2 Mu"), alpha = 0) +
+    geom_point(aes(x = 1, y = 1, color = "Component 1 Mu", fill = "Component 1 Mu"), alpha = 0) +
     geom_point(aes(x = 1, y = 1, color = "Component 2 Mu", fill = "Component 2 Mu"), alpha = 0) +
-    geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model")) +
+    geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model"))
     geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = color_comp), data = ci_data, alpha = 0.25)
 
   if(mode =="surv"){

@@ -27,7 +27,7 @@ EM_algorithm_safety_surv = function(
     visible_data = prep_sim_data_for_em(),
     mu_formula = Surv(time = left_bound,
                       time2 = right_bound,
-                      type = "interval2") ~ pspline(t, df = 0, calc = TRUE),
+                      type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
     pi_formula = c == "2" ~ s(t),
     censored_side = "RC",
     max_it = 3000,
@@ -43,7 +43,11 @@ EM_algorithm_safety_surv = function(
     model_coefficient_tolerance = 0.00001,
     maxiter_survreg = 30,
     stop_on_likelihood_drop = TRUE,
-    extra_row = FALSE){
+    extra_row = FALSE,
+    n_models = 100,
+    seed = NULL,
+    randomize = "all",
+    sd_initial = 0.2){
   #verbose = 0: print nothing
   #verbose = 1: print run number (controlled outside in the purrr::map of this) --done
   #verbose = 2: print run number and iteration number --done
@@ -54,10 +58,19 @@ EM_algorithm_safety_surv = function(
     visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
   }
 
+  if(!is.null(seed)){
+    set.seed(seed)
+  }
+
   #first E step-----
   #possible_data = case_when(
-
+if(!is.null(randomize) && randomize %in% c("all", "mu", "sigma", "pi")){
+  possible_data = random_start_safety(visible_data, censored_side, extra_row, randomize, sd_parameter = sd_initial, n_models)
+}else{
   possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
+}
+
+
 
 
   likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 4)
@@ -271,6 +284,12 @@ EM_algorithm_safety_surv = function(
     possible_data_old = NA
   }
 
+  if(!is.null(randomize)){
+    random_start_set = randomize
+  }else{
+    random_start_set = NA_character_
+  }
+
   return(
     list(
       likelihood = likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, scale = V4) %>% filter(!is.na(likelihood)),
@@ -282,7 +301,10 @@ EM_algorithm_safety_surv = function(
       ncomp = ncomp,
       censored_side = censored_side,
       extra_row = extra_row,
-      prior_step_models = list(mu_model = mu_model_old, pi_model = pi_model_old, log_likelihood = log_likelihood_old, possible_data = possible_data_old)
+      prior_step_models = list(mu_model = mu_model_old, pi_model = pi_model_old, log_likelihood = log_likelihood_old, possible_data = possible_data_old),
+      seed = seed,
+      random_start_set = random_start_set,
+      sd_initial = sd_initial
     )
   )
 

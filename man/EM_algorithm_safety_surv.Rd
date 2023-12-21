@@ -7,7 +7,7 @@
 EM_algorithm_safety_surv(
   visible_data = prep_sim_data_for_em(),
   mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
-    pspline(t, df = 0, calc = TRUE),
+    pspline(t, df = 0, caic = TRUE),
   pi_formula = c == "2" ~ s(t),
   censored_side = "RC",
   max_it = 3000,
@@ -23,7 +23,11 @@ EM_algorithm_safety_surv(
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
   stop_on_likelihood_drop = TRUE,
-  extra_row = FALSE
+  extra_row = FALSE,
+  n_models = 100,
+  seed = NULL,
+  randomize = "all",
+  sd_initial = 0.2
 )
 }
 \arguments{
