@@ -132,5 +132,5 @@ simulation_1_set =
     errorCondition("pick 'fm' or 'fms'")
   }
 
-  return(set_output = output, set_mic_seed = mic.seed, set_start_seeds = random_start_seeds)
+  list(set_output = output, set_mic_seed = mic.seed, set_start_seeds = random_start_seeds) %>% return()
 }
