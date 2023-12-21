@@ -61,7 +61,7 @@ simulation_1_set =
   #sim data once
   set.seed(mic.seed)
   if (verbose >= 2) {
-    message("starting batch number ", i)
+    message("mic.seed ", mic.seed)
   }
 
   data.sim <- simulate_mics(
@@ -84,7 +84,7 @@ simulation_1_set =
       left_bound_name = "left_bound",
       right_bound_name = "right_bound",
       time = "t",
-      covariate_names = covariate_names,
+      covariate_names = NULL,
       scale = scale,
       keep_truth = TRUE,
       observed_value_name = "observed_value",
