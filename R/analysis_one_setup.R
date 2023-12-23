@@ -43,7 +43,7 @@ print(batch$set_mic_seed)
     )
 
 
-  sigma_summary = map(batch$set_output, ~get_sigmas(.x, parameters$sd_initial)) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
+  sigma_summary = map(batch$set_output, ~get_sigmas(.x, sd_init = parameters$sd_initial)) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
   #print(sigma_summary)
 
   sigma_summary_table =
@@ -86,9 +86,9 @@ analysis_one_run = function(file, setup_number){
 
   n_data_sets = results$batch_output %>% length
   if(n_data_sets == 1){
-    analysis_one_data_set(batch = results$batch_output, setup_number, results$batch_parameters) %>% return()
+    analysis_one_data_set(batch = results$batch_output, setup_number, parameters = results$batch_parameters) %>% return()
   }else{
-    map(results$batch_output, ~analysis_one_data_set(batch = .x, setup_number, results$batch_parameters)) %>% return()
+    map(results$batch_output, ~analysis_one_data_set(batch = .x, setup_number, parameters = results$batch_parameters)) %>% return()
   }
 
 }
@@ -105,7 +105,7 @@ get_sigmas = function(grid_output, sd_init = NULL){
     c1_scale_final = NaN,
     c2_scale_final = NaN,
     grid_output$final_like,
-    sd_initial = ifelse(is.null(sd_init), NaN, parameters$sd_initial)) %>% return()
+    sd_initial = ifelse(is.null(sd_init), NaN, sd_init)) %>% return()
   }else{
 
   tibble(c1_scale_init = grid_output$output$possible_data %>% filter(c == "1") %>% pull(sigma_initial) %>% unique,
