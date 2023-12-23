@@ -12,7 +12,7 @@
 #' @examples
 analysis_one_setup = function(setup_number, files_folder, run_name, n_runs_per_setup, date){
   if(files_folder != "" && str_sub(files_folder, - 1, -1) != "/"){
-    paste0(files_folder, "/")
+    files_folder = paste0(files_folder, "/")
   }
 
   file_names = paste0(files_folder, run_name, "_row_", rep(setup_number, each = n_runs_per_setup), "_", date,"_run_", 1:((n_runs_per_setup) + (n_runs_per_setup * (setup_number - 1))), ".Rdata")
@@ -21,7 +21,7 @@ analysis_one_setup = function(setup_number, files_folder, run_name, n_runs_per_s
   #map over the files
 }
 
-analysis_one_data_set = function(batch, setup_number){
+analysis_one_data_set = function(batch, setup_number, parameters){
 
 print(batch$set_mic_seed)
 
@@ -38,11 +38,12 @@ print(batch$set_mic_seed)
       is.na(n) ~ 0,
       TRUE ~ n),
       setup_number = setup_number,
-      mic.seed = batch$set_mic_seed
+      mic.seed = batch$set_mic_seed,
+      sd_initial = parameters$sd_initial
     )
 
 
-  sigma_summary = map(batch$set_output, get_sigmas) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
+  sigma_summary = map(batch$set_output, ~get_sigmas(.x, parameters$sd_initial)) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
   #print(sigma_summary)
 
   sigma_summary_table =
@@ -85,9 +86,9 @@ analysis_one_run = function(file, setup_number){
 
   n_data_sets = results$batch_output %>% length
   if(n_data_sets == 1){
-    analysis_one_data_set(batch = results$batch_output, setup_number) %>% return()
+    analysis_one_data_set(batch = results$batch_output, setup_number, results$batch_parameters) %>% return()
   }else{
-    map(results$batch_output, ~analysis_one_data_set(batch = .x, setup_number)) %>% return()
+    map(results$batch_output, ~analysis_one_data_set(batch = .x, setup_number, results$batch_parameters)) %>% return()
   }
 
 }
@@ -96,11 +97,22 @@ get_like = function(grid_output){
   grid_output$final_like %>% return()
 }
 
-get_sigmas = function(grid_output){
+get_sigmas = function(grid_output, sd_init = NULL){
+  if(length(grid_output$output) == 1 && grid_output$output == "Error"){
+    tibble(
+    c1_scale_init = NaN,
+    c2_scale_init = NaN,
+    c1_scale_final = NaN,
+    c2_scale_final = NaN,
+    grid_output$final_like,
+    sd_initial = ifelse(is.null(sd_init), NaN, parameters$sd_initial)) %>% return()
+  }else{
+
   tibble(c1_scale_init = grid_output$output$possible_data %>% filter(c == "1") %>% pull(sigma_initial) %>% unique,
          c2_scale_init = grid_output$output$possible_data %>% filter(c == "2") %>% pull(sigma_initial) %>% unique,
          c1_scale_final = grid_output$output$possible_data %>% filter(c == "1") %>% pull(`sd[Y|t,c]`) %>% unique,
          c2_scale_final = grid_output$output$possible_data %>% filter(c == "2") %>% pull(`sd[Y|t,c]`) %>% unique,
          grid_output$final_like,
          sd_initial = grid_output$output$sd_initial) %>% return()
+    }
 }
