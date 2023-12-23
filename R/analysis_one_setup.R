@@ -15,7 +15,7 @@ analysis_one_setup = function(setup_number, files_folder, run_name, n_runs_per_s
     files_folder = paste0(files_folder, "/")
   }
 
-  file_names = paste0(files_folder, run_name, "_row_", rep(setup_number, each = n_runs_per_setup), "_", date,"_run_", 1:((n_runs_per_setup) + (n_runs_per_setup * (setup_number - 1))), ".Rdata")
+  file_names = paste0(files_folder, run_name, "_row_", rep(setup_number, each = n_runs_per_setup), "_", date,"_run_", ((n_runs_per_setup * (setup_number - 1)) + 1):(n_runs_per_setup * (setup_number)), ".Rdata")
 
   map(file_names, ~analysis_one_run(.x, setup_number))
   #map over the files
