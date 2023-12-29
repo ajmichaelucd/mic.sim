@@ -189,20 +189,28 @@ integrate_difference_error = function(model_output, parameters, t_min = 0, t_max
   single_model_output = model_output$output
 
   if(model_output$final_like$comp_conv %in% c("both", "comp 1")){
-    area_1 = integrate(function(t){predict(single_model_output$mu_model[[1]], newdata = data.frame(t = t)) -
-        parameters$`E[X|T,C]`(t, "1")}, lower = t_min, upper = t_max)
+    area_1 = integrate(function(t){abs(predict(single_model_output$mu_model[[1]], newdata = data.frame(t = t)) -
+        parameters$`E[X|T,C]`(t, "1"))}, lower = t_min, upper = t_max)
   }else{
-    area_1 = NA_integer_
+    area_1 = list(value = NA_integer_)
   }
   if(model_output$final_like$comp_conv %in% c("both", "comp 2")){
-    area_2 = integrate(function(t){predict(single_model_output$mu_model[[2]], newdata = data.frame(t = t)) -
-        parameters$`E[X|T,C]`(t, "2")}, lower = t_min, upper = t_max)
+    area_2 = integrate(function(t){abs(predict(single_model_output$mu_model[[2]], newdata = data.frame(t = t)) -
+        parameters$`E[X|T,C]`(t, "2"))}, lower = t_min, upper = t_max)
   }else{
-    area_2 = NA_integer_
+    area_2 = list(value = NA_integer_)
+  }
+
+  if(model_output$final_like$comp_conv != "neither"){
+    area_3 = integrate(function(t){abs(predict(single_model_output$pi_model, newdata = data.frame(t = t), type = "response") -
+        parameters$pi(t) %>% pull(2))}, lower = t_min, upper = t_max)
+  }else{
+    area_3 = list(value = NA_integer_)
   }
   return(tibble(
-    abs_error_area_1 = area_1$value,
-    abs_error_area_2 = area_2$value
+    abs_error_area_mu_1 = area_1$value,
+    abs_error_area_mu_2 = area_2$value,
+    abs_error_area_pi = area_3$value
   ))
 }
 
