@@ -248,8 +248,8 @@ dublin_bopo <-
 
 
 ##Modeling-----------
-drug = "TYLO"
-bug = "pm"
+drug = "TETRA"
+bug = "mh"
 if (bug == "mh") {
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
@@ -350,7 +350,7 @@ brd_output = EM_fm_surv_batch_run(
                     type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
   pi_formula = c == "2" ~ s(t),
   max_it = 500,
-  ncomp = 1,
+  ncomp = 2,
   tol_ll = 1e-6,
   pi_link = "logit",
   verbose = 1,
@@ -378,7 +378,7 @@ summary %>% ggplot() +
   geom_histogram(aes(x = likelihood))
 
 #plot_fm(brd_output[[70]]$output, "top iter")
-
+plot_fm(brd_output[[43]]$output, "top iter")
 plot_fm(brd_output[[(summary %>% head(1) %>% pull(iter))]]$output, "top iter")
 plot_fm(brd_output[[(summary %>% head(1) %>% pull(iter))]]$output, "top iter", use_prior_step = TRUE)
 plot_fm(brd_output[[(summary %>% filter(!is.na(likelihood)) %>% tail(1) %>% pull(iter))]]$output, "bottom iter")

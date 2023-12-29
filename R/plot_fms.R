@@ -90,8 +90,9 @@ plot_fms = function(output, title, cens_dir, mode = "surv", add_log_reg = FALSE,
   mean <- df %>% ggplot() +
     geom_point(aes(x = 1, y = 1, color = "Component 1 Mu", fill = "Component 1 Mu"), alpha = 0) +
     geom_point(aes(x = 1, y = 1, color = "Component 2 Mu", fill = "Component 2 Mu"), alpha = 0) +
-    geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model"))
-    geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = color_comp), data = ci_data, alpha = 0.25)
+    geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = color_comp, linetype = "Fitted Model")) +
+    geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = color_comp), data = ci_data, alpha = 0.25) +
+    scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#F8766D", "#00BFC4"))
 
   if(mode =="surv"){
     mean = mean + geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = color_comp), data = sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15)
@@ -110,7 +111,7 @@ plot_fms = function(output, title, cens_dir, mode = "surv", add_log_reg = FALSE,
     #ylim(plot_min - 0.5, plot_max + 0.5) +
     ggtitle(title) +
     xlab("Time") +
-    ylab("MIC") +
+    ylab(bquote(log[2]~ MIC)) +
     ylim(plot_min, plot_max)
   #  geom_function(fun = function(t){mu.se.brd(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
   #  geom_function(fun = function(t){mu.se.brd(t, c = 2, z = -1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6)
@@ -123,16 +124,17 @@ plot_fms = function(output, title, cens_dir, mode = "surv", add_log_reg = FALSE,
       fun = function(t) {
         predict(output$pi_model, data.frame(t), type = "response")
       },
-      aes(color = "Proportion non-WT")
+      aes(color = "Non-Wild Type")
     ) +
     geom_function(
       fun = function(t) {
         (1 - predict(output$pi_model, data.frame(t), type = "response"))
       },
-      aes(color = "Proportion WT")
+      aes(color = "Wild Type")
     ) +
     xlim(min(output$possible_data$t), max(output$possible_data$t)) +
-    ylim(0, 1)
+    ylim(0, 1)  +
+    xlab("Time") + ylab("Proportion")
 
   if(add_log_reg & !is.null(s_breakpoint) & !is.null(r_breakpoint)){
     if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
@@ -140,12 +142,14 @@ plot_fms = function(output, title, cens_dir, mode = "surv", add_log_reg = FALSE,
 
     pi = pi +
       geom_function(fun = function(t){(1 - predict(lr_output, newdata = data.frame(t = t), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-      geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression"))
+      geom_function(fun = function(t){predict(lr_output, newdata = data.frame(t = t), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+      scale_color_manual(breaks = c("Wild Type", "Non-Wild Type", "Susceptible", "Resistant"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF"))
     mean = mean +
       ggnewscale::new_scale_color() +
-      geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint"), alpha = 0.4) +
-      geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint"), alpha = 0.4) +
-      scale_color_viridis_d(option = "turbo")
+      geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
+      geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
+      scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), values = c("#7CAE00", "#C77CFF")) +
+      scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5))
     }
   }
 

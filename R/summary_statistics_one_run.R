@@ -176,12 +176,34 @@ summary_statistcs_one_model = function(model_output, one_set_output, parameters)
     c1_scale_truth = parameters$sd_vector["1"],
     c2_scale_truth = parameters$sd_vector["2"],
     sq_resid_weight = sq_resid_weight,
-    resid_tibble_comp
+    resid_tibble_comp,
+    integrate_difference_error(model_output = model_output, parameters = parameters)
 
   ) %>% return()
 
 
 
+}
+
+integrate_difference_error = function(model_output, parameters, t_min = 0, t_max = 16){
+  single_model_output = model_output$output
+
+  if(model_output$final_like$comp_conv %in% c("both", "comp 1")){
+    area_1 = integrate(function(t){predict(single_model_output$mu_model[[1]], newdata = data.frame(t = t)) -
+        parameters$`E[X|T,C]`(t, "1")}, lower = t_min, upper = t_max)
+  }else{
+    area_1 = NA_integer_
+  }
+  if(model_output$final_like$comp_conv %in% c("both", "comp 2")){
+    area_2 = integrate(function(t){predict(single_model_output$mu_model[[2]], newdata = data.frame(t = t)) -
+        parameters$`E[X|T,C]`(t, "2")}, lower = t_min, upper = t_max)
+  }else{
+    area_2 = NA_integer_
+  }
+  return(tibble(
+    abs_error_area_1 = area_1$value,
+    abs_error_area_2 = area_2$value
+  ))
 }
 
 

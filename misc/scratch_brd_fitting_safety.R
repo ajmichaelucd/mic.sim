@@ -270,10 +270,10 @@ dublin_bopo <-
 
 
 ##Modeling-----------
-drug = "TULATH"
+drug = "TILDIP"
 bug = "pm"
 censored_side = "RC"
-extra_row = FALSE
+extra_row = TRUE
 if (bug == "mh") {
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
