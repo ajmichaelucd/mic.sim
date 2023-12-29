@@ -29,7 +29,9 @@ fit_single_component_model_surv = function(visible_data, mu_formula, maxiter_sur
     control = survreg.control(maxiter = maxiter_survreg, debug = verbose > 3))
 
   return(list(possible_data = possible_data,
-              newmodel = mu_model,
+              mu_model = mu_model,
               converge = "YES",
-              ncomp = ncomp))
+              ncomp = ncomp,
+         likelihood = tibble(step = 1, likelihood = mu_model$loglik[2]))
+  )
 }

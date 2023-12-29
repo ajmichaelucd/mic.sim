@@ -58,7 +58,7 @@ EM_algorithm_surv = function(
   converge = NA_character_
 
   if(ncomp == 1){
-    fit_single_component_model_surv(visible_data, mu_formula, verbose) %>% return()
+    fit_single_component_model_surv(visible_data, mu_formula, maxiter_survreg, verbose) %>% return()
   }else{
 
     #first E step-----

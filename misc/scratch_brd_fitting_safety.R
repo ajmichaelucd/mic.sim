@@ -272,8 +272,8 @@ dublin_bopo <-
 ##Modeling-----------
 drug = "TULATH"
 bug = "pm"
-censored_side = "LC"
-extra_row = TRUE
+censored_side = "RC"
+extra_row = FALSE
 if (bug == "mh") {
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
@@ -394,6 +394,8 @@ get_like = function(grid_output){
 summary = map(brd_output, get_like) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
 print(summary)
 
+summary %>% summarize(.by = converge, n= n())
+
 summary %>% ggplot() +
   geom_histogram(aes(x = step), binwidth = 1)
 
@@ -469,6 +471,9 @@ map(brd_output, get_sigma_final) %>%
 
 
 
+
+
+plot_fms(brd_output[[(summary %>% head(10) %>% tail(1) %>% pull(iter))]]$output, cens_dir = censored_side, title = paste0(drug, " ", str_to_upper(bug), " FMS"), add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
 
 plot_fms(brd_output[[(summary %>% head(1) %>% pull(iter))]]$output, cens_dir = censored_side, title = paste0(drug, " ", str_to_upper(bug), " FMS"), add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)

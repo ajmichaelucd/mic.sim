@@ -37,7 +37,7 @@ EM_fm_surv_single_run = function(seed,
 message("starting iteration ", iter)
   single_model_output <- visible_data %>%
     EM(
-      visible_data = visible_data,
+      visible_data = .,
       mu_formula = mu_formula,
       pi_formula = pi_formula,
       max_it = max_it,

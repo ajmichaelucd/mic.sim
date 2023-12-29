@@ -248,7 +248,7 @@ dublin_bopo <-
 
 
 ##Modeling-----------
-drug = "TULATH"
+drug = "TYLO"
 bug = "pm"
 if (bug == "mh") {
   set = brd_mh
@@ -350,7 +350,7 @@ brd_output = EM_fm_surv_batch_run(
                     type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
   pi_formula = c == "2" ~ s(t),
   max_it = 500,
-  ncomp = 2,
+  ncomp = 1,
   tol_ll = 1e-6,
   pi_link = "logit",
   verbose = 1,
@@ -384,7 +384,7 @@ plot_fm(brd_output[[(summary %>% head(1) %>% pull(iter))]]$output, "top iter", u
 plot_fm(brd_output[[(summary %>% filter(!is.na(likelihood)) %>% tail(1) %>% pull(iter))]]$output, "bottom iter")
 plot_fm(brd_output[[(summary %>% filter(!is.na(likelihood)) %>% tail(1) %>% pull(iter))]]$output, "bottom iter", use_prior_step = TRUE)
 
-plot_fm(brd_output[[(summary %>% head(10) %>% tail(1) %>% pull(iter))]]$output, "top iter", use_prior_step = TRUE)
+plot_fm(brd_output[[(summary %>% head(10) %>% tail(1) %>% pull(iter))]]$output, "top iter", use_prior_step = FALSE)
 
 
 get_sigma_init = function(grid_output){
@@ -450,6 +450,7 @@ map(brd_output, get_sigma_final) %>%
 
 
 
+plot_fm(brd_output[[(summary %>% head(10) %>% tail(1) %>% pull(iter))]]$output, paste0(drug, " ", str_to_upper(bug), " FM"), add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
 
 
 plot_fm(brd_output[[(summary %>% head(1) %>% pull(iter))]]$output, paste0(drug, " ", str_to_upper(bug), " FM"), add_log_reg = TRUE, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)

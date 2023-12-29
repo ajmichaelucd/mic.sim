@@ -153,8 +153,8 @@ random_start_safety = function(visible_data, censored_side, extra_row, randomize
           TRUE ~ (left_bound == -Inf ) %>% as.numeric()
         ),
         `P(C=c|t)` = case_when(
-          c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
-          c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+          c == "2" ~ `P(2)`,
+          c == "1" ~ `P(1)`
         ),
         `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
       ) %>%
@@ -227,8 +227,8 @@ random_start_safety = function(visible_data, censored_side, extra_row, randomize
             TRUE ~ (left_bound == -Inf | left_bound == low_con) %>% as.numeric()
           ),
           `P(C=c|t)` = case_when(
-            c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
-            c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+            c == "2" ~ `P(2)`,
+            c == "1" ~ `P(1)`
           ),
           `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
         ) %>%
@@ -301,8 +301,8 @@ random_start_safety = function(visible_data, censored_side, extra_row, randomize
               TRUE ~ (right_bound == Inf | right_bound == high_con) %>% as.numeric()
             ),
             `P(C=c|t)` = case_when(
-              c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
-              c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
+              c == "2" ~ `P(2)`,
+              c == "1" ~ `P(1)`
             ),
             `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
           ) %>%
