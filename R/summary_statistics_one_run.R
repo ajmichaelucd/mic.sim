@@ -66,7 +66,7 @@ summary_statistcs_one_model = function(model_output, one_set_output, parameters)
                 bias = mean(resid),
                 sq_res_avg = mean((observed_value - predicted_mu)^2),
                 sq_res_med =  median((observed_value - predicted_mu)^2)
-      ) %>% pivot_wider(names_from = c, values_from = bias:sq_res_med) %>% select(bias_1, bias_2, sq_res_avg_1, sq_res_avg_2, sq_res_med_1, sq_res_med_2)
+      ) %>% right_join(., tibble(c = c("1", "2")), by = "c") %>% pivot_wider(names_from = c, values_from = bias:sq_res_med) %>% select(bias_1, bias_2, sq_res_avg_1, sq_res_avg_2, sq_res_med_1, sq_res_med_2)
 
     pi_metrics = single_model_output$possible_data %>% filter(c == "2") %>% select(obs_id, t, comp) %>%
       mutate(pi_hat =
@@ -101,7 +101,7 @@ summary_statistcs_one_model = function(model_output, one_set_output, parameters)
                 bias = mean(resid),
                 sq_res_avg = mean((observed_value - predicted_mu)^2),
                 sq_res_med =  median((observed_value - predicted_mu)^2)
-      ) %>% pivot_wider(names_from = c, values_from = bias:sq_res_med) %>% select(bias_1, bias_2, sq_res_avg_1, sq_res_avg_2, sq_res_med_1, sq_res_med_2)
+      ) %>% right_join(., tibble(c = c("1", "2")), by = "c") %>% pivot_wider(names_from = c, values_from = bias:sq_res_med) %>% select(bias_1, bias_2, sq_res_avg_1, sq_res_avg_2, sq_res_med_1, sq_res_med_2)
 
     pi_metrics = single_model_output$possible_data %>% filter(c == "2") %>% select(obs_id, t, comp) %>%
       mutate(pi_hat =
@@ -135,7 +135,7 @@ summary_statistcs_one_model = function(model_output, one_set_output, parameters)
                 bias = mean(resid),
                 sq_res_avg = mean((observed_value - predicted_mu)^2),
                 sq_res_med =  median((observed_value - predicted_mu)^2)
-      ) %>% pivot_wider(names_from = c, values_from = bias:sq_res_med) %>% select(bias_1, bias_2, sq_res_avg_1, sq_res_avg_2, sq_res_med_1, sq_res_med_2)
+      ) %>% right_join(., tibble(c = c("1", "2")), by = "c") %>%  pivot_wider(names_from = c, values_from = bias:sq_res_med) %>% select(bias_1, bias_2, sq_res_avg_1, sq_res_avg_2, sq_res_med_1, sq_res_med_2)
 
     pi_metrics = single_model_output$possible_data %>% filter(c == "2") %>% select(obs_id, t, comp) %>%
       mutate(pi_hat =
