@@ -12,7 +12,7 @@
 #'
 #' @examples
 summary_statistics_one_run = function(run_number, files_folder, run_name, n_setups, n_runs_per_setup, date){
-
+message(paste0("Run Number ", run_number))
   setup_number = (run_number / n_runs_per_setup) %>% ceiling()
 
   file_name = paste0(files_folder, run_name, "_row_", setup_number, "_", date,"_run_", run_number, ".Rdata")
