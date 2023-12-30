@@ -37,6 +37,25 @@ summary_statistics_one_data_set = function(one_set_output, parameters){
 
 summary_statistcs_one_model = function(model_output, one_set_output, parameters){
 
+  if(nrow(model_output$final_like) == 0){
+    c1_scale_est = NA_integer_
+    c2_scale_est = NA_integer_
+    sq_resid_weight = NA_integer_
+
+    resid_tibble_comp = tibble(bias_1 = NA_integer_, bias_2 = NA_integer_, sq_res_avg_1 = NA_integer_, sq_res_avg_2 = NA_integer_, sq_res_med_1 = NA_integer_, sq_res_med_2 = NA_integer_,)
+
+    pi_metrics = tibble(pi_resid_abs = NA_integer_, pi_resid_sq = NA_integer_, pi_false_resid_sq = NA_integer_, pi_bias = NA_integer_)
+
+    model_output$final_like = tibble(
+      step = NaN,
+      likelihood = NaN,
+      iter = model_output$iter,
+      seed = model_output$seed,
+      converge = "NO",
+      comp_conv = "neither"
+    )
+  }else{
+
   single_model_output = model_output$output
   ##Error
   ##One of two comps converge
@@ -166,7 +185,7 @@ summary_statistcs_one_model = function(model_output, one_set_output, parameters)
     pi_metrics = tibble(pi_resid_abs = NA_integer_, pi_resid_sq = NA_integer_, pi_false_resid_sq = NA_integer_, pi_bias = NA_integer_)
   }
 
-
+}
 
   tibble(
     mic_seed = one_set_output$set_mic_seed,
@@ -188,6 +207,12 @@ summary_statistcs_one_model = function(model_output, one_set_output, parameters)
 integrate_difference_error = function(model_output, parameters, t_min = 0, t_max = 16){
   single_model_output = model_output$output
 
+  if(nrow(model_output$final_like) == 0){
+    area_1 = list(value = NA_integer_)
+    area_2 = list(value = NA_integer_)
+    area_3 = list(value = NA_integer_)
+  }else{
+
   if(model_output$final_like$comp_conv %in% c("both", "comp 1")){
     area_1 = integrate(function(t){abs(predict(single_model_output$mu_model[[1]], newdata = data.frame(t = t)) -
         parameters$`E[X|T,C]`(t, "1"))}, lower = t_min, upper = t_max)
@@ -206,6 +231,7 @@ integrate_difference_error = function(model_output, parameters, t_min = 0, t_max
         parameters$pi(t) %>% pull(2))}, lower = t_min, upper = t_max)
   }else{
     area_3 = list(value = NA_integer_)
+  }
   }
   return(tibble(
     abs_error_area_mu_1 = area_1$value,
