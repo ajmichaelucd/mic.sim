@@ -28,71 +28,69 @@
 
 setwd("~/Desktop/Dissertation Project/Chapter 1/simulation_scripts")
 
-setup_id = 2
-ymin = -4
-ymax = 6
+library(purrr)
+library(ggplot2)
+
+setup_id = 1
+ymin = -5
+ymax = 10
 low_con = -5
 high_con = 3
 
-`E[X|T,C]` = list(function(t, c) {
-  case_when(c == "1" ~ -3.0 + 0.05 * t,
-            c == "2" ~ 2.5,
-            TRUE ~ NaN)
-},
-function(t, c) {
-  case_when(c == "1" ~ -3.0 + 0.05 * t,
-            c == "2" ~ 3,
-            TRUE ~ NaN)
-},
-function(t, c) {
-  case_when(c == "1" ~ -3.0 + 0.05 * t,
-            c == "2" ~ 3.25,
-            TRUE ~ NaN)
-},
-function(t, c) {
-  case_when(c == "1" ~ -3.0 + 0.05 * t,
-            c == "2" ~ 3.5,
-            TRUE ~ NaN)
-},
-function(t, c) {
-  case_when(c == "1" ~ -3.0 + 0.05 * t,
-            c == "2" ~ 3.75,
-            TRUE ~ NaN)
-},
-function(t, c) {
-  case_when(c == "1" ~ -3.0 + 0.05 * t,
-            c == "2" ~ 4,
-            TRUE ~ NaN)
+`E[X|T,C]` = list(function(t, c){
+  case_when(
+    c == "1" ~ -3.0 + 0.2 * t,
+    c == "2" ~ -1 + (15 * sqrt((t ^ 0.7) * 0.02)),
+    TRUE ~ NaN
+  )
 })
 
-sd_vector = list(c("1" = 1, "2" = 1),
-                 c("1" = 1, "2" = 0.75))
+sd_vector = list(c("1" = 1, "2" = 1))
 
 sd_vals = list(
-  0.2
+  0.1,
+  0.2,
+  0.3,
+  0.4
 )
 
 pi_vals = list(
   function(t) {
-    z <- 0.3
+    z <- 0 + (0.002 * t)
+    #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+    tibble("1" = 1 - z, "2" = z)
+  },
+  function(t) {
+    z <- 0.1 + (0.002 * t)
+    #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+    tibble("1" = 1 - z, "2" = z)
+  },
+  function(t) {
+    z <- 0.2 + (0.002 * t)
     #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
     tibble("1" = 1 - z, "2" = z)
   }
 )
 
-param_grid = tidyr::expand_grid(sd_vals = sd_vals, pi_vals = pi_vals, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector)
-
-for(row in 1:nrow(param_grid)){
-  set = loadRData(paste0(getwd(), "/setup_", setup_id, "_analysis_set_", row, ".Rdata"))
-  param_grid_one_row = param_grid[row,]
-
-  pi = (param_grid_one_row$pi_vals)[[1]]
-
-  `E[X|T,C]` = (param_grid_one_row$`E[X|T,C]`)[[1]]
 
 
+param_grid = tidyr::expand_grid(sd_vals = sd_vals, pi_vals = pi_vals, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector) %>%
+  mutate(description =
+           c(
+             "SD Initial Param = 0.1, Prop C2 = 0 + (0.002 * t)",
+             "SD Initial Param = 0.1, Prop C2 = 0.1 + (0.002 * t)",
+             "SD Initial Param = 0.1, Prop C2 = 0.2 + (0.002 * t)",
+             "SD Initial Param = 0.2, Prop C2 = 0 + (0.002 * t)",
+             "SD Initial Param = 0.2, Prop C2 = 0.1 + (0.002 * t)",
+             "SD Initial Param = 0.2, Prop C2 = 0.2 + (0.002 * t)",
+             "SD Initial Param = 0.3, Prop C2 = 0 + (0.002 * t)",
+             "SD Initial Param = 0.3, Prop C2 = 0.1 + (0.002 * t)",
+             "SD Initial Param = 0.3, Prop C2 = 0.2 + (0.002 * t)",
+             "SD Initial Param = 0.4, Prop C2 = 0 + (0.002 * t)",
+             "SD Initial Param = 0.4, Prop C2 = 0.1 + (0.002 * t)",
+             "SD Initial Param = 0.4, Prop C2 = 0.2 + (0.002 * t)"
+           ))
 
-set
 t1 = function(i, j, set){
   comp = 1
   current_set = set[[i]][[j]]
@@ -115,19 +113,19 @@ t1 = function(i, j, set){
 
 
   fun =
-  function(t, high, comp){
-    if(!is.null(high)) {
-    if (!is.na(high$mu_model[[comp]]$scale) &
-        !is.na(predict(high$mu_model[[comp]], newdata = data.frame(t = 2)))) {
+    function(t, high, comp){
+      if(!is.null(high)) {
+        if (!is.na(high$mu_model[[comp]]$scale) &
+            !is.na(predict(high$mu_model[[comp]], newdata = data.frame(t = 2)))) {
 
-                             predict(high$mu_model[[comp]], newdata = data.frame(t = t))
-    }else{
-      return(NA_integer_)
+          predict(high$mu_model[[comp]], newdata = data.frame(t = t))
+        }else{
+          return(NA_integer_)
+        }
+      }else{
+        return(NA_integer_)
+      }
     }
-    }else{
-      return(NA_integer_)
-    }
-}
 
 
 
@@ -138,7 +136,7 @@ t1 = function(i, j, set){
     j = j,
     colour = (2 * i) - (2 - j),
     args = list(list(high = high,
-                comp = comp)),
+                     comp = comp)),
     fun = c(fun)
   ) )
 }
@@ -176,7 +174,7 @@ t2 = function(i, j, set){
       }else{
         return(NA_integer_)
       }
-}
+    }
 
 
 
@@ -226,7 +224,7 @@ t3 = function(i, j, set){
         return(NA_integer_)
       }
 
-}
+    }
 
 
 
@@ -274,7 +272,7 @@ t4 = function(i, j, set){
       }else{
         return(NA_integer_)
       }
-}
+    }
 
 
 
@@ -324,7 +322,7 @@ t5 = function(i, j, set){
         return(NA_integer_)
       }
 
-}
+    }
 
 
 
@@ -372,7 +370,7 @@ t6 = function(i, j, set){
       }else{
         return(NA_integer_)
       }
-}
+    }
 
 
 
@@ -390,25 +388,50 @@ t6 = function(i, j, set){
 
 
 
+plot_sim_results = function(row, param_grid, setup_id, return = "one_row_splits"){
 
 
+  set = loadRData(paste0(getwd(), "/setup_", setup_id, "_analysis_set_", row, ".Rdata"))
+  param_grid_one_row = param_grid[row,]
+
+  pi = (param_grid_one_row$pi_vals)[[1]]
+
+  `E[X|T,C]` = (param_grid_one_row$`E[X|T,C]`)[[1]]
+
+
+
+#set
+
+
+
+if(return == "one_row_splits"){
 high_comp_1_layers = map2_df(rep(1:10, each = 4), rep(rep(1:2, 10), each = 2), ~t1(.x, .y, set = set)) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
 
 high_comp_2_layers = map2_df(rep(1:10, each = 4), rep(rep(1:2, 10), each = 2), ~t2(.x, .y, set = set)) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
-H_mu = ggplot() + high_comp_1_layers + high_comp_2_layers + xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0("Setup ", setup_id, " Row ", row, ": High Likelihood: Mu")) +
-  geom_hline(yintercept = low_con, colour = "orange", linetype = "dashed") +
-  geom_hline(yintercept = high_con, colour = "orange", linetype = "dashed")
+H_mu = ggplot() + high_comp_1_layers + high_comp_2_layers + xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0(param_grid_one_row %>% pull(description),": High Likelihood: Mu")) +
+  geom_hline(colour = "orange", aes(linetype = "low_con", yintercept = low_con), size = 1) +
+  geom_hline(colour = "orange", aes(linetype = "high_con", yintercept = high_con), size = 1) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, color = "black", size = 1, aes(linetype = "truth")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, color = "black", size = 1, aes(linetype = "truth")) +
+  scale_linetype_manual(c("low_con", "high_con", "truth"), values = c("dotted", "dotted", "dashed")) +
+  guides(linetype = "none")  +
+  theme(plot.title = element_text(size = 8))
 
 med_comp_1_layers = map2_df(rep(1:10, each = 4), rep(rep(1:2, 10), each = 2), ~t3(.x, .y, set = set)) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
 
 med_comp_2_layers = map2_df(rep(1:10, each = 4), rep(rep(1:2, 10), each = 2), ~t4(.x, .y, set = set)) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
-M_mu = ggplot() + med_comp_1_layers + med_comp_2_layers + xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0("Setup ", setup_id, " Row ", row, ": Med Likelihood: Mu")) +
-  geom_hline(yintercept = low_con, colour = "orange", linetype = "dashed") +
-  geom_hline(yintercept = high_con, colour = "orange", linetype = "dashed")
+M_mu = ggplot() + med_comp_1_layers + med_comp_2_layers + xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0(param_grid_one_row %>% pull(description), ": Med Likelihood: Mu")) +
+  geom_hline(colour = "orange", aes(linetype = "low_con", yintercept = low_con), size = 1) +
+  geom_hline(colour = "orange", aes(linetype = "high_con", yintercept = high_con), size = 1) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, color = "black", size = 1, aes(linetype = "truth")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, color = "black", size = 1, aes(linetype = "truth")) +
+  scale_linetype_manual(c("low_con", "high_con", "truth"), values = c("dotted", "dotted", "dashed")) +
+  guides(linetype = "none")  +
+  theme(plot.title = element_text(size = 8))
 
 
 low_comp_1_layers = map2_df(rep(1:10, each = 4), rep(rep(1:2, 10), each = 2), ~t5(.x, .y, set = set)) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
@@ -416,11 +439,16 @@ low_comp_1_layers = map2_df(rep(1:10, each = 4), rep(rep(1:2, 10), each = 2), ~t
 
 low_comp_2_layers = map2_df(rep(1:10, each = 4), rep(rep(1:2, 10), each = 2), ~t6(.x, .y, set = set)) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
-L_mu = ggplot() + low_comp_1_layers + low_comp_2_layers + xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0("Setup ", setup_id, " Row ", row, ": Low Likelihood: Mu"))  +
-  geom_hline(yintercept = low_con, colour = "orange", linetype = "dashed") +
-  geom_hline(yintercept = high_con, colour = "orange", linetype = "dashed")
+L_mu = ggplot() + low_comp_1_layers + low_comp_2_layers + xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0(param_grid_one_row %>% pull(description), ": Low Likelihood: Mu"))  +
+  geom_hline(colour = "orange", aes(linetype = "low_con", yintercept = low_con), size = 1) +
+  geom_hline(colour = "orange", aes(linetype = "high_con", yintercept = high_con), size = 1) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, color = "black", size = 1, aes(linetype = "truth")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, color = "black", size = 1, aes(linetype = "truth")) +
+  scale_linetype_manual(c("low_con", "high_con", "truth"), values = c("dotted", "dotted", "dashed")) +
+  guides(linetype = "none") +
+  theme(plot.title = element_text(size = 8))
 
-
+}else{
 
 
 high_comp_1_layers = map2_df(rep(1:10, each = 2), rep(rep(1:2, 10)), ~t1(.x, .y, set = set)) %>% select(-c(i, j)) %>% select(fun, args) %>% mutate(mapping = list(aes(alpha = 0.2, color = "high"))) %>%
@@ -446,15 +474,18 @@ ggplot() +
   low_comp_1_layers + low_comp_2_layers +
   med_comp_1_layers + med_comp_2_layers +
   high_comp_1_layers + high_comp_2_layers +
-  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, color = "black") +
-  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, color = "black") +
-  xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0("Setup ", setup_id, " Row ", row, ": Mu for High, Median, and Low Likelihood")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, aes(color = "truth")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, aes(color = "truth")) +
+  xlim(0, 16) + ylim(ymin, ymax) +  ggtitle(paste0(param_grid_one_row %>% pull(description), ": Mu for High, Median, and Low Likelihood")) +
   geom_hline(yintercept = low_con, colour = "orange", linetype = "dashed") +
-  geom_hline(yintercept = high_con, colour = "orange", linetype = "dashed")
+  geom_hline(yintercept = high_con, colour = "orange", linetype = "dashed") +
+  scale_color_manual(c("high", "med","low","truth"), values = c("#F8766D", "#00BFC4", "#7CAE00", "black")) +
+  guides(alpha = "none")  +
+  theme(plot.title = element_text(size = 7))
 
-data_1
+#data_1
 
-
+}
 
 pi_analysis_sims = function(i, j, set, choose){
 
@@ -535,20 +566,25 @@ pi_analysis_sims = function(i, j, set, choose){
 
 }
 
+if(return == "one_row_splits"){
 high_pi_layers = map2_df(rep(1:10, each = 2), rep(rep(1:2, 10)), ~pi_analysis_sims(.x, .y, set = set, choose = "high")) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
-H_pi = ggplot() + high_pi_layers + xlim(0, 16) + ylim(0, 1) + ggtitle(paste0("Setup ", setup_id, " Row ", row, ": High Likelihood: Pi"))
+H_pi = ggplot() + high_pi_layers + xlim(0, 16) + ylim(0, 1) + ggtitle(paste0(param_grid_one_row %>% pull(description), ": High Likelihood: Pi")) +
+  geom_function(fun = function(t){pi(t) %>% pull("2")}, color = "black", size = 1, linetype = "dashed")  +
+  theme(plot.title = element_text(size = 8))
+
 med_pi_layers = map2_df(rep(1:10, each = 2), rep(rep(1:2, 10)), ~pi_analysis_sims(.x, .y, set = set, choose = "med")) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
-M_pi = ggplot() + med_pi_layers + xlim(0, 16) + ylim(0, 1) + ggtitle(paste0("Setup ", setup_id, " Row ", row, ": Med Likelihood: Pi"))
+M_pi = ggplot() + med_pi_layers + xlim(0, 16) + ylim(0, 1) + ggtitle(paste0(param_grid_one_row %>% pull(description), ": Med Likelihood: Pi")) +
+  geom_function(fun = function(t){pi(t) %>% pull("2")}, color = "black", size = 1, linetype = "dashed")  +
+  theme(plot.title = element_text(size = 8))
 low_pi_layers = map2_df(rep(1:10, each = 2), rep(rep(1:2, 10)), ~pi_analysis_sims(.x, .y, set = set, choose = "low")) %>% select(-c(i, j)) %>% mutate(colour = as.factor(colour)) %>% select(fun, colour, args) %>%
   pmap(stat_function)
-L_pi = ggplot() + low_pi_layers + xlim(0, 16) + ylim(0, 1) + ggtitle(paste0("Setup ", setup_id, " Row ", row, ": Low Likelihood: Pi"))
+L_pi = ggplot() + low_pi_layers + xlim(0, 16) + ylim(0, 1) + ggtitle(paste0(param_grid_one_row %>% pull(description), ": Low Likelihood: Pi")) +
+  geom_function(fun = function(t){pi(t) %>% pull("2")}, color = "black", size = 1, linetype = "dashed")  +
+  theme(plot.title = element_text(size = 8))
 
-
-library(patchwork)
-(H_mu|M_mu|L_mu)/(H_pi|M_pi|L_pi)
-
+}else{
 
 
 high_pi_layers = map2_df(rep(1:10, each = 2), rep(rep(1:2, 10)), ~pi_analysis_sims(.x, .y, set = set, choose = "high")) %>% select(-c(i, j)) %>% select(fun, args) %>% mutate(mapping = list(aes(alpha = 0.2, color = "high"))) %>%
@@ -564,19 +600,71 @@ data_2 = tibble(m = 1, weight = 0.01) %>%
   med_pi_layers +
   high_pi_layers +
   xlim(0,16) + ylim(0,1) +
-  geom_function(fun = function(t){pi(t) %>% pull("2")}) +  ggtitle(paste0("Setup ", setup_id, " Row ", row, ": Pi for High, Median, and Low Likelihood"))
+  geom_function(fun = function(t){pi(t) %>% pull("2")}, aes(color = "truth")) +  ggtitle(paste0(param_grid_one_row %>% pull(description), ": Pi for High, Median, and Low Likelihood")) +
+  scale_color_manual(c("high", "med","low","truth"), values = c("#F8766D", "#00BFC4", "#7CAE00", "black")) +
+  guides(alpha = "none") +
+  theme(plot.title = element_text(size = 7))
+
+}
+#data_1/data_2
 
 
-data_1/data_2
 
-name = as.character(paste0("setup_", setup_id,"_row_", row,"_visuals.pdf"))
+if(return == "one_row_splits"){
+  return(((H_mu|M_mu|L_mu)/(H_pi|M_pi|L_pi)))
+}else{
+  return((data_1/data_2))
+}
+
+}
+
+#likelihood_splits = map(1:12, ~ plot_sim_results(.x, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits"))
+#likelihoods_together = map(1:12, ~ plot_sim_results(.x, param_grid = param_grid, setup_id = setup_id, return = "likelihoods_together"))
+
+name = as.character(paste0("setup_", setup_id,"_likelihood_splits_visuals.pdf"))
 
 pdf(width = 11, height = 8.5, file = name)
-  (H_mu|M_mu|L_mu)/(H_pi|M_pi|L_pi)
-  (data_1/data_2)
+
+    plot_sim_results(1, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(2, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(3, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(4, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(5, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(6, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(7, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(8, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(9, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(10, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(11, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+    plot_sim_results(12, param_grid = param_grid, setup_id = setup_id, return = "one_row_splits")
+
 dev.off()
-}
+
+name = as.character(paste0("setup_", setup_id,"_likelihood_combined_visuals.pdf"))
+
+pdf(width = 11, height = 8.5, file = name)
+if(nrow(param_grid) == 12){
+  a = plot_sim_results(1, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  b = plot_sim_results(2, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  c = plot_sim_results(3, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  d = plot_sim_results(4, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  e = plot_sim_results(5, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  f = plot_sim_results(6, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  g = plot_sim_results(7, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  h = plot_sim_results(8, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  i = plot_sim_results(9, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  j = plot_sim_results(10, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  k = plot_sim_results(11, param_grid = param_grid, setup_id = setup_id, return = "combined")
+  l = plot_sim_results(12, param_grid = param_grid, setup_id = setup_id, return = "combined")
+
+ print((a|b|c)/(d|e|f))
+  print((g|h|i)/(j|k|l))
+  }
+dev.off()
+
+
 
 
 setwd("/Users/alecmichael/Desktop/Dissertation Project/Chapter 1/mic.sim")
+
 
