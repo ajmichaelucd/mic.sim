@@ -31,64 +31,73 @@ setwd("~/Desktop/Dissertation Project/Chapter 1/simulation_scripts")
 library(purrr)
 library(ggplot2)
 
-setup_id = 1
+setup_id = 2
 ymin = -5
 ymax = 10
 low_con = -5
 high_con = 3
 
-`E[X|T,C]` = list(function(t, c){
-  case_when(
-    c == "1" ~ -3.0 + 0.2 * t,
-    c == "2" ~ -1 + (15 * sqrt((t ^ 0.7) * 0.02)),
-    TRUE ~ NaN
-  )
+`E[X|T,C]` = list(function(t, c) {
+  case_when(c == "1" ~ -3.0 + 0.05 * t,
+            c == "2" ~ 2.5,
+            TRUE ~ NaN)
+},
+function(t, c) {
+  case_when(c == "1" ~ -3.0 + 0.05 * t,
+            c == "2" ~ 3,
+            TRUE ~ NaN)
+},
+function(t, c) {
+  case_when(c == "1" ~ -3.0 + 0.05 * t,
+            c == "2" ~ 3.25,
+            TRUE ~ NaN)
+},
+function(t, c) {
+  case_when(c == "1" ~ -3.0 + 0.05 * t,
+            c == "2" ~ 3.5,
+            TRUE ~ NaN)
+},
+function(t, c) {
+  case_when(c == "1" ~ -3.0 + 0.05 * t,
+            c == "2" ~ 3.75,
+            TRUE ~ NaN)
+},
+function(t, c) {
+  case_when(c == "1" ~ -3.0 + 0.05 * t,
+            c == "2" ~ 4,
+            TRUE ~ NaN)
 })
 
-sd_vector = list(c("1" = 1, "2" = 1))
+sd_vector = list(c("1" = 1, "2" = 1),
+                 c("1" = 1, "2" = 0.75))
 
 sd_vals = list(
-  0.1,
-  0.2,
-  0.3,
-  0.4
+  0.2
 )
 
 pi_vals = list(
   function(t) {
-    z <- 0 + (0.002 * t)
-    #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
-    tibble("1" = 1 - z, "2" = z)
-  },
-  function(t) {
-    z <- 0.1 + (0.002 * t)
-    #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
-    tibble("1" = 1 - z, "2" = z)
-  },
-  function(t) {
-    z <- 0.2 + (0.002 * t)
+    z <- 0.3
     #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
     tibble("1" = 1 - z, "2" = z)
   }
 )
 
-
-
 param_grid = tidyr::expand_grid(sd_vals = sd_vals, pi_vals = pi_vals, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector) %>%
   mutate(description =
            c(
-             "SD Initial Param = 0.1, Prop C2 = 0 + (0.002 * t)",
-             "SD Initial Param = 0.1, Prop C2 = 0.1 + (0.002 * t)",
-             "SD Initial Param = 0.1, Prop C2 = 0.2 + (0.002 * t)",
-             "SD Initial Param = 0.2, Prop C2 = 0 + (0.002 * t)",
-             "SD Initial Param = 0.2, Prop C2 = 0.1 + (0.002 * t)",
-             "SD Initial Param = 0.2, Prop C2 = 0.2 + (0.002 * t)",
-             "SD Initial Param = 0.3, Prop C2 = 0 + (0.002 * t)",
-             "SD Initial Param = 0.3, Prop C2 = 0.1 + (0.002 * t)",
-             "SD Initial Param = 0.3, Prop C2 = 0.2 + (0.002 * t)",
-             "SD Initial Param = 0.4, Prop C2 = 0 + (0.002 * t)",
-             "SD Initial Param = 0.4, Prop C2 = 0.1 + (0.002 * t)",
-             "SD Initial Param = 0.4, Prop C2 = 0.2 + (0.002 * t)"
+             "C2 Mean = 2.5, SD = 1",
+              "C2 Mean = 2.5, SD = 0.75",
+              "C2 Mean = 3, SD = 1",
+              "C2 Mean = 3, SD = 0.75",
+              "C2 Mean = 3.25, SD = 1",
+              "C2 Mean = 3.25, SD = 0.75",
+              "C2 Mean = 3.5, SD = 1",
+              "C2 Mean = 3.5, SD = 0.75",
+              "C2 Mean = 3.75, SD = 1",
+              "C2 Mean = 3.75, SD = 0.75",
+              "C2 Mean = 4, SD = 1",
+              "C2 Mean = 4, SD = 0.75"
            ))
 
 t1 = function(i, j, set){
@@ -108,7 +117,9 @@ t1 = function(i, j, set){
     med = NULL
     low = NULL
   }else{
-    errorCondition("Should only grab 3 example models, not more")
+        high = NULL
+        med = NULL
+        low = NULL
   }
 
 
@@ -157,7 +168,9 @@ t2 = function(i, j, set){
     med = NULL
     low = NULL
   }else{
-    errorCondition("Should only grab 3 example models, not more")
+        high = NULL
+        med = NULL
+        low = NULL
   }
 
 
@@ -206,7 +219,9 @@ t3 = function(i, j, set){
     med = NULL
     low = NULL
   }else{
-    errorCondition("Should only grab 3 example models, not more")
+        high = NULL
+        med = NULL
+        low = NULL
   }
 
 
@@ -255,7 +270,9 @@ t4 = function(i, j, set){
     med = NULL
     low = NULL
   }else{
-    errorCondition("Should only grab 3 example models, not more")
+        high = NULL
+        med = NULL
+        low = NULL
   }
 
 
@@ -304,7 +321,9 @@ t5 = function(i, j, set){
     med = NULL
     low = NULL
   }else{
-    errorCondition("Should only grab 3 example models, not more")
+        high = NULL
+        med = NULL
+        low = NULL
   }
 
 
@@ -353,7 +372,9 @@ t6 = function(i, j, set){
     med = NULL
     low = NULL
   }else{
-    errorCondition("Should only grab 3 example models, not more")
+        high = NULL
+        med = NULL
+        low = NULL
   }
 
 
@@ -480,7 +501,8 @@ ggplot() +
   geom_hline(yintercept = low_con, colour = "orange", linetype = "dashed") +
   geom_hline(yintercept = high_con, colour = "orange", linetype = "dashed") +
   scale_color_manual(c("high", "med","low","truth"), values = c("#F8766D", "#00BFC4", "#7CAE00", "black")) +
-  guides(alpha = "none")  +
+  guides(alpha = "none",
+         color = guide_legend(title="Likelihood")) +
   theme(plot.title = element_text(size = 7))
 
 #data_1
@@ -504,7 +526,9 @@ pi_analysis_sims = function(i, j, set, choose){
     med = NULL
     low = NULL
   }else{
-    errorCondition("Should only grab 3 example models, not more")
+        high = NULL
+        med = NULL
+        low = NULL
   }
 
   if(choose == "high"){
@@ -602,7 +626,8 @@ data_2 = tibble(m = 1, weight = 0.01) %>%
   xlim(0,16) + ylim(0,1) +
   geom_function(fun = function(t){pi(t) %>% pull("2")}, aes(color = "truth")) +  ggtitle(paste0(param_grid_one_row %>% pull(description), ": Pi for High, Median, and Low Likelihood")) +
   scale_color_manual(c("high", "med","low","truth"), values = c("#F8766D", "#00BFC4", "#7CAE00", "black")) +
-  guides(alpha = "none") +
+  guides(alpha = "none",
+         color = guide_legend(title="Likelihood")) +
   theme(plot.title = element_text(size = 7))
 
 }

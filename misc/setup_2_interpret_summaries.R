@@ -63,9 +63,9 @@ data %>% summarize(.by = row,
   gt(data = .) %>%
   cols_label(
     row = "Scenario",
-    sd2 = "Component 2 SD",
-    mu2 = "Component 2 Mu",
-    pct_censored = "Proportion of Component 2 that is Right Censored",
+    sd2 = "Comp 2 SD",
+    mu2 = "Comp 2 Mu",
+    pct_censored = "Proportion of Comp 2 that is RC",
     mean_like = "Mean Likelihood",
     mean_c1_scale_est = "Mean Estimate of Comp 1 Scale",
     mean_c2_scale_est = "Mean Estimate of Comp 2 Scale",
@@ -79,11 +79,17 @@ data %>% summarize(.by = row,
     mean_bias_2 = "Comp 2 Mean Residuals"
 
   ) %>%
-  cols_hide(median_c1_scale_est) %>%
+  cols_hide(c(median_c1_scale_est, sd1)) %>%
   tab_footnote(
-    footnote = "Residuals for Component 2 Mu took the difference between the estimated mu and the uncensored underlying value for all observations drawn from component 2 during simulation",
+    footnote = "RC: Right-Censored",
     locations = cells_column_labels(
       columns = c(mean_bias_2)
+    )
+  )  %>%
+  tab_footnote(
+    footnote = "Total area is calculated by taking the integral of the absolute value of the difference of the estimated curve for either mu or pi and the corresponding true curve from t= 0 to t = 16",
+    locations = cells_column_labels(
+      columns = c(pct_censored)
     )
   ) %>%
   tab_footnote(
@@ -92,8 +98,13 @@ data %>% summarize(.by = row,
       columns = c(mean_abs_error_area_mu_1, mean_abs_error_area_mu_2, mean_abs_error_area_pi, median_abs_error_area_mu_1, median_abs_error_area_mu_2, median_abs_error_area_pi)
     )
   )  %>% tab_header(
-    title = "Component 2 Error Metrics Under Different Levels of Censoring",
-    subtitle = glue::glue("With Maximum Tested Concentration of {high_con} on log2 Scale and n = 300, and the Population Proportion of Observations From Component 2 = 0.3")
+    title = "Simulation Set 2: Component 2 Error Metrics Under Different Levels of Censoring",
+    subtitle = glue::glue("With Maximum Tested Concentration of {high_con} on log2 Scale, n = 300, a Fully Interval Censored Component 1, and the Population Proportion of Observations From Component 2 = 0.3")
+  ) %>%
+  fmt_percent(
+    columns = c(pct_censored),
+    decimals = 2,
+    drop_trailing_zeros = TRUE
   )
 
 
@@ -126,7 +137,7 @@ data %>% summarize(.by = row,
     decimals = 2,
     drop_trailing_zeros = TRUE
   ) %>% tab_header(
-    title = "Convergence Rates Under Different Censoring Levels for Component 2",
-    subtitle = glue::glue("With Maximum Tested Concentration of {high_con} on log2 Scale and a Fully Interval Censored Component 2")
+    title = "Simulation Set 2: Convergence Rates Under Different Censoring Levels for Component 2",
+    subtitle = glue::glue("With Maximum Tested Concentration of {high_con} on log2 Scale, n = 300, a Fully Interval Censored Component 1, and the Population Proportion of Observations From Component 2 = 0.3")
   )
 

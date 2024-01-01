@@ -88,10 +88,10 @@ b = bounds %>%
   ylim(-5, 8) +
   geom_function(fun = function(t){param_grid$`E[X|T,C]`[[4]](t, 1)}, aes(color = "C1 Mu = 0")) +
   geom_function(fun = function(t){param_grid$`E[X|T,C]`[[4]](t, 2)}, aes(color = "C2 Mu min = 2")) +
-  geom_ribbon(aes(x = t, ymin = row_4_c1_lb, ymax = row_4_c1_ub, fill = "C1 SD = 1"), alpha = 0.2) +
-  geom_ribbon(aes(x = t, ymin = row_4_c2_lb, ymax = row_4_c2_ub, fill = "C2 SD = 0.75"), alpha = 0.2) +
-  geom_ribbon(aes(x = t, ymin = row_5_c2_lb, ymax = row_5_c2_ub, fill = "C2 SD = 1"), alpha = 0.2) +
-  geom_ribbon(aes(x = t, ymin = row_6_c2_lb, ymax = row_6_c2_ub, fill = "C2 SD = 1.25"), alpha = 0.2) +
+  geom_ribbon(aes(x = t, ymin = row_4_c1_lb, ymax = row_4_c1_ub, fill = "C1 SD = 1"), alpha = 0.3) +
+  geom_ribbon(aes(x = t, ymin = row_6_c2_lb, ymax = row_6_c2_ub, fill = "C2 SD = 1.25"), alpha = 0.3) +
+  geom_ribbon(aes(x = t, ymin = row_5_c2_lb, ymax = row_5_c2_ub, fill = "C2 SD = 1"), alpha = 0.4) +
+  geom_ribbon(aes(x = t, ymin = row_4_c2_lb, ymax = row_4_c2_ub, fill = "C2 SD = 0.75"), alpha = 0.5) +
   geom_hline( aes(yintercept = high_con, color = "Limits of Tested Range"), linetype = "dashed") +
   geom_hline(aes(yintercept = low_con, color = "Limits of Tested Range"), linetype = "dashed") +
   scale_fill_manual(c(
@@ -101,13 +101,16 @@ b = bounds %>%
     "C1 SD = 1"
   ),
   values = c(
-    "orange",
+    "pink",
     "blue",
     "darkgreen",
     "orange"
   )) +
   scale_color_manual(c("C1 Mu = 0", "C2 Mu min = 2", "Limits of Tested Range"),
-                     values = c("red", "purple", "black"))
+                     values = c("red", "purple", "black")) +
+  guides(color = guide_legend(title="Mu"),
+         fill = guide_legend(title = "Sigma")) +
+  ggtitle("Scenarios 4, 5, 6, 10, 11, 12")
 
 
 a = bounds %>%
@@ -115,10 +118,10 @@ a = bounds %>%
   ylim(-5, 8) +
   geom_function(fun = function(t){param_grid$`E[X|T,C]`[[1]](t, 1)}, aes(color = "C1 Mu = -1")) +
   geom_function(fun = function(t){param_grid$`E[X|T,C]`[[1]](t, 2)}, aes(color = "C2 Mu min = 1")) +
-  geom_ribbon(aes(x = t, ymin = row_1_c1_lb, ymax = row_1_c1_ub, fill = "C1 SD = 1"), alpha = 0.2) +
-  geom_ribbon(aes(x = t, ymin = row_1_c2_lb, ymax = row_1_c2_ub, fill = "C2 SD = 0.75"), alpha = 0.2) +
-  geom_ribbon(aes(x = t, ymin = row_2_c2_lb, ymax = row_2_c2_ub, fill = "C2 SD = 1"), alpha = 0.2) +
-  geom_ribbon(aes(x = t, ymin = row_3_c2_lb, ymax = row_3_c2_ub, fill = "C2 SD = 1.25"), alpha = 0.2) +
+  geom_ribbon(aes(x = t, ymin = row_1_c1_lb, ymax = row_1_c1_ub, fill = "C1 SD = 1"), alpha = 0.3) +
+  geom_ribbon(aes(x = t, ymin = row_3_c2_lb, ymax = row_3_c2_ub, fill = "C2 SD = 1.25"), alpha = 0.3) +
+  geom_ribbon(aes(x = t, ymin = row_2_c2_lb, ymax = row_2_c2_ub, fill = "C2 SD = 1"), alpha = 0.4) +
+  geom_ribbon(aes(x = t, ymin = row_1_c2_lb, ymax = row_1_c2_ub, fill = "C2 SD = 0.75"), alpha = 0.5) +
   geom_hline( aes(yintercept = high_con, color = "Limits of Tested Range"), linetype = "dashed") +
   geom_hline(aes(yintercept = low_con, color = "Limits of Tested Range"), linetype = "dashed") +
   scale_fill_manual(c(
@@ -128,13 +131,16 @@ a = bounds %>%
     "C1 SD = 1"
   ),
   values = c(
-    "orange",
+    "pink",
     "blue",
     "darkgreen",
     "orange"
   )) +
   scale_color_manual(c("C1 Mu = -1", "C2 Mu min = 1", "Limits of Tested Range"),
-                    values = c("red", "purple", "black"))
+                    values = c("red", "purple", "black"))  +
+  guides(color = guide_legend(title="Mu"),
+         fill = guide_legend(title = "Sigma"))  +
+  ggtitle("Scenarios 1, 2, 3, 7, 8, 9")
 #1: mu -1 and U, sd 1 and .75, pi = 0.3
 #2: mu -1 and U, sd 1 and 1, pi = 0.3
 #3: mu -1 and U, sd 1 and 1.25, pi = 0.3
@@ -223,8 +229,8 @@ data %>% summarize(.by = row,
       columns = c(mean_abs_error_area_mu_1, mean_abs_error_area_mu_2, mean_abs_error_area_pi, median_abs_error_area_mu_1, median_abs_error_area_mu_2, median_abs_error_area_pi)
     )
   )  %>% tab_header(
-    title = "Component 2 Error Metrics Under Different Levels of Censoring",
-    subtitle = glue::glue("With Maximum Tested Concentration of {high_con} on log2 Scale and n = 300, and the Population Proportion of Observations From Component 2 = 0.3")
+    title = "Scenario 3: Error Metrics For Varying Values of Component 2 Standard Deviation And Mu",
+    subtitle = glue::glue("With Maximum Tested Concentration of {high_con} on log2 Scale and n = 300, and a Parabolic Component 2 of the form y = 0.05 * (t - 8)^2 + Mu Minimum")
   ) %>%
   fmt_percent(columns = c(pct_conv),
               decimals = 2,
