@@ -270,10 +270,10 @@ dublin_bopo <-
 
 
 ##Modeling-----------
-drug = "TILDIP"
+drug = "TILMIC"
 bug = "pm"
 censored_side = "RC"
-extra_row = TRUE
+extra_row = FALSE
 if (bug == "mh") {
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
@@ -469,7 +469,7 @@ map(brd_output, get_sigma_final) %>%
 
 
 
-
+predict(brd_output[[(summary %>% head(10) %>% tail(1) %>% pull(iter))]]$output$pi_model, newdata = data.frame(t = c(0, 16)), type = "response")
 
 
 

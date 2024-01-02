@@ -22,7 +22,7 @@ df %>% ggplot() +
   ylim(plot_min - 1, plot_max + 1) +
   scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
   scale_x_continuous(breaks = scales::breaks_extended(6)) +
-  theme_minimal() +
+  theme_minimal()
 
 
 #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +

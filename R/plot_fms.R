@@ -110,9 +110,12 @@ plot_fms = function(output, title, cens_dir, mode = "surv", add_log_reg = FALSE,
     geom_point(aes(x = t, y = right_bound, color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf & c == "2"), alpha = 0.2) +
     #ylim(plot_min - 0.5, plot_max + 0.5) +
     ggtitle(title) +
-    xlab("Time") +
+    xlab("Time (Years Since 2007)") +
     ylab(bquote(log[2]~ MIC)) +
-    ylim(plot_min, plot_max)
+    ylim(plot_min - 1, plot_max + 1) +
+    scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
+    scale_x_continuous(breaks = scales::breaks_extended(6)) +
+    theme_minimal()
   #  geom_function(fun = function(t){mu.se.brd(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
   #  geom_function(fun = function(t){mu.se.brd(t, c = 2, z = -1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6)
 

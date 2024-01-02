@@ -96,9 +96,12 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
       geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
       #ylim(plot_min - 0.5, plot_max + 0.5) +
       ggtitle(title) +
-      xlab("Time") +
+      xlab("Time (Years Since 2007)") +
       ylab(bquote(log[2]~ MIC)) +
-      ylim(plot_min - 1, plot_max + 1)
+      ylim(plot_min - 1, plot_max + 1) +
+      scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
+      scale_x_continuous(breaks = scales::breaks_extended(6)) +
+      theme_minimal()
       #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
       #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
       #geom_function(fun = function(t){mu.se.brd(t, c = 2, z = 1.96)}, aes(color = "Component 2 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
@@ -152,24 +155,24 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
         geom_function(fun = function(t){predict(fitted_comp, newdata = data.frame(t = t))}, aes(color = "Component Mu", linetype = "Fitted Model")) +
         geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
         geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.2) +
-        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000), alpha = 0.15) +
+        geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component Mu"), data = ci_data, alpha = 0.2) +
+        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000), alpha = 0.15) +
         ggnewscale::new_scale_color() +
         #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
-        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "int")), alpha = 0.2) +
-        geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = cens), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-        geom_point(aes(x = t, y = left_bound,  color = cens), data = df %>% filter(left_bound != -Inf), alpha = 0.2) +
-        geom_point(aes(x = t, y = right_bound,  color = cens), data = df %>% filter(right_bound != Inf), alpha = 0.2) +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "int")), alpha = 0.3) +
+        geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = cens), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+        geom_point(aes(x = t, y = left_bound,  color = cens), data = df %>% filter(left_bound != -Inf), alpha = 0.3) +
+        geom_point(aes(x = t, y = right_bound,  color = cens), data = df %>% filter(right_bound != Inf), alpha = 0.3) +
         #scale_colour_gradientn(colours = c("purple", "orange")) +
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
-        xlab("Time") +
+        xlab("Time (Years Since 2007)") +
         ylab(bquote(log[2]~ MIC)) +
-        #geom_function(fun = function(t){predict(fitted_comp[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
-        #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        ylim(plot_min - 1, plot_max + 1)
+        ylim(plot_min - 1, plot_max + 1) +
+        scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
+        scale_x_continuous(breaks = scales::breaks_extended(6)) +
+        theme_minimal()
 
       return(mean)
 
@@ -206,13 +209,12 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
         #scale_colour_gradientn(colours = c("purple", "orange")) +
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
-        xlab("Time") +
+        xlab("Time (Years Since 2007)") +
         ylab(bquote(log[2]~ MIC)) +
-        ylim(plot_min - 1, plot_max + 1)
-        #geom_function(fun = function(t){predict(fitted_comp[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
-        #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-
+        ylim(plot_min - 1, plot_max + 1) +
+        scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
+        scale_x_continuous(breaks = scales::breaks_extended(6)) +
+        theme_minimal()
 
       pi <- ggplot() +
         geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Wild Type", linetype = "Fitted Model")) +
@@ -236,7 +238,7 @@ mean = mean +
   geom_hline(aes(yintercept = ((s_breakpoint %>% parse_number() %>% log2) - 1), color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
   geom_hline(aes(yintercept = ((r_breakpoint %>% parse_number() %>% log2) - 1), color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
   scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), values = c("#7CAE00", "#C77CFF")) +
-  scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5))
+  scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))
         }
       }
       return(mean/pi)
