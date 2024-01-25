@@ -24,6 +24,7 @@
 <li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/polynomial_vs_pspline.html">Do Polynomial Regressions Result in Likelihood Drops?</a>
     <a class="dropdown-item" href="../articles/test_safety_versions.html">Safety Mode Tests</a>
     <a class="dropdown-item" href="../articles/two_comp_mgcv_demo.html">two_comp_mgcv_demo</a>
   </div>
@@ -64,16 +65,16 @@
 <dd><p>data frame iterated on by the EM algorithm, should contain left_bound, right_bound, c, P(C=c|y,t), and any covariates, such as time, e.g. "t"</p></dd>
 
 
+<dt>pred_comp</dt>
+<dd><p>numeric variable, which component is this model being fitted to, e.g. 2</p></dd>
+
+
 <dt>mu_formula</dt>
 <dd><p>formula being used to fit the model for mu, should contain a Surv object for an outcome and any covariates of interest, accepts pspline and other arguments to survreg</p></dd>
 
 
 <dt>maxiter_survreg</dt>
 <dd><p>maximum number of iterations for survreg to fit the model</p></dd>
-
-
-<dt>comp</dt>
-<dd><p>numeric variable, which component is this model being fitted to, e.g. 2</p></dd>
 
 </dl></div>
 

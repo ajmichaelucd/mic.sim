@@ -7,6 +7,9 @@
     <loc>https://ajmichaelucd.github.io/mic.sim/articles/index.html</loc>
   </url>
   <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/articles/polynomial_vs_pspline.html</loc>
+  </url>
+  <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/articles/test_safety_versions.html</loc>
   </url>
   <url>
@@ -17,6 +20,9 @@
   </url>
   <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/index.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm.html</loc>
   </url>
   <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_mgcv.html</loc>
@@ -31,7 +37,19 @@
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_surv.html</loc>
   </url>
   <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_fm_surv_batch_run.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_fm_surv_single_run.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_fms_surv_batch_run.html</loc>
+  </url>
+  <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/add_covariate.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/analysis_one_setup.html</loc>
   </url>
   <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_log_likelihood.html</loc>
@@ -106,6 +124,9 @@
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/fm_checks.html</loc>
   </url>
   <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/full_polynomial_cv.html</loc>
+  </url>
+  <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/full_sim_in_1_function.html</loc>
   </url>
   <url>
@@ -166,6 +187,15 @@
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/prep_sim_data_for_em.html</loc>
   </url>
   <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/random_lines.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/random_start.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/random_start_safety.html</loc>
+  </url>
+  <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/rerun_incomplete_sets.html</loc>
   </url>
   <url>
@@ -179,5 +209,11 @@
   </url>
   <url>
     <loc>https://ajmichaelucd.github.io/mic.sim/reference/simulate_mics.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/simulation_1_set.html</loc>
+  </url>
+  <url>
+    <loc>https://ajmichaelucd.github.io/mic.sim/reference/summary_statistics_one_run.html</loc>
   </url>
 </urlset>
