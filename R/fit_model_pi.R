@@ -267,8 +267,14 @@ if(i > 1 & pause_on_likelihood_drop && likelihood_documentation[i, 2] < likeliho
   }
 }
 
-tibble_like <- function(likelihood_documentation){
-  likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5, scale_1 = V6, scale_2 = V7) %>% filter(!is.na(likelihood)) %>% return()
+tibble_like <- function(likelihood_documentation, model = "surv"){
+  if(model == "mgcv"){
+    likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5, scale_1 = V6, scale_2 = V7) %>% filter(!is.na(likelihood)) %>% return()
+
+  }
+  else{
+    likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5, scale_1 = V6, scale_2 = V7) %>% filter(!is.na(likelihood)) %>% return()
+    }
 }
 
 m_step_check_maximizing = function(possible_data, mu_models, pi_model){

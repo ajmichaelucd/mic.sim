@@ -29,7 +29,8 @@ Imports:
     tibble,
     tidyr,
     tidyselect,
-    mgcv
+    mgcv,
+    MASS
 URL: https://github.com/ajmichaelucd/mic.sim,
     https://ajmichaelucd.github.io/mic.sim/
 BugReports: https://github.com/ajmichaelucd/mic.sim/issues

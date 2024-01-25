@@ -248,9 +248,9 @@ dublin_bopo <-
 
 
 ##Modeling-----------
-drug = "ENROFL"
-bug = "mh"
-comps = 1
+drug = "TULATH"
+bug = "pm"
+comps = 2
 if (bug == "mh") {
   set = brd_mh
   s_breakpoint = brd_breakpoints %>% filter(drug_name == drug) %>% pull(mh_s)
@@ -440,7 +440,7 @@ map(brd_output, get_sigma_final) %>%
 
 
 
-
+#brd_output_tulath_mh = brd_output
 
 
 

@@ -16,6 +16,11 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(mic.sim)
+library(mgcv)
+library(dplyr)
+library(ggplot2)
+library(ggnewscale)
+library(survival)
 ```
 
 ```{r}
@@ -61,17 +66,21 @@ example_data %>%
   ylim(low_con - 2, high_con + 2)
 ```
 
+
+When using pspline, we see decreased in log likelihood over steps of the model
 ```{r}
 output_pspline = EM_algorithm_surv(example_data, mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~ pspline(t, df = 0, caic = TRUE), verbose = 0, pause_on_likelihood_drop = FALSE)
 
 plot_likelihood(output_pspline$likelihood, format = "tibble")
 ```
-
+  
+But when using polynomials in place of splines, it appears to avoid the drops
+  
 ```{r}
 initial_data = example_data %>% mutate(obs_id = row_number(), t2 = (t^2), t3 = (t^3)) %>% select(obs_id, everything()) %>% 
   initial_weighting_fixed_regression_at_boundaries(., 2, 1)
 
-max_it = 100
+max_it = 60
 likelihood_documentation = matrix(data = NA, nrow = max_it, ncol = 5)
 likelihood_documentation [,1] <- 1:max_it
 possible_data = initial_data %>% mutate(
@@ -90,7 +99,7 @@ possible_data = initial_data %>% mutate(
 models = list()
 
 for(i in 1:max_it){
-  print(i)
+  #print(i)
     if(i != 1){
         mu_models_old = mu_models_new
         pi_model_old = pi_model_new
@@ -103,7 +112,7 @@ for(i in 1:max_it){
       mutate(`P(C=c|y,t)` =  paste0(`P(C=c|y,t)`) %>% as.numeric) %>% 
       survival::survreg(Surv(time = left_bound,
                    time2 = right_bound,
-                   type = "interval2") ~ t + t2 + t3, 
+                   type = "interval2") ~ poly(t, degree = 3), 
                    weights = `P(C=c|y,t)`,
                    data = .,
                    dist = "gaussian") %>% return()

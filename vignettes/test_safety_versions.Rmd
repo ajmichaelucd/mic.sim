@@ -81,7 +81,7 @@ output_mgcv = example_data %>%
                            prior_step_plot = FALSE,
                            pause_on_likelihood_drop = FALSE,
                            pi_link = "logit",
-                           verbose = 3,
+                           verbose = 2,
                            model_coefficient_tolerance = 1e-05,
                            extra_row = FALSE
                            )

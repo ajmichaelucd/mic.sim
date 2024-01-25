@@ -59,7 +59,7 @@ EM_algorithm_safety_mgcv = function(
   possible_data = initial_weighting_safety(visible_data, censored_side, extra_row)
 
 
-    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 5)
+    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 7)
     likelihood_documentation [,1] <- 1:max_it
 
     possible_data = possible_data %>% mutate(
@@ -94,7 +94,9 @@ EM_algorithm_safety_mgcv = function(
 
 
       if(censored_side == "RC") {mu_model_new = list(fit_mgcv_mu_model(possible_data = possible_data, pred_comp = 1, mu_formula = mu_formula))
+      likelihood_documentation[i,6] = mu_model_new[[1]]$family$getTheta(TRUE)
       }else if(censored_side == "LC") {mu_model_new = list(fit_mgcv_mu_model(possible_data = possible_data, pred_comp = 2, mu_formula = mu_formula))
+      likelihood_documentation[i,7] = mu_model_new[[1]]$family$getTheta(TRUE)
       }else{errorCondition("Invalid censored_side value")}
 
 
