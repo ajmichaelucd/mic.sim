@@ -35,7 +35,7 @@ fit_polynomial_EM = function(max_degree,
                              sd_initial = 0.2){
 
 
-  cv_results = full_polynomial_cv(max_degree = 8, visible_data = example_data %>% mutate(obs_id = row_number()), nfolds = 10, verbose = 2) %>%
+  cv_results = full_polynomial_cv(max_degree = 8, visible_data = visible_data %>% mutate(obs_id = row_number()), nfolds = 10, verbose = 2) %>%
     summarize(.by = c(degree_1, degree_2), log_likelihood = sum(fold_likelihood)) %>%
     arrange(desc(log_likelihood))
 
@@ -60,7 +60,7 @@ fit_polynomial_EM = function(max_degree,
   )
 
   output = EM_algorithm(
-    example_data,
+    visible_data,
     model = "polynomial",
     #"mgcv"
     mu_formula = mu_formula,
