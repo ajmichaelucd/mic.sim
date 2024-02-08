@@ -1,3 +1,24 @@
+#' Title
+#'
+#' @param max_degree
+#' @param visible_data
+#' @param nfolds
+#' @param non_linear_term
+#' @param covariates
+#' @param pi_formula
+#' @param max_it
+#' @param ncomp
+#' @param tol_ll
+#' @param pi_link
+#' @param verbose
+#' @param model_coefficient_tolerance
+#' @param initial_weighting
+#' @param sd_initial
+#'
+#' @return
+#' @export
+#'
+#' @examples
 fit_polynomial_EM = function(max_degree,
                              visible_data,
                              nfolds,
@@ -24,14 +45,14 @@ fit_polynomial_EM = function(max_degree,
   mu_formula = list(
     reformulate(
       termlabels = c(
-        paste0("poly(", non_linear_term, ",", "degree = ", degree_1, ")", mu_covariates),
+        paste0("poly(", non_linear_term, ",", "degree = ", degree_1, ")", covariates),
         covariates
       ),
       response = "Surv(time = left_bound, time2 = right_bound, type = 'interval2')"
     ),
     reformulate(
       termlabels = c(
-        paste0("poly(", non_linear_term, ",", "degree = ", degree_2, ")", mu_covariates),
+        paste0("poly(", non_linear_term, ",", "degree = ", degree_2, ")", covariates),
         covariates
       ),
       response = "Surv(time = left_bound, time2 = right_bound, type = 'interval2')"

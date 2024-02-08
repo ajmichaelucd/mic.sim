@@ -70,6 +70,7 @@ single_cv = function(degrees,
                      model_coefficient_tolerance = 0.00001,
                      initial_weighting = 8,
                      sd_initial = 0.2) {
+  message("CV for degrees", degrees)
   visible_data = visible_data %>% mutate(fold = sample(rep(1:10, each = (
     nrow(visible_data) / 10
   ) %>% ceiling), nrow(visible_data)))
