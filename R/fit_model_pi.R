@@ -273,7 +273,7 @@ tibble_like <- function(likelihood_documentation, model = "surv"){
 
   }
   else{
-    likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5, scale_1 = V6, scale_2 = V7) %>% filter(!is.na(likelihood)) %>% return()
+    likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = .data$V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5, scale_1 = V6, scale_2 = V7) %>% filter(!is.na(.data$likelihood)) %>% return()
     }
 }
 
