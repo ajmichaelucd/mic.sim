@@ -54,7 +54,9 @@ EM_algorithm = function(
     seed = NULL,
     randomize = "all"
 ){
-  if(ncol(visible_data %>% select(matches("obs_id"))) == 0){
+  #add attribute model to visible data
+
+  if(ncol(visible_data %>% select(matches("obs_id"))) == 0){ #add function
     visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
   }
 
@@ -65,7 +67,7 @@ EM_algorithm = function(
   converge = NA_character_
 
   if(ncomp == 1){
-    if(model == "mgcv"){
+    if(model == "mgcv"){ #merge into 1 function where visible data has model attribute
       fit_single_component_model_mgcv(visible_data, mu_formula, verbose) %>% return()
     }else{
       fit_single_component_model_surv(visible_data, mu_formula, maxiter_survreg, verbose) %>% return()
@@ -101,10 +103,10 @@ EM_algorithm = function(
 
     }
 
-    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 7)
+    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 7) #add function
     likelihood_documentation [,1] <- 1:max_it
 
-    if(model == "mgcv"){
+    if(model == "mgcv"){ #add function
       possible_data = possible_data %>% mutate(
         left_bound_mgcv =
           case_when(
@@ -123,10 +125,10 @@ EM_algorithm = function(
     for(i in 1:max_it){
       if(verbose > 1){
         message("starting iteration number ", i)}
-      if(verbose > 3){
-        message("mem used = ")
-        print(pryr::mem_used())
-      }
+      # if(verbose > 3){
+      #   message("mem used = ")
+      #   print(pryr::mem_used())
+      # }
       #first M step--------
       #MLE of all parameters
       if(i != 1){
@@ -195,14 +197,21 @@ EM_algorithm = function(
       }
 
       #Next E step-------------
-
+if(model == "mgcv"){
+  likelihood_documentation[i, 4] <- m_step_check_maximizing_mgcv(possible_data, mu_models_new, pi_model_new)
+  if(i > 1){
+    likelihood_documentation[i, 5] <- m_step_check_maximizing_mgcv(possible_data, mu_models_old, pi_model_old)
+  }else{
+    likelihood_documentation[i, 5] <- NaN
+  }
+}else{
       likelihood_documentation[i, 4] <- m_step_check_maximizing(possible_data, mu_models_new, pi_model_new)
       if(i > 1){
         likelihood_documentation[i, 5] <- m_step_check_maximizing(possible_data, mu_models_old, pi_model_old)
       }else{
         likelihood_documentation[i, 5] <- NaN
       }
-
+}
 
       if(model == "mgcv"){
         possible_data %<>%
@@ -374,4 +383,45 @@ EM_algorithm = function(
       )
     )
   }
+}
+
+
+
+
+
+
+
+
+
+
+m_step_check_maximizing_mgcv = function(possible_data, mu_models, pi_model){
+  possible_data %>%
+    mutate(
+      `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models[[1]], newdata = possible_data),
+                             c == "2" ~ predict(mu_models[[2]], newdata = possible_data),
+                             TRUE ~ NaN),
+      #predict(model, newdata = possible_data),
+      `sd[Y|t,c]` = case_when(c == "1" ~ mu_models[[1]]$family$getTheta(TRUE),
+                              c == "2" ~ mu_models[[2]]$family$getTheta(TRUE), #1,
+                              TRUE ~ NaN),
+      #model$scale[c], #####QUESTION HERE????????????????????????????
+      # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
+
+      `P(Y|t,c)` = case_when(
+        left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+        TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+          pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)
+      ),
+      `P(C=c|t)` = case_when(
+        c == "2" ~ predict(pi_model, newdata = tibble(t = t), type = "response"),
+        c == "1" ~ 1 - predict(pi_model, newdata = tibble(t = t), type = "response")
+      ),
+      `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
+    ) %>% select(obs_id, c, `P(c,y|t)`, `P(C=c|y,t)`) %>%
+    mutate(m_step_check = `P(C=c|y,t)` * log(`P(c,y|t)`)) %>% pull(m_step_check) %>% sum %>% return()
+
+
+
 }
