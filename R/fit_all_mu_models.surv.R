@@ -11,6 +11,9 @@
 #' @export
 #'
 #' @examples
-fit_all_mu_models = function(possible_data, ncomp, mu_formula, maxiter_survreg){
-  purrr::map(1:ncomp, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula, maxiter_survreg = maxiter_survreg)) %>% return()
-}
+fit_all_mu_models.surv = function(possible_data, ncomp, mu_formula, maxiter_survreg){
+  mu_models_new = purrr::map(1:ncomp, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula, maxiter_survreg = maxiter_survreg))
+  mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
+  attr(mu_models_new, "model") <- attr(possible_data, "model")
+  return(mu_models_new)
+  }

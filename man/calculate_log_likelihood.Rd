@@ -4,10 +4,10 @@
 \alias{calculate_log_likelihood}
 \title{Title}
 \usage{
-calculate_log_likelihood(possible_data)
+calculate_log_likelihood(possible_data, verbose = 0)
 }
 \arguments{
-\item{possible_data}{}
+\item{verbose}{}
 }
 \description{
 Title

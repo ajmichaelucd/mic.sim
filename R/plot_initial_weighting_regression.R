@@ -7,6 +7,11 @@
 #'
 #' @examples
 plot_initial_weighting_regression = function(possible_data){
+if(!is.null(attr(possible_data, "plot_initial"))){
+  if(!attr(possible_data, "plot_initial")){
+    return(invisible(NULL))
+  }
+}
   data.plot = possible_data %>% mutate(
     cens =
       case_when(left_bound == -Inf ~ "lc",

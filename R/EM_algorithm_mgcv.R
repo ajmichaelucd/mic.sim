@@ -283,73 +283,8 @@ fit_mgcv_mu_model = function(possible_data, pred_comp, mu_formula){
   mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML") %>% return()
 }
 
-check_mu_models_convergence_mgcv = function(mu_models, n_comp){
-  purrr::map(1:n_comp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients))) %>% return()
-}
-
-fit_single_component_model_mgcv = function(visible_data, mu_formula){
-
-  possible_data = visible_data %>%
-    mutate(left_bound_mgcv =
-             case_when(
-               left_bound == -Inf ~ right_bound,
-               TRUE ~ left_bound
-             ),
-           right_bound_mgcv =
-             case_when(
-               left_bound == -Inf ~ -Inf,
-               TRUE ~ right_bound
-             ),
-           `P(C=c|y,t)` = 1,
-           c = 1
-           )
-  fit_mgcv_mu_model_safely = purrr::safely(fit_mgcv_mu_model, "NO")
-  mu_model = fit_mgcv_mu_model_safely(possible_data, pred_comp = 1, mu_formula)
-  if((mu_model %>% length) > 1){
-    mu_model = list(mu_model)
-  }
-
-  return(list(possible_data = possible_data,
-              mu_model = mu_model,
-              converge = ifelse(length(mu_model) > 1, "YES", mu_model),
-              ncomp = ncomp))
-}
-
-fit_mgcv_pi_model = function(pi_formula, pi_link, possible_data){
-
-  if(pi_link == "logit"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
-  } else if(pi_link == "identity"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
-  }
-  if(pi_link == "logit_simple"){
-    pi_model = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
-  }else{ errorCondition("pick logit or identity link function")}
 
 
-  return(pi_model)
-}
 
-model_coefficient_checks_mgcv = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
-  #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
-  pi_parametric_coef_check = max((pi_model_new %>% coefficients()) - (pi_model_old %>% coefficients())) < model_coefficient_tolerance
 
-  #these are the actual smoothing things for every observation I believe
-  #pi_nonparametric_check = max(pi_model_new$smooth - pi_model_old$smooth) < model_coefficient_tolerance
 
-  #check if the number of coefficients in the mu models changes
-  mu_number_of_coef_check = purrr::map(1:ncomp, ~(length(na.omit(mu_models_new[[.x]]$coefficients)) == length(na.omit(mu_models_old[[.x]]$coefficients)))) %>%
-    unlist %>% all
-
-  mu_coefficient_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$coefficients - mu_models_old[[.x]]$coefficients) %>% abs %>% sum)) %>% unlist %>% max < model_coefficient_tolerance
-
-  mu_sigma_check = purrr::map(1:ncomp, ~((mu_models_new[[.x]]$family$getTheta(TRUE) - mu_models_old[[.x]]$family$getTheta(TRUE)) %>% abs)) %>% unlist %>% max < model_coefficient_tolerance
-
-  #check likelihood at end of E step
-
-  return(all(pi_parametric_coef_check,
-             #pi_nonparametric_check,
-             mu_number_of_coef_check,
-             mu_coefficient_check,
-             mu_sigma_check))
-}

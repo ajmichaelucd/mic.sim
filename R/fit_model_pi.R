@@ -267,47 +267,9 @@ if(i > 1 & pause_on_likelihood_drop && likelihood_documentation[i, 2] < likeliho
   }
 }
 
-tibble_like <- function(likelihood_documentation, model = "surv"){
-  if(model == "mgcv"){
-    likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5, scale_1 = V6, scale_2 = V7) %>% filter(!is.na(likelihood)) %>% return()
-
-  }
-  else{
-    likelihood_documentation %>% as_tibble %>% suppressWarnings() %>% rename(step = .data$V1, likelihood = V2, survreg_maxout = V3, m_step_check_new = V4, m_step_check_old = V5, scale_1 = V6, scale_2 = V7) %>% filter(!is.na(.data$likelihood)) %>% return()
-    }
-}
-
-m_step_check_maximizing = function(possible_data, mu_models, pi_model){
-  possible_data %>%
-    mutate(
-      `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models[[1]], newdata = possible_data),
-                             c == "2" ~ predict(mu_models[[2]], newdata = possible_data),
-                             TRUE ~ NaN),
-      #predict(model, newdata = possible_data),
-      `sd[Y|t,c]` = case_when(c == "1" ~ mu_models[[1]]$scale,
-                              c == "2" ~ mu_models[[2]]$scale, #1,
-                              TRUE ~ NaN),
-      #model$scale[c], #####QUESTION HERE????????????????????????????
-      # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
-
-      `P(Y|t,c)` = case_when(
-        left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-        left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-          pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-        TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
-          pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)
-      ),
-      `P(C=c|t)` = case_when(
-        c == "2" ~ predict(pi_model, newdata = tibble(t = t), type = "response"),
-        c == "1" ~ 1 - predict(pi_model, newdata = tibble(t = t), type = "response")
-      ),
-      `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
-    ) %>% select(obs_id, c, `P(c,y|t)`, `P(C=c|y,t)`) %>%
-    mutate(m_step_check = `P(C=c|y,t)` * log(`P(c,y|t)`)) %>% pull(m_step_check) %>% sum %>% return()
 
 
 
-}
 
 fit_pi_model = function(pi_formula, pi_link, possible_data){
 
@@ -322,9 +284,7 @@ fit_pi_model = function(pi_formula, pi_link, possible_data){
   return(pi_model)
 }
 
-check_mu_models_convergence_surv = function(mu_models, ncomp){
-  purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$scale), is.na(mu_models[[.x]]$coefficients)))
-}
+
 
 model_coefficient_checks_surv = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
   #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
