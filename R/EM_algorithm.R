@@ -58,206 +58,84 @@ EM_algorithm = function(
 ){
   #add attribute model to visible data
 
-  if(ncol(visible_data %>% select(matches("obs_id"))) == 0){ #add function
-    visible_data = visible_data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
-  }
+  visible_data = modify_visible_data(visible_data, model)
 
-  if(!is.null(seed)){
-    set.seed(seed)
-  }
+  set_algorithm_seed(seed)
+
 
   converge = NA_character_
 
   if(ncomp == 1){
-    if(model == "mgcv"){ #merge into 1 function where visible data has model attribute
-      fit_single_component_model_mgcv(visible_data, mu_formula, verbose) %>% return()
-    }else{
-      fit_single_component_model_surv(visible_data, mu_formula, maxiter_survreg, verbose) %>% return()
-    }
+    fit_single_component_model(visible_data, mu_formula, maxiter_survreg) %>% return()
   }else{
 
     #first E step-----
-    if(initial_weighting == 1){
-      possible_data = initial_weighting_staggered_weighting_by_distance_from_median_and_boundary(visible_data)
-    } else if(initial_weighting == 2){
-      possible_data = initial_weighting_staggered_weighting_by_distance_from_median_and_boundary_plus_random_variation(visible_data)
-    }else if(initial_weighting == 3){
-      possible_data = initial_weighting_flat_interval_censored_full_weight_left_right_censored(visible_data)
-    } else if(initial_weighting == 4){
-      possible_data = initial_weighting_slight_shift_at_median(visible_data)
-    }else if(initial_weighting == 5){
-      possible_data = initial_weighting_flat_center_band_of_heavy_weights_at_ends(visible_data)
-    }else if(initial_weighting == 6){
-      possible_data = initial_weighting_flat_center_two_bands_of_progressively_heavier_weights_at_ends(visible_data)
-    } else if(initial_weighting == 7){
-      possible_data = random_start(visible_data, ncomp, sd_parameter = sd_initial, n_models, randomize)
-    }else{
+    possible_data = first_E_step(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, randomize, n_models, model)
 
-      possible_data = initial_weighting_fixed_regression_at_boundaries(visible_data, ncomp, sd_parameter = sd_initial)
+    #wrapper function
+    plot_initial_weighting_regression(possible_data = possible_data)
+    #browser?
+    likelihood_documentation = set_up_likelihood_matrix(max_it)
+    possible_data = modify_bounds(possible_data)
 
-      if(plot_visuals){
-        plot_initial_weighting_regression(possible_data)
-
-        browser("stopping at inital setup to examine a plot for the basis of the initial weighting")
-
-      }
-
-
-    }
-
-    likelihood_documentation <- matrix(data = NA, nrow = max_it, ncol = 7) #add function
-    likelihood_documentation [,1] <- 1:max_it
-
-    if(model == "mgcv"){ #add function
-      possible_data = possible_data %>% modify_bounds.mgcv()
-    }
 
 
     for(i in 1:max_it){
-      if(verbose > 1){
-        message("starting iteration number ", i)}
-      # if(verbose > 3){
-      #   message("mem used = ")
-      #   print(pryr::mem_used())
-      # }
+      message_iteration_count(i, verbose)
       #first M step--------
       #MLE of all parameters
+
       if(i != 1){
-        mu_models_old = mu_models_new
-        pi_model_old = pi_model_new
-        log_likelihood_old = log_likelihood_new
-        possible_data_old = possible_data
+        prior_iteration = save_previous_iteration(mu_models_new, pi_model_new, log_likelihood_new, possible_data)
       }
 
-      if(model == "mgcv"){
-        mu_models_new = purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
-        likelihood_documentation[i, 6] = mu_models_new[[1]]$family$getTheta(TRUE)
-        likelihood_documentation[i, 7] = mu_models_new[[2]]$family$getTheta(TRUE)
-
-        if(check_mu_models_convergence_mgcv(mu_models_new, ncomp) %>% unlist %>% any){
-          converge = "NO"
-          break
-        }
-      }else if(model == "polynomial"){
-        mu_models_new = purrr::map2(1:ncomp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg)) %>% return()
-        likelihood_documentation[i, 6] = mu_models_new[[1]]$scale
-        likelihood_documentation[i, 7] = mu_models_new[[2]]$scale
-        likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
-        if(check_mu_models_convergence_surv(mu_models_new, ncomp) %>% unlist %>% any){
-          converge = "NO"
-          break
-        }
-      }else{
-        #mu_models_new = purrr::map(1:2, ~mu_model(possible_data = possible_data, pred_comp = .x))
-        mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
-        likelihood_documentation[i, 6] = mu_models_new[[1]]$scale
-        likelihood_documentation[i, 7] = mu_models_new[[2]]$scale
-        likelihood_documentation[i,3] = check_survreg_iteration_maxout(mu_models_new, ncomp, maxiter_survreg)
-        if(check_mu_models_convergence_surv(mu_models_new, ncomp) %>% unlist %>% any){
-          converge = "NO"
-          break
-        }
+      mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
+      likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
+      if(check_mu_models_convergence(mu_models_new, ncomp)){
+        converge = "NO"
+        break #if wrapping into an M-step function, add list to list of outputs, then check between steps
       }
 
       pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
-
-
-
-      if (i != 1) {
-        if (model == "mgcv") {
-          model_coefficient_checks_results = model_coefficient_checks_mgcv(
-            mu_models_new,
-            pi_model_new,
-            mu_models_old,
-            pi_model_old,
-            model_coefficient_tolerance,
-            ncomp
-          )
-        } else{
-          model_coefficient_checks_results = model_coefficient_checks_surv(
-            mu_models_new,
-            pi_model_new,
-            mu_models_old,
-            pi_model_old,
-            model_coefficient_tolerance,
-            ncomp
-          )
-
-        }
+      if(i > 1){
+        model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, prior_iteration$mu_models_old, prior_iteration$pi_model_old, model_coefficient_tolerance, ncomp)
       }
+
+
+
 
       #Next E step-------------
 
-      likelihood_documentation[i, 4] <- m_step_check_maximizing(possible_data, mu_models_new, pi_model_new)
+      likelihood_documentation[i, "m_step_check_new"] <- m_step_check_maximizing(possible_data, mu_models_new, pi_model_new) ###use dimnames in matrix
       if(i > 1){
-        likelihood_documentation[i, 5] <- m_step_check_maximizing(possible_data, mu_models_old, pi_model_old)
+        likelihood_documentation[i, "m_step_check_old"] <- m_step_check_maximizing(possible_data, prior_iteration$mu_models_old, prior_iteration$pi_model_old) ###use dimnames in matrix
       }else{
-        likelihood_documentation[i, 5] <- NaN
+        likelihood_documentation[i, "m_step_check_old"] <- NaN
       }
 
 
-        possible_data %<>%
-          mutate(
-            `E[Y|t,c]` = case_when(c == "1" ~ predict(mu_models_new[[1]], newdata = possible_data),
-                                   c == "2" ~ predict(mu_models_new[[2]], newdata = possible_data),
-                                   TRUE ~ NaN),
-            #predict(model, newdata = possible_data),
-            `sd[Y|t,c]` = case_when(c == "1" ~ mu_models_new[[1]]$scale,
-                                    c == "2" ~ mu_models_new[[2]]$scale, #1,
-                                    TRUE ~ NaN),
-            #model$scale[c], #####QUESTION HERE????????????????????????????
-            # `Var[Y|t,c]` = `sd[Y|t,c]`^2,
 
-            `P(Y|t,c)` = case_when(
-              left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-              left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
-                pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
-              TRUE ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
-                pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE)
-            ),
-            `P(C=c|t)` = case_when(
-              c == "2" ~ predict(pi_model_new, newdata = tibble(t = t), type = "response"),
-              c == "1" ~ 1 - predict(pi_model_new, newdata = tibble(t = t), type = "response")
-            ),
-            `P(c,y|t)` = `P(C=c|t)` * `P(Y|t,c)`
-          ) %>%
-          mutate(.by = obs_id,
-                 `P(Y=y|t)` = sum(`P(c,y|t)`)) %>%
-          mutate(
-            `P(C=c|y,t)` = `P(c,y|t)` / `P(Y=y|t)`)
-
-
+      possible_data = E_step(possible_data, mu_models_new, pi_model_new)
 
       if(verbose > 2){
         print(pi_model_new)
         print(mu_models_new)
       }
-      calculate_log_likelihood = function(possible_data){
-        log_likelihood_obs <- possible_data %>%
-          summarise(.by = obs_id, likelihood_i = sum(`P(c,y|t)`)) %>%
-          mutate(log_likelihood_i = log(likelihood_i))
-        log_likelihood <- sum(log_likelihood_obs$log_likelihood_i)
-        return(log_likelihood)
-      }
-
-      log_likelihood_new = calculate_log_likelihood(possible_data)
-      likelihood_documentation[i, 2] <- log_likelihood_new
 
 
-      if(verbose > 2){
-        message(log_likelihood_new)
-      }
 
-      if(i > 1 && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2] & stop_on_likelihood_drop){
+      log_likelihood_new = calculate_log_likelihood(possible_data, verbose)
+      likelihood_documentation[i, "loglikelihood"] <- log_likelihood_new ###use dimnames
+
+      if(i > 1 && likelihood_documentation[i, "loglikelihood"] < likelihood_documentation[i - 1, "loglikelihood"] & stop_on_likelihood_drop){
         converge = "likelihood decreased"
         break
       }
 
-      if(i > 1 & pause_on_likelihood_drop && likelihood_documentation[i, 2] < likelihood_documentation[i - 1, 2]){
+      if(i > 1 & pause_on_likelihood_drop && likelihood_documentation[i, "loglikelihood"] < likelihood_documentation[i - 1, "loglikelihood"]){
         browser("likelihood decreased")
       }
-
 
       if(browse_each_step & plot_visuals){
 
@@ -268,10 +146,12 @@ EM_algorithm = function(
           plot_likelihood(likelihood_documentation, format = "matrix")
         }
       }
-      if(browse_each_step & !plot_visuals){browser(message("End of step ", i))}
-      if(i != 1){
 
-        check_ll = (log_likelihood_new - log_likelihood_old)
+      if(browse_each_step & !plot_visuals){browser(message("End of step ", i))}
+
+      if(i != 1){
+        ##too much overlap with 103
+        check_ll = (log_likelihood_new - prior_iteration$log_likelihood_old)
 
         if(check_ll < 0){
           warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
@@ -293,21 +173,26 @@ EM_algorithm = function(
 
     }
 
+
+    ####group 149 to 173
     if(i > 1){
       if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){
         converge = "iterations"
       }
     }
+
     if(i == 1 & i == max_it & is.na(converge)){
       converge = "iterations"
     }
 
 
     if(i == 1){
-      mu_models_old = NA
-      pi_model_old = NA
-      log_likelihood_old = NA
-      possible_data_old = NA
+      prior_iteration = list(
+        mu_models_old = NA,
+        pi_model_old = NA,
+        log_likelihood_old = NA,
+        possible_data_old = NA
+      )
     }
 
     if(initial_weighting == 7){
@@ -326,7 +211,7 @@ EM_algorithm = function(
         steps = i,
         converge = converge,
         ncomp = ncomp,
-        prior_step_models = list(mu_models = mu_models_old, pi_model = pi_model_old, log_likelihood = log_likelihood_old, possible_data = possible_data_old),
+        prior_step_models = prior_iteration,
         seed = seed,
         random_start_set = random_start_set,
         sd_initial = ifelse(initial_weighting >= 7, sd_initial, NaN),
