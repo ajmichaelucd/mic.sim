@@ -19,7 +19,10 @@
 #' @export
 #'
 #' @examples
-fit_polynomial_EM = function(max_degree,
+fit_polynomial_EM = function(pre_set_degrees = NULL, #c(7,7)
+                             max_degree,
+                             degree_sets = "matched",
+                             #"independent"
                              visible_data,
                              nfolds,
                              non_linear_term = "t",
@@ -32,33 +35,28 @@ fit_polynomial_EM = function(max_degree,
                              verbose = 3,
                              model_coefficient_tolerance = 0.00001,
                              initial_weighting = 8,
-                             sd_initial = 0.2){
+                             sd_initial = 0.2) {
+  if (is.null(pre_set_degrees)) {
+    cv_results = full_polynomial_cv(
+      max_degree,
+      degree_sets,
+      visible_data = visible_data %>% mutate(obs_id = row_number()),
+      nfolds = 10,
+      verbose = 2
+    ) %>%
+      summarize(
+        .by = c(degree_1, degree_2),
+        log_likelihood = sum(fold_likelihood)
+      ) %>%
+      arrange(desc(log_likelihood))
 
-
-  cv_results = full_polynomial_cv(max_degree = 8, visible_data = visible_data %>% mutate(obs_id = row_number()), nfolds = 10, verbose = 2) %>%
-    summarize(.by = c(degree_1, degree_2), log_likelihood = sum(fold_likelihood)) %>%
-    arrange(desc(log_likelihood))
-
-  degree_1 = cv_results %>% head(1) %>% pull(degree_1)
-  degree_2 =  cv_results %>% head(1) %>% pull(degree_2)
-
-  mu_formula = list(
-    reformulate(
-      termlabels = c(
-        paste0("poly(", non_linear_term, ",", "degree = ", degree_1, ")", covariates),
-        covariates
-      ),
-      response = "Surv(time = left_bound, time2 = right_bound, type = 'interval2')"
-    ),
-    reformulate(
-      termlabels = c(
-        paste0("poly(", non_linear_term, ",", "degree = ", degree_2, ")", covariates),
-        covariates
-      ),
-      response = "Surv(time = left_bound, time2 = right_bound, type = 'interval2')"
-    )
-  )
-
+    mu_formula = write_all_polynomial_formulas(non_linear_term,
+                                               pull_top_degree_set(cv_results),
+                                               covariates)
+  } else{
+    mu_formula = write_all_polynomial_formulas(non_linear_term, pre_set_degrees, covariates)
+    cv_results = NULL
+  }
   output = EM_algorithm(
     visible_data,
     model = "polynomial",
@@ -91,4 +89,8 @@ fit_polynomial_EM = function(max_degree,
 
   output %>% return()
 
+}
+
+pull_top_degree_set = function(cv_results) {
+  cv_results %>% select(-log_likelihood) %>% purrr::map_dbl(., head(1)) %>% unname %>% return()
 }

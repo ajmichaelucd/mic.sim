@@ -6,6 +6,7 @@
 \usage{
 full_polynomial_cv(
   max_degree,
+  degree_sets,
   visible_data,
   nfolds,
   non_linear_term = "t",

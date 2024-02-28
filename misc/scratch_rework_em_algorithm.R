@@ -1,4 +1,4 @@
-EM_algorithm_2 = function(
+EM_algorithm = function(
     visible_data,
     model = "surv", #"mgcv", "polynomial"
     mu_formula = Surv(time = left_bound,

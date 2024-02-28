@@ -33,11 +33,12 @@ EM_fm_surv_single_run = function(seed,
                                  sd_initial,
                                  randomize,
                                  n_models) {
-  EM = purrr::possibly(.f = EM_algorithm_surv, otherwise = "Error")
+  EM = purrr::possibly(.f = EM_algorithm, otherwise = "Error")
 message("starting iteration ", iter)
   single_model_output <- visible_data %>%
     EM(
       visible_data = .,
+      model = "surv",
       mu_formula = mu_formula,
       pi_formula = pi_formula,
       max_it = max_it,
@@ -59,10 +60,28 @@ message("starting iteration ", iter)
       n_models = n_models
     )
 
+final_like = parse_surv_single_run_output(single_model_output, iter, seed)
+
+  list(
+    output = single_model_output,
+    seed = seed,
+    iter = iter,
+    final_like = final_like
+  ) %>% return()
+
+}
+
+check_surv_single_run_output_mu_model = function(mu_model){
+  !is.na(mu_model$scale) & !is.na(predict(mu_model, newdata = data.frame(t = 1))) %>% unname
+}
+
+
+
+parse_surv_single_run_output = function(single_model_output, iter, seed){
   if (length(single_model_output) > 1) {
 
     final_like = single_model_output$likelihood %>%
-      select(step, likelihood) %>%
+      select(step, loglikelihood) %>%
       tail(1) %>%
       mutate(iter = iter,
              seed = seed,
@@ -70,9 +89,9 @@ message("starting iteration ", iter)
     if(ncomp > 1){
       final_like = final_like %>% mutate(
         comp_conv = case_when(
-          (!is.na(single_model_output$mu_model[[1]]$scale)) & (!is.na(single_model_output$mu_model[[2]]$scale)) & !is.na(predict(single_model_output$mu_model[[1]], newdata = data.frame(t = 1))) & !is.na(predict(single_model_output$mu_model[[2]], newdata = data.frame(t = 1))) ~ "both",
-          !is.na(single_model_output$mu_model[[1]]$scale) & !is.na(predict(single_model_output$mu_model[[1]], newdata = data.frame(t = 1))) ~ "comp 1",
-          !is.na(single_model_output$mu_model[[2]]$scale) & !is.na(predict(single_model_output$mu_model[[2]], newdata = data.frame(t = 1))) ~ "comp 2",
+          (check_surv_single_run_output_mu_model(single_model_output$mu_model[[1]]) & check_surv_single_run_output_mu_model(single_model_output$mu_model[[2]])) ~ "both",
+          check_surv_single_run_output_mu_model(single_model_output$mu_model[[1]]) ~ "comp 1",
+          check_surv_single_run_output_mu_model(single_model_output$mu_model[[2]]) ~ "comp 2",
           TRUE ~ "neither"
         ))
     }else{
@@ -82,18 +101,12 @@ message("starting iteration ", iter)
   } else{
     final_like = tibble(
       step = NA_integer_,
-      likelihood = NA_integer_,
+      loglikelihood = NA_integer_,
       iter = iter,
       seed = seed,
       converge = "Error",
       comp_conv = "neither"
     )
   }
-  list(
-    output = single_model_output,
-    seed = seed,
-    iter = iter,
-    final_like = final_like
-  )
-
+  return(final_like)
 }

@@ -224,7 +224,7 @@ EM_algorithm = function(
 fit_mu_model.mgcv = function(possible_data, pred_comp, mu_formula){
   df = possible_data %>% filter(`P(C=c|y,t)` > 0 & c == pred_comp)
   df$yi = cbind(df$left_bound_mgcv, df$right_bound_mgcv)
-  mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "ML") %>% return()
+  mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), weights = `P(C=c|y,t)`, data=df, method = "REML") %>% return()
 }
 
 fit_single_component_model.mgcv = function(visible_data, mu_formula){
@@ -365,7 +365,7 @@ set_model_attr = function(model, possible_data){attr(model, "model")  = attr(pos
 return(model)}
 
 fit_all_mu_models.mgcv = function(possible_data, ncomp, mu_formula){
-  mu_models_new = purrr::map(1:ncomp, ~fit_mgcv_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
+  mu_models_new = purrr::map(1:ncomp, ~fit_mu_model.mgcv(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
   mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
   attr(mu_models_new, "model") <- attr(possible_data, "model")
   return(mu_models_new)
