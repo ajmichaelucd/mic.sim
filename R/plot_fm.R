@@ -14,7 +14,7 @@
 #' @export
 #'
 #' @examples
-plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE){
+plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL){
 
   if(!is.null(output$prior_step_models) & use_prior_step){
     output$mu_model = output$prior_step_models$mu_models
@@ -47,9 +47,17 @@ plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_bre
                                            TRUE ~ (left_bound + right_bound) / 2
                                          ))
 
+  attr(df, "model") <- attr(output$possible_data, "model")
 
-plot_min <- plot_bounds(df, "min", ncomp, range_zoom, output, fitted_comp)
-plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
+
+
+if(is.null(plot_range)){
+plot_min <- plot_bounds(output$possible_data, "min", ncomp, range_zoom, output, fitted_comp)
+plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, fitted_comp)
+}else{
+  plot_min = plot_range[1]
+  plot_max = plot_range[2]
+}
 
 
 
@@ -62,29 +70,25 @@ plot_max <- plot_bounds(df, "max", ncomp, range_zoom, output, fitted_comp)
 
   if(ncomp == 2){
 
-    output$mu_model[[1]]$scale %>% print
-    output$mu_model[[2]]$scale %>% print
+    #output$mu_model[[1]]$scale %>% print
+    #output$mu_model[[2]]$scale %>% print
 
-    ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
-      mutate(
-        c1pred = predict(output$mu_model[[1]], tibble(t), se = T)$fit,
-        c1pred_se = predict(output$mu_model[[1]], tibble(t), se = T)$se.fit,
-        c1pred_lb = c1pred - 1.96 * c1pred_se,
-        c1pred_ub = c1pred + 1.96 * c1pred_se,
-        c2pred = predict(output$mu_model[[2]], tibble(t), se = T)$fit,
-        c2pred_se = predict(output$mu_model[[2]], tibble(t), se = T)$se.fit,
-        c2pred_lb = c2pred - 1.96 * c2pred_se,
-        c2pred_ub = c2pred + 1.96 * c2pred_se,
-      )
+
+ci_data = get_two_comp_ci(output)
+
 
     mean <- df %>% ggplot() +
       #geom_bar(aes(x = mid, fill = cens)) +
       geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
       geom_function(fun = function(t){predict(output$mu_model[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
       geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.25) +
-      geom_ribbon(aes(ymin = c2pred_lb, ymax = c2pred_ub, x = t, fill = "Component 2 Mu"), data = ci_data, alpha = 0.25) +
+      geom_ribbon(aes(ymin = c2pred_lb, ymax = c2pred_ub, x = t, fill = "Component 2 Mu"), data = ci_data, alpha = 0.25)
+    if(attr(df, "model") != "mgcv"){
+    mean = mean +
       geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
-      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
+      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15)
+    }
+    mean = mean +
       scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#F8766D", "#00BFC4")) +
       ggnewscale::new_scale_color() +
       scale_colour_gradient2(high = "blue", low = "red", mid = "green", midpoint = 0.5) +
@@ -258,7 +262,7 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
       plot_min_1 <- (df %>% pull(left_bound) %>% min(., na.rm = TRUE)) - 2.5
     }
 
-
+if(attr(df, "model") != "mgcv"){
     if(ncomp == 2){
       plot_min_2 <- min(sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2,
                         sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2)
@@ -267,6 +271,9 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
     }else{
       plot_min_2 = plot_min_1
     }
+}else{
+  plot_min_2 = plot_min_1
+}
 
     plot_min = min(plot_min_1, plot_min_2, na.rm = TRUE)
     if(range_zoom){
@@ -281,11 +288,17 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
       plot_max_1 <- (df %>% pull(right_bound) %>% max(., na.rm = TRUE)) + 2.5
     }
 
+    if(attr(df, "model") != "mgcv"){
+
     if(ncomp == 1){
       plot_max_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2
     } else if(ncomp == 2){
       plot_max_2 <- max(sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2,
                         sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2)
+    }else{
+      plot_max_2 = plot_max_1
+    }
+
     }else{
       plot_max_2 = plot_max_1
     }
@@ -304,4 +317,18 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
 check_comp_conv = function(models){
   is.na(models$scale) | (tibble(a = models$coefficients) %>% filter(is.na(a)) %>% nrow) > 0
 }
+
+get_two_comp_ci = function(output){
+  tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
+    mutate(
+      c1pred = predict(output$mu_model[[1]], tibble(t), se = T)$fit,
+      c1pred_se = predict(output$mu_model[[1]], tibble(t), se = T)$se.fit,
+      c1pred_lb = c1pred - 1.96 * c1pred_se,
+      c1pred_ub = c1pred + 1.96 * c1pred_se,
+      c2pred = predict(output$mu_model[[2]], tibble(t), se = T)$fit,
+      c2pred_se = predict(output$mu_model[[2]], tibble(t), se = T)$se.fit,
+      c2pred_lb = c2pred - 1.96 * c2pred_se,
+      c2pred_ub = c2pred + 1.96 * c2pred_se,
+    ) %>% return()}
+
 

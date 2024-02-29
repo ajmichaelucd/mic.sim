@@ -291,9 +291,10 @@ add_attribute_data = function(data, model){
 
 add_obs_id = function(data){
   if(ncol(data %>% select(matches("obs_id"))) == 0){ #add function
-    visible_data = data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything())
+    data %>% mutate(obs_id = row_number()) %>% select(obs_id, everything()) %>% return()
+  }else{
+  return(data)
   }
-  return(visible_data)
 }
 
 fit_single_component_model = function(visible_data, mu_formula, maxiter_survreg){

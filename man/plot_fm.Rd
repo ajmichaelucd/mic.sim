@@ -11,7 +11,8 @@ plot_fm(
   s_breakpoint = NA,
   r_breakpoint = NA,
   use_prior_step = FALSE,
-  range_zoom = FALSE
+  range_zoom = FALSE,
+  plot_range = NULL
 )
 }
 \arguments{

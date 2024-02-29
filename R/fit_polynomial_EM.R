@@ -58,7 +58,7 @@ fit_polynomial_EM = function(pre_set_degrees = NULL, #c(7,7)
     cv_results = NULL
   }
   output = EM_algorithm(
-    visible_data,
+    visible_data = visible_data,
     model = "polynomial",
     #"mgcv"
     mu_formula = mu_formula,

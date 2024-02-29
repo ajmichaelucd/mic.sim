@@ -1,8 +1,8 @@
 ---
-title: "three_approaches_standard_data"
+title: "three_approaches_minimal_censoring"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{three_approaches_standard_data}
+  %\VignetteIndexEntry{three_approaches_minimal_censoring}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -48,7 +48,7 @@ attr(t_dist, "min") = 0
 attr(t_dist, "max") = 16
 sd_vector = c("1" = 1, "2" = 1.05)
 low_con = -3
-high_con = 3
+high_con = 6
 scale = "log"
 example_data = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log") %>% suppressMessages()
 
@@ -84,7 +84,7 @@ output_polynomial = fit_polynomial_EM(pre_set_degrees = NULL, #c(7,7)
                                                  ncomp = 2,
                                                  tol_ll = 1e-6,
                                                  pi_link = "logit",
-                                                 verbose = 3,
+                                                 verbose = 2,
                                                  model_coefficient_tolerance = 0.00001,
                                                  initial_weighting = 8,
                                                  sd_initial = 0.2) 

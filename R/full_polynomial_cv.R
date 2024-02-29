@@ -122,7 +122,7 @@ get_fold_likelihood = function(i,
   testing_set = visible_data %>% filter(fold == test)
 
   trained_model = EM_algorithm(
-    training_set,
+    visible_data = training_set,
     model = "polynomial",
     mu_formula = mu_formula,
     pi_formula = pi_formula,
