@@ -86,7 +86,7 @@ parse_surv_single_run_output = function(single_model_output, iter, seed){
       mutate(iter = iter,
              seed = seed,
              converge = single_model_output$converge)
-    if(ncomp > 1){
+    if(single_model_output$ncomp > 1){
       final_like = final_like %>% mutate(
         comp_conv = case_when(
           (check_surv_single_run_output_mu_model(single_model_output$mu_model[[1]]) & check_surv_single_run_output_mu_model(single_model_output$mu_model[[2]])) ~ "both",
