@@ -283,15 +283,15 @@ mean <- df %>%
           mean = mean + scale_color_manual(breaks = c("Component Mu"), values = c(corresponding_color), guide = "none")
         }
         mean = mean +
-        scale_fill_manual(breaks = c("Component Mu"), values = c(corresponding_color)) +
+        scale_fill_manual(breaks = c("Component Mu"), values = c(corresponding_color), name = "Component Mu") +
         ggnewscale::new_scale_color() +
         scale_colour_gradient2(high = "blue", low = "red", mid = "green", midpoint = 0.5) +
         #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
-        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.2) +
-        geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc"& c == "2") %>% mutate(right_bound = plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-        geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = df %>% filter(left_bound != -Inf & c == "2"), alpha = 0.2) +
-        geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf & c == "2"), alpha = 0.2) +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2") %>% offset_time_as_date_in_df(., start_date)), alpha = 0.2) +
+        geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = plot_min) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc"& c == "2") %>% mutate(right_bound = plot_max) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+        geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = (df %>% filter(left_bound != -Inf & c == "2") %>% offset_time_as_date_in_df(., start_date)), alpha = 0.2) +
+        geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = (df %>% filter(right_bound != Inf & c == "2") %>% offset_time_as_date_in_df(., start_date)), alpha = 0.2) +
         #scale_colour_gradientn(colours = c("purple", "orange")) +
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
@@ -299,7 +299,7 @@ mean <- df %>%
         ylab(bquote(log[2]~ MIC)) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
-        scale_x_continuous(breaks = scales::breaks_extended(6)) +
+        #scale_x_continuous(breaks = scales::breaks_extended(6)) +
         theme_minimal()
 
       pi <- df %>%
