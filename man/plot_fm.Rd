@@ -12,7 +12,8 @@ plot_fm(
   r_breakpoint = NA,
   use_prior_step = FALSE,
   range_zoom = FALSE,
-  plot_range = NULL
+  plot_range = NULL,
+  start_date = 2007
 )
 }
 \arguments{
