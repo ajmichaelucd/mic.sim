@@ -42,7 +42,7 @@ fit_polynomial_EM = function(pre_set_degrees = NULL, #c(7,7)
       degree_sets,
       visible_data = visible_data %>% mutate(obs_id = row_number()),
       nfolds = 10,
-      verbose = 2
+      verbose = verbose
     ) %>%
       summarize(
         .by = c(degree_1, degree_2),
