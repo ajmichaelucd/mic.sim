@@ -170,7 +170,7 @@ mean <- df %>%
       geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf & c == "2") %>% offset_time_as_date_in_df(., start_date), alpha = 0.3) +
       #ylim(plot_min - 0.5, plot_max + 0.5) +
       ggtitle(title) +
-      xlab("Time (Years Since 2007)") +
+      xlab("Time") +
       ylab(bquote(log[2]~ MIC)) +
       ylim(plot_min - 1, plot_max + 1) +
       scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
@@ -246,7 +246,7 @@ mean <- df %>%
         #scale_colour_gradientn(colours = c("purple", "orange")) +
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
-        xlab("Time (Years Since 2007)") +
+        xlab("Time") +
         ylab(bquote(log[2]~ MIC)) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
@@ -268,13 +268,15 @@ mean <- df %>%
       corresponding_color = "#00BFC4"}#comp2
 
 
-      mean <- df %>% ggplot() +
+      mean <- df %>%
+        offset_time_as_date_in_df(., start_date) %>%
+        ggplot(aes(x = t)) +
         #geom_bar(aes(x = mid, fill = cens)) +
-        geom_function(fun = function(t){predict(fitted_comp, newdata = data.frame(t = t))}, aes(color = "Component Mu", linetype = "Fitted Model")) +
-        geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component Mu"), data = ci_data, alpha = 0.2) +
-        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000), alpha = 0.15)
+        geom_function(fun = function(t){predict(fitted_comp, newdata = data.frame(t = as_offset_time(x = t, start_date)))}, aes(color = "Component Mu", linetype = "Fitted Model")) +
+        #geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+        #geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+        geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = offset_time_as_date(t, start_date), fill = "Component Mu"), data = ci_data, alpha = 0.2) +
+        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15)
         if(add_log_reg){
           mean = mean + scale_color_manual(breaks = c("Component Mu"), values = c(corresponding_color))
         }else{
@@ -293,20 +295,21 @@ mean <- df %>%
         #scale_colour_gradientn(colours = c("purple", "orange")) +
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
-        xlab("Time (Years Since 2007)") +
+        xlab("Time") +
         ylab(bquote(log[2]~ MIC)) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
         scale_x_continuous(breaks = scales::breaks_extended(6)) +
         theme_minimal()
 
-      pi <- ggplot() +
-        geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
-        geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
+      pi <- df %>%
+        offset_time_as_date_in_df(., start_date) %>%
+        ggplot(aes(x = t)) +
+        geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
+        geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
         scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
-        xlim(0, 16) +
         ylim(0,1)  +
-        xlab("Time") + ylab("Proportion")
+        xlab("Time") + ylab("Proportion") + theme_minimal()
 
 
       if(add_log_reg && !is.null(s_breakpoint) & !is.null(r_breakpoint)){
