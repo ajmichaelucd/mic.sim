@@ -188,13 +188,14 @@ mean <- df %>%
     #way it calculates the sim response
     #do we need to account for weighting or anything?
 
-    pi <- ggplot() +
+    pi <- df %>%
+      offset_time_as_date_in_df(., start_date) %>%
+      ggplot(aes(x = t)) +
       geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
       geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
       scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
-      xlim(0, 16) +
       ylim(0,1)  +
-      xlab("Time") + ylab("Proportion")
+      xlab("Time") + ylab("Proportion") + theme_minimal()
     if(add_log_reg && !is.null(s_breakpoint) & !is.null(r_breakpoint)){
       if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
       lr_output = log_reg(output$possible_data, data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
