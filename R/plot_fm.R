@@ -14,7 +14,71 @@
 #' @export
 #'
 #' @examples
-plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL){
+#' library(mic.sim)
+#' library(mgcv)
+#' library(dplyr)
+#' library(ggplot2)
+#' library(ggnewscale)
+#' library(survival)
+#' library(patchwork)
+#' library(purrr)
+#' library(data.table)
+#' library(ggnewscale)
+#' n = 300
+#' ncomp = 2
+#' pi = function(t) {
+#'   z <- 0.07 + 0.03 * t - 0.00045 * t^2
+#'   #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+#'   tibble("1" = 1 - z, "2" = z)
+#' }
+#' `E[X|T,C]` = function(t, c)
+#' {
+#'   case_when(
+#'     c == "1" ~ -4.0 + (0.24 * t) - (0.0055 * t^2),
+#'     c == "2" ~ 3 + 0.001 * t,
+#'     TRUE ~ NaN
+#'   )
+#' }
+#' t_dist = function(n){runif(n, min = 0, max = 16)}
+#' attr(t_dist, "min") = 0
+#' attr(t_dist, "max") = 16
+#' sd_vector = c("1" = 1, "2" = 1.05)
+#' low_con = -3
+#' high_con = 3
+#' scale = "log"
+#' set.seed(1)
+#' example_data = simulate_mics(
+#'   n = n,
+#'   t_dist = t_dist,
+#'   pi = pi,
+#'   `E[X|T,C]` = `E[X|T,C]`,
+#'   sd_vector = sd_vector,
+#'   covariate_list = NULL,
+#'   covariate_effect_vector = c(0),
+#'   low_con = low_con,
+#'   high_con = high_con,
+#'   scale = "log"
+#' ) %>% suppressMessages()
+#' output_surv = fit_surv_EM(
+#' random_seeds_vector = 1:10,
+#' visible_data = example_data,
+#' mu_formula = Surv(time = left_bound,
+#'                  time2 = right_bound,
+#'                  type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
+#' pi_formula = c == "2" ~ s(t),
+#' max_it = 500,
+#' ncomp = 2,
+#' tol_ll = 1e-6,
+#' pi_link = "logit",
+#' verbose = 1,
+#' initial_weighting = 7,
+#' model_coefficient_tolerance = 0.00001,
+#' maxiter_survreg = 30,
+#' sd_initial = 0.2,
+#' randomize = "all")
+#' plot_fm(output_surv$top_output$output, title = "Surv")
+#'
+plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 2007){
 
   if(!is.null(output$prior_step_models) & use_prior_step){
     output$mu_model = output$prior_step_models$mu_models
@@ -76,17 +140,18 @@ plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, 
 
 ci_data = get_two_comp_ci(output)
 
-
-    mean <- df %>% ggplot() +
+mean <- df %>%
+      offset_time_as_date_in_df(., start_date) %>%
+      ggplot(aes(x = t)) +
       #geom_bar(aes(x = mid, fill = cens)) +
-      geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = t))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
-      geom_function(fun = function(t){predict(output$mu_model[[2]], newdata = data.frame(t = t))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
-      geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component 1 Mu"), data = ci_data, alpha = 0.25) +
-      geom_ribbon(aes(ymin = c2pred_lb, ymax = c2pred_ub, x = t, fill = "Component 2 Mu"), data = ci_data, alpha = 0.25)
+      geom_function(fun = function(t){predict(output$mu_model[[1]], newdata = data.frame(t = as_offset_time(x = t, start_date)))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){predict(output$mu_model[[2]], newdata = data.frame(t = as_offset_time(x = t, start_date)))}, aes(color = "Component 2 Mu", linetype = "Fitted Model")) +
+      geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = offset_time_as_date(t, start_date), fill = "Component 1 Mu"), data = ci_data, alpha = 0.25) +
+      geom_ribbon(aes(ymin = c2pred_lb, ymax = c2pred_ub, x = offset_time_as_date(t, start_date), fill = "Component 2 Mu"), data = ci_data, alpha = 0.25)
     if(attr(df, "model") != "mgcv"){
     mean = mean +
-      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
-      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000), alpha = 0.15) +
+      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15) +
+      geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15) +
       scale_fill_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#F8766D", "#00BFC4"), name = "Component Means")
     }
     if(add_log_reg){
@@ -98,18 +163,18 @@ ci_data = get_two_comp_ci(output)
       ggnewscale::new_scale_color() +
       scale_colour_gradient2(high = "blue", low = "red", mid = "green", midpoint = 0.5) +
       #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
-      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2")), alpha = 0.3) +
-      geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
-      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
-      geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = df %>% filter(left_bound != -Inf & c == "2"), alpha = 0.3) +
-      geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf & c == "2"), alpha = 0.3) +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2") %>% offset_time_as_date_in_df(., start_date)), alpha = 0.3) +
+      geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(plot_min) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "rc" & c == "2") %>% mutate(plot_max) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+      geom_point(aes(x = t, y = left_bound,  color = `P(C=c|y,t)`), data = df %>% filter(left_bound != -Inf & c == "2") %>% offset_time_as_date_in_df(., start_date), alpha = 0.3) +
+      geom_point(aes(x = t, y = right_bound,  color = `P(C=c|y,t)`), data = df %>% filter(right_bound != Inf & c == "2") %>% offset_time_as_date_in_df(., start_date), alpha = 0.3) +
       #ylim(plot_min - 0.5, plot_max + 0.5) +
       ggtitle(title) +
       xlab("Time (Years Since 2007)") +
       ylab(bquote(log[2]~ MIC)) +
       ylim(plot_min - 1, plot_max + 1) +
       scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
-      scale_x_continuous(breaks = scales::breaks_extended(6)) +
+      # scale_x_continuous(breaks = scales::breaks_extended(6)) +
       theme_minimal()
       #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = 1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
       #geom_function(fun = function(t){mu.se.brd(t, c = 1, z = -1.96)}, aes(color = "Component 1 Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
@@ -124,8 +189,8 @@ ci_data = get_two_comp_ci(output)
     #do we need to account for weighting or anything?
 
     pi <- ggplot() +
-      geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
-      geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
+      geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
       scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
       xlim(0, 16) +
       ylim(0,1)  +
@@ -349,4 +414,6 @@ get_two_comp_ci = function(output){
       c2pred_ub = c2pred + 1.96 * c2pred_se,
     ) %>% return()}
 
-
+offset_time_as_date_in_df = function(df, start_date){
+  df %>% mutate(t = offset_time_as_date(t, start_date)) %>% return()
+}
