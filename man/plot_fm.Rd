@@ -6,7 +6,7 @@
 \usage{
 plot_fm(
   output,
-  title,
+  title = "",
   add_log_reg = FALSE,
   s_breakpoint = NA,
   r_breakpoint = NA,
