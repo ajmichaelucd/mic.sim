@@ -22,3 +22,69 @@ plot_fm(
 \description{
 Title
 }
+\examples{
+library(mic.sim)
+library(mgcv)
+library(dplyr)
+library(ggplot2)
+library(ggnewscale)
+library(survival)
+library(patchwork)
+library(purrr)
+library(data.table)
+library(ggnewscale)
+n = 300
+ncomp = 2
+pi = function(t) {
+  z <- 0.07 + 0.03 * t - 0.00045 * t^2
+  #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+  tibble("1" = 1 - z, "2" = z)
+}
+`E[X|T,C]` = function(t, c)
+{
+  case_when(
+    c == "1" ~ -4.0 + (0.24 * t) - (0.0055 * t^2),
+    c == "2" ~ 3 + 0.001 * t,
+    TRUE ~ NaN
+  )
+}
+t_dist = function(n){runif(n, min = 0, max = 16)}
+attr(t_dist, "min") = 0
+attr(t_dist, "max") = 16
+sd_vector = c("1" = 1, "2" = 1.05)
+low_con = -3
+high_con = 3
+scale = "log"
+set.seed(1)
+example_data = simulate_mics(
+  n = n,
+  t_dist = t_dist,
+  pi = pi,
+  `E[X|T,C]` = `E[X|T,C]`,
+  sd_vector = sd_vector,
+  covariate_list = NULL,
+  covariate_effect_vector = c(0),
+  low_con = low_con,
+  high_con = high_con,
+  scale = "log"
+) \%>\% suppressMessages()
+output_surv = fit_surv_EM(
+random_seeds_vector = 1:10,
+visible_data = example_data,
+mu_formula = Surv(time = left_bound,
+                 time2 = right_bound,
+                 type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
+pi_formula = c == "2" ~ s(t),
+max_it = 500,
+ncomp = 2,
+tol_ll = 1e-6,
+pi_link = "logit",
+verbose = 1,
+initial_weighting = 7,
+model_coefficient_tolerance = 0.00001,
+maxiter_survreg = 30,
+sd_initial = 0.2,
+randomize = "all")
+plot_fm(output_surv$top_output$output, title = "Surv")
+
+}
