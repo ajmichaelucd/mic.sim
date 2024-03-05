@@ -126,7 +126,7 @@ ci_data = get_two_comp_ci(output)
     pi <- ggplot() +
       geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
       geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
-      scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4")) +
+      scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
       xlim(0, 16) +
       ylim(0,1)  +
       xlab("Time") + ylab("Proportion")
@@ -237,7 +237,7 @@ ci_data = get_two_comp_ci(output)
       pi <- ggplot() +
         geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = t), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
         geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = t), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
-        scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4")) +
+        scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
         xlim(0, 16) +
         ylim(0,1)  +
         xlab("Time") + ylab("Proportion")
