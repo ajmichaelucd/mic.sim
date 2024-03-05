@@ -84,7 +84,7 @@ output_polynomial = fit_polynomial_EM(pre_set_degrees = NULL, #c(7,7)
                                                  ncomp = 2,
                                                  tol_ll = 1e-6,
                                                  pi_link = "logit",
-                                                 verbose = 2,
+                                                 verbose = 3,
                                                  model_coefficient_tolerance = 0.00001,
                                                  initial_weighting = 8,
                                                  sd_initial = 0.2) 
