@@ -14,6 +14,16 @@
 #' @export
 #'
 #' @examples
+#' library(mic.sim)
+#' library(mgcv)
+#' library(dplyr)
+#' library(ggplot2)
+#' library(ggnewscale)
+#' library(survival)
+#' library(patchwork)
+#' library(purrr)
+#' library(data.table)
+#' library(ggnewscale)
 #' n = 300
 #' ncomp = 2
 #' pi = function(t) {
@@ -36,6 +46,7 @@
 #' low_con = -3
 #' high_con = 3
 #' scale = "log"
+#' set.seed(1)
 #' example_data = simulate_mics(
 #'   n = n,
 #'   t_dist = t_dist,
@@ -47,16 +58,13 @@
 #'   low_con = low_con,
 #'   high_con = high_con,
 #'   scale = "log"
-#' ) %>% suppressMessages() %>%
-#'   mutate(
-#'     y_int = Surv(time = left_bound,
-#'                  time2 = right_bound,
-#'                  type = "interval2")
-#'   )
+#' ) %>% suppressMessages()
 #' output_surv = fit_surv_EM(
 #' random_seeds_vector = 1:10,
 #' visible_data = example_data,
-#' mu_formula = y_int ~ pspline(t, df = 0, caic = TRUE),
+#' mu_formula = Surv(time = left_bound,
+#'                  time2 = right_bound,
+#'                  type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
 #' pi_formula = c == "2" ~ s(t),
 #' max_it = 500,
 #' ncomp = 2,
@@ -68,15 +76,7 @@
 #' maxiter_survreg = 30,
 #' sd_initial = 0.2,
 #' randomize = "all")
-#' plot_likelihood(output_surv$top_output$output$likelihood)
 #' plot_fm(output_surv$top_output$output, title = "Surv")
-#'
-#'
-#'
-#'
-#'
-#'
-#'
 #'
 plot_fm <- function(output, title, add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 2007){
 
