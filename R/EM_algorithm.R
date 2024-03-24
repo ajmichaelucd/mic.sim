@@ -54,7 +54,9 @@ EM_algorithm = function(
     stop_on_likelihood_drop = FALSE,
     n_models = 100,
     seed = NULL,
-    randomize = "all"
+    randomize = "all",
+    non_linear_term = "t",
+    covariates = NULL
 ){
   #add attribute model to visible data
 
@@ -70,7 +72,7 @@ EM_algorithm = function(
   }else{
 
     #first E step-----
-    possible_data = first_E_step(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, randomize, n_models, model)
+    possible_data = first_E_step(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, randomize, n_models, model, non_linear_term, covariates, pi_formula, max_it,tol_ll, pi_link, model_coefficient_tolerance)
 
     #wrapper function
     plot_initial_weighting_regression(possible_data = possible_data)

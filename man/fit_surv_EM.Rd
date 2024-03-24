@@ -5,9 +5,7 @@
 \title{Title}
 \usage{
 fit_surv_EM(
-  random_seeds_vector,
   visible_data,
-  n_models = length(random_seeds_vector),
   mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
     pspline(t, df = 0, caic = TRUE),
   pi_formula = c == "2" ~ s(t),
@@ -16,11 +14,12 @@ fit_surv_EM(
   tol_ll = 1e-06,
   pi_link = "logit",
   verbose = 1,
-  initial_weighting = 7,
+  initial_weighting = 9,
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
   sd_initial = 0.2,
-  randomize = "all"
+  non_linear_term = "t",
+  covariates = NULL
 )
 }
 \arguments{

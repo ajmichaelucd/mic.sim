@@ -27,7 +27,9 @@ EM_algorithm(
   stop_on_likelihood_drop = FALSE,
   n_models = 100,
   seed = NULL,
-  randomize = "all"
+  randomize = "all",
+  non_linear_term = "t",
+  covariates = NULL
 )
 }
 \arguments{
