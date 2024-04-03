@@ -1,5 +1,5 @@
 # mic.sim
-What the Package Does (Title Case)
+An R package for modeling MIC data
 
 ## How to install
 
