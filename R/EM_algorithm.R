@@ -27,6 +27,7 @@
 #' @export
 #'
 #' @importFrom magrittr %<>%
+#' @importFrom survival survreg.control
 #'
 #' @examples
 EM_algorithm = function(
