@@ -407,11 +407,15 @@ brd_output = EM_fm_surv_batch_run(
 )
 
 
-get_like = function(grid_output){
-  grid_output$final_like %>% return()
+
+summary = map(grid_output, get_like) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
+
+sort_solutions = function(grid_output){
+  map(grid_output, get_like) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
 }
 
-summary = map(brd_output, get_like) %>% data.table::rbindlist(.) %>% tibble %>% arrange(desc(likelihood))
+
+
 print(summary)
 
 summary %>% summarize(.by = comp_conv, n = n())

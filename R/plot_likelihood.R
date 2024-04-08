@@ -14,14 +14,15 @@ plot_likelihood = function(likelihood_documentation, format = "tibble"){
     like <- likelihood_documentation %>%
       as_tibble %>%
       suppressWarnings() %>%
-      rename(step = V1, likelihood = V2, survreg_maxout = V3)
-    diff = c(NaN, diff(like$likelihood))
+      rename(step = V1, loglikelihood = V2, survreg_maxout = V3)
+    diff = c(NaN, diff(like$loglikelihood))
       like = like %>% tibble(., diff) %>%
-      filter(!is.na(likelihood)) }
+      filter(!is.na(loglikelihood))
+      }
   else if(format == "tibble"){
-    diff = c(NaN, diff(likelihood_documentation$likelihood))
+    diff = c(NaN, diff(likelihood_documentation$loglikelihood))
     like = likelihood_documentation %>% tibble(., diff) %>%
-      filter(!is.na(likelihood))
+      filter(!is.na(loglikelihood))
   }
 
   like %>%
@@ -32,6 +33,8 @@ plot_likelihood = function(likelihood_documentation, format = "tibble"){
                         TRUE ~ "dec")
     ) %>%
     ggplot() +
-    geom_line(aes(x = step, y = likelihood)) +
-    geom_point(aes(x = step, y = likelihood, color = diff_sign))
+    geom_line(aes(x = step, y = loglikelihood)) +
+    geom_point(aes(x = step, y = loglikelihood, color = diff_sign)) +
+    theme_minimal() + scale_color_discrete(name = "Change in LL") +
+    ylab("log-likelihood")
 }

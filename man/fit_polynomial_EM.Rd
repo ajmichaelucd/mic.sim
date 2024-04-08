@@ -5,7 +5,9 @@
 \title{Title}
 \usage{
 fit_polynomial_EM(
+  pre_set_degrees = NULL,
   max_degree,
+  degree_sets = "matched",
   visible_data,
   nfolds,
   non_linear_term = "t",
