@@ -13,7 +13,7 @@
 #' @importFrom readr parse_number
 #'
 #' @examples
-import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE){
+import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE, log_reg_value = FALSE){
 
   mic_column <- dplyr::case_when(
     grepl("/", as.character(mic_column)) ~ gsub("/.*$", "", mic_column),
@@ -53,8 +53,9 @@ import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE
                  TRUE ~ readr::parse_number(mic_column)
                )
       )
+
   }
-  df %>%
+ df = df %>%
     mutate(
       left_bound = case_when(
         left_bound == "0.12" ~ 0.125,
@@ -74,8 +75,25 @@ import_mics = function(mic_column, code_column = NULL, combination_agent = FALSE
         right_bound == "0.00375" ~ 2^-8,
         TRUE ~ right_bound
       )
-    ) %>% return()
+    )
 
+ if(log_reg_value){
+   df = df %>% mutate(
+     mic_column = paste0(code_column, mic_column),
+     lr_column =
+       case_when(
+         grepl(pattern = "(≤)|(<=)|(=<)", x = mic_column) ~ parse_number(mic_column),
+         grepl(pattern = ">", x = mic_column) ~ parse_number(mic_column) * 2,
+         TRUE ~ parse_number(mic_column)
+       )
+   )
+ }
+
+ attr(df, "source") <- "imported"
+ attr(df, "lr_col") <- TRUE
+ attr(df, "mic_class") <- "imported_mic_column"
+ attr(df, "metadata") <- FALSE
+ return(df)
 }
 
 
