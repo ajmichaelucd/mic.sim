@@ -234,7 +234,7 @@ fit_single_component_model.mgcv = function(visible_data, mu_formula){
 
   possible_data = visible_data %>%
     modify_bounds.mgcv()
-  mu_model = mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), data = possible_data, method = "ML")
+  mu_model = mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), data = possible_data, method = "REML")
 
   return(list(possible_data = possible_data,
               mu_model = mu_model,

@@ -71,7 +71,7 @@ example_data %>%
 ```
 
 ```{r}
-output_polynomial = fit_polynomial_EM(pre_set_degrees = NULL, #c(7,7)
+output_polynomial = fit_polynomial_EM(pre_set_degrees = c(7,7), #NULL
                                                  max_degree = 8,
                                                  degree_sets = "matched",
                                                  #"independent"
@@ -84,7 +84,7 @@ output_polynomial = fit_polynomial_EM(pre_set_degrees = NULL, #c(7,7)
                                                  ncomp = 2,
                                                  tol_ll = 1e-6,
                                                  pi_link = "logit",
-                                                 verbose = 3,
+                                                 verbose = 0,
                                                  model_coefficient_tolerance = 0.00001,
                                                  initial_weighting = 8,
                                                  sd_initial = 0.2) 
@@ -93,7 +93,7 @@ plot_fm(output_polynomial, title = "Polynomial")
 ```
 
 ```{r}
-output_surv = fit_surv_EM(random_seeds_vector = 1:10, 
+output_surv = fit_surv_EM( 
             visible_data = example_data, 
             mu_formula = Surv(time = left_bound,
                               time2 = right_bound,
@@ -107,10 +107,9 @@ output_surv = fit_surv_EM(random_seeds_vector = 1:10,
             initial_weighting = 7,
             model_coefficient_tolerance = 0.00001,
             maxiter_survreg = 30,
-            sd_initial = 0.2,
-            randomize = "all")
-plot_likelihood(output_surv$top_output$output$likelihood)
-plot_fm(output_surv$top_output$output, title = "Surv")
+            sd_initial = 0.2)
+plot_likelihood(output_surv$likelihood)
+plot_fm(output_surv, title = "Surv")
 ```
 
 
@@ -118,8 +117,8 @@ plot_fm(output_surv$top_output$output, title = "Surv")
 output_mgcv = EM_algorithm(
   visible_data = example_data, 
   model = "mgcv", 
-  mu_formula = yi ~ s(t), 
-  pi_formula = c == "2" ~ s(t),
+  mu_formula = yi ~ s(t, bs = "cr"), 
+  pi_formula = c == "2" ~ s(t, bs = "cr"),
   max_it = 100,
   ncomp = 2,
   tol_ll = 1e-06,
@@ -133,6 +132,10 @@ output_mgcv = EM_algorithm(
 
 plot_likelihood(output_mgcv$likelihood)
 plot_fm(output_mgcv, title = "mgcv")
+output_mgcv$likelihood %>% 
+  ggplot() + 
+  geom_point(aes(x = step, y = scale_comp_1), color = "red") +
+  geom_point(aes(x = step, y = scale_comp_2), color = "blue")
 
 ```
 
