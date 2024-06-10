@@ -186,9 +186,11 @@ degree_tib = function(i, max_degree){
 }
 
 assign_folds = function(visible_data, nfolds){
-  visible_data = visible_data %>% mutate(fold = sample(rep(1:nfolds, each = (
-    nrow(visible_data) / 10
-  ) %>% ceiling), nrow(visible_data)))
+  visible_data = visible_data %>% ungroup() %>% mutate(fold =
+                                           sample(
+                                             rep(1:nfolds, each = (
+                                                nrow(visible_data) / nfolds
+                                                  %>% ceiling)), nrow(visible_data)))
 }
 
 calculate_fold_likelihood = function(testing_set, trained_mu_model, trained_pi_model){
