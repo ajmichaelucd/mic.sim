@@ -342,12 +342,21 @@ fit_all_mu_models.polynomial = function(possible_data, ncomp, mu_formula, maxite
   return(mu_models_new)
 }
 
+fit_all_mu_models.surv.split = function(possible_data, ncomp, mu_formula, maxiter_survreg){
+  mu_models_new = purrr::map2(1:ncomp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
+  mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
+  attr(mu_models_new, "model") <- attr(possible_data, "model")
+  return(mu_models_new)
+} ##note is identical to fit_all_mu_models.polynomial
+
 fit_all_mu_models = function(possible_data, ncomp, mu_formula, maxiter_survreg = 30){
   if(attr(possible_data, "model") == "mgcv"){
     fit_all_mu_models.mgcv(possible_data, ncomp, mu_formula) %>% return()
   }else if(attr(possible_data, "model") == "polynomial"){
     fit_all_mu_models.polynomial(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
-  }else{
+  }else if(attr(possible_data, "model") == "surv" & is.list(mu_formula) && length(mu_formula) == ncomp){
+    fit_all_mu_models.surv.split(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
+  }else {
     fit_all_mu_models.surv(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
   }
 }

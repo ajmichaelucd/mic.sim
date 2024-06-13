@@ -1,3 +1,7 @@
+
+out = full_surv_cv(visible_data = visible_data)
+
+
 full_surv_cv = function(max_degree = 10,
                         degree_sets = "independent",
                         visible_data,
@@ -36,7 +40,7 @@ full_surv_cv = function(max_degree = 10,
 
 }
 
-full_surv_cv(visible_data = visible_data)
+
 
 
 single_cv_surv = function(degrees,

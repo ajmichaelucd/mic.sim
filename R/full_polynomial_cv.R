@@ -194,7 +194,8 @@ assign_folds = function(visible_data, nfolds){
 }
 
 calculate_fold_likelihood = function(testing_set, trained_mu_model, trained_pi_model){
-  testing_set %>% reframe(.by = everything(),
+
+  testing_set %>% add_obs_id() %>% reframe(.by = everything(),
                           c = as.character(1:2)) %>%
     calculate_density_obs(., trained_mu_model) %>%
     pi_model_predictions(., trained_pi_model) %>%
