@@ -57,11 +57,14 @@ EM_algorithm = function(
     seed = NULL,
     randomize = "all",
     non_linear_term = "t",
-    covariates = NULL
+    covariates = NULL,
+    scale = NULL
 ){
   #add attribute model to visible data
 
   visible_data = modify_visible_data(visible_data, model)
+
+  visible_data = set_scale_log(visible_data, scale)
 
   set_algorithm_seed(seed)
 
@@ -531,10 +534,30 @@ tibble_like <- function(likelihood_documentation, model = "surv"){
   likelihood_documentation %>% as_tibble %>% filter(!is.na(.data$loglikelihood)) %>% return()
 }
 
-modify_visible_data = function(visible_data, model){
+modify_visible_data = function(visible_data, model, scale = NULL){
   visible_data = add_attribute_data(visible_data, model)
   visible_data = add_obs_id(visible_data)
+  visible_data = add_scale(visible_data, scale)
   return(visible_data)
+}
+
+add_scale = function(data, scale){
+  if(is.null(attr(data, "scale"))){
+    if(is.null(scale)){
+      errorCondition("This data set does not have a scale attribute already attached, please use 'scale' argument to provide one: acceptable values are log, fold, log2, MIC")
+    }else{
+      scale_modified = case_when(
+        tolower(scale) %in% c("log", "fold", "log2") ~ "log",
+        tolower(scale) %in% c("mic", "concentration") ~ "MIC",
+        TRUE ~ "error"
+      )
+
+      if(scale_modified == "error"){errorCondition("Invalid value of scale, please use 'log', 'fold', 'log2', or 'MIC'")}
+
+      attr(data, "scale") = scale
+    }
+  }
+  return(data)
 }
 
 set_algorithm_seed = function(seed){
@@ -663,4 +686,13 @@ m_step_check_maximizing_mgcv = function(possible_data, mu_models, pi_model){
     mutate(m_step_check = `P(C=c|y,t)` * log(`P(c,y|t)`)) %>% pull(m_step_check) %>% sum %>% return()
 }
 
+set_scale_log = function(visible_data, scale){
+  visible_data = add_scale(visible_data, scale)
+  if(attr(visible_data, "scale") == "MIC"){
+    visible_data = visible_data %>% mutate(left_bound = log2(left_bound),
+                                           right_bound = log2(right_bound))
+  }
+  return(visible_data)
+
+}
 

@@ -15,8 +15,9 @@ full_surv_cv = function(max_degree = 10,
                         pi_link = "logit",
                         verbose = 3,
                         model_coefficient_tolerance = 0.00001,
-                        initial_weighting = 8,
-                        sd_initial = 0.2){
+                        initial_weighting = 9,
+                        sd_initial = 0.2,
+                        scale = NULL){
   create_degree_combinations_surv(max_degree, ncomp, degree_sets) %>%
   map(
   .,
@@ -34,7 +35,8 @@ full_surv_cv = function(max_degree = 10,
     verbose = verbose,
     model_coefficient_tolerance = model_coefficient_tolerance,
     initial_weighting = initial_weighting,
-    sd_initial = sd_initial
+    sd_initial = sd_initial,
+    scale = scale
   )
 ) %>% data.table::rbindlist() %>% tibble %>% return()
 
@@ -56,7 +58,8 @@ single_cv_surv = function(degrees,
                      verbose = 3,
                      model_coefficient_tolerance = 0.00001,
                      initial_weighting = 8,
-                     sd_initial = 0.2) {
+                     sd_initial = 0.2,
+                     scale = NULL) {
   message("CV for degrees", degrees)
 
   tibble(fold_likelihood = map_dbl(
@@ -75,7 +78,8 @@ single_cv_surv = function(degrees,
       verbose = verbose,
       model_coefficient_tolerance = model_coefficient_tolerance,
       initial_weighting = initial_weighting,
-      sd_initial = sd_initial
+      sd_initial = sd_initial,
+      scale = scale
     )
   )) %>%
     mutate(fold = row_number(),
@@ -97,7 +101,8 @@ get_fold_likelihood_surv = function(i,
                                verbose = 3,
                                model_coefficient_tolerance = 0.00001,
                                initial_weighting = 8,
-                               sd_initial = 0.2) {
+                               sd_initial = 0.2,
+                               scale = NULL) {
   test = i
 
   mu_formula = write_all_surv_formulas(non_linear_term, degrees, covariates)
@@ -128,7 +133,8 @@ get_fold_likelihood_surv = function(i,
     stop_on_likelihood_drop = FALSE,
     n_models = 100,
     seed = NULL,
-    randomize = "all"
+    randomize = "all",
+    scale = scale
   )
   calculate_fold_likelihood(testing_set, trained_model$mu_model, trained_model$pi_model)
 

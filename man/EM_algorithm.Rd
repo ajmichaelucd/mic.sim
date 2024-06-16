@@ -29,7 +29,8 @@ EM_algorithm(
   seed = NULL,
   randomize = "all",
   non_linear_term = "t",
-  covariates = NULL
+  covariates = NULL,
+  scale = NULL
 )
 }
 \arguments{
