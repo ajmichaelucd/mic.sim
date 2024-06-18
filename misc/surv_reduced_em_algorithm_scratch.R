@@ -1,3 +1,35 @@
+output = EM_algorithm_reduced(
+  fixed_side = "LC",
+  extra_row = FALSE,
+  visible_data,
+  model = "surv", #"mgcv", "polynomial"
+  mu_formula = Surv(time = left_bound,
+                    time2 = right_bound,
+                    type = "interval2") ~ pspline(t, df = 5),
+  #mu_formula = yi ~ s(t),
+  pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
+  max_it = 3000,
+  ncomp = 2,
+  tol_ll = 1e-6,
+  browse_at_end = FALSE,
+  browse_each_step = FALSE,
+  plot_visuals = FALSE,
+  prior_step_plot = FALSE,
+  pause_on_likelihood_drop = TRUE,
+  pi_link = "logit",
+  verbose = 3,
+  model_coefficient_tolerance = 0.00001,
+  maxiter_survreg = 30,
+  initial_weighting = 2,
+  sd_initial = 0.2,
+  stop_on_likelihood_drop = FALSE,
+  non_linear_term = "t",
+  covariates = NULL
+)
+
+output
+
+
 EM_algorithm_reduced = function(
     #add:
   fixed_side = "RC",
@@ -24,7 +56,7 @@ EM_algorithm_reduced = function(
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
     maxiter_survreg = 30,
-    #cut initial_weighting = 8,
+    initial_weighting = 1,
     sd_initial = 0.2,
     stop_on_likelihood_drop = FALSE,
     #cut n_models = 100,
@@ -38,8 +70,6 @@ EM_algorithm_reduced = function(
   visible_data = modify_visible_data(visible_data, model)
 
   visible_data = set_scale_log(visible_data, scale)
-
-  set_algorithm_seed(seed)
 
 
   converge = NA_character_
@@ -70,7 +100,7 @@ EM_algorithm_reduced = function(
 
     mu_models_new = fit_all_mu_models_v2(possible_data = possible_data, ncomp = ncomp, mu_formula = mu_formula, fixed_side = fixed_side, maxiter_survreg = maxiter_survreg)
       #mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
-      likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
+      #likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
       if(check_mu_models_convergence(mu_models_new, ncomp - 1)){
         converge = "NO"
         break #if wrapping into an M-step function, add list to list of outputs, then check between steps
@@ -190,10 +220,12 @@ EM_algorithm_reduced = function(
         converge = converge,
         ncomp = ncomp,
         prior_step_models = prior_iteration,
-        seed = seed,
+        #seed = seed,
         random_start_set = random_start_set,
-        sd_initial = ifelse(initial_weighting >= 7, sd_initial, NaN),
-        mu_formula = mu_formula
+        sd_initial = sd_initial,  # ifelse(initial_weighting >= 7, sd_initial, NaN),
+        mu_formula = mu_formula,
+        fixed_side = fixed_side,
+        extra_row = extra_row
       )
     )
   }
@@ -288,8 +320,8 @@ first_E_step_reduced = function(initial_weighting, visible_data, plot_visuals, s
   if(initial_weighting == 1){
     possible_data = initial_weighting_reduced(visible_data = visible_data, fixed_side = fixed_side, extra_row = extra_row )
   }else{
-    #linear_e_step_output = initial_weighting_fit_linear_model(visible_data, non_linear_term, covariates, pi_formula, max_it, ncomp, tol_ll, pi_link, verbose = 0, model_coefficient_tolerance, sd_initial)
-    #possible_data = linear_e_step_output$possible_data
+    linear_e_step_output = initial_weighting_fit_linear_model_reduced(visible_data, fixed_side, extra_row = extra_row, non_linear_term, covariates, pi_formula, max_it, ncomp, tol_ll, pi_link, verbose, model_coefficient_tolerance, sd_initial)
+    possible_data = linear_e_step_output$possible_data
   }
 
 
@@ -397,8 +429,29 @@ fit_all_mu_models_v2 = function(possible_data, ncomp, mu_formula, fixed_side = N
   }else{
     errorCondition("mu_formula should be a list of formulas equal to the number of component means being estimated or a single formula to be repeated for all the components")
   }
+
+  attr(mu_models_new, "fixed_side") <- fixed_side
   return(mu_models_new)
 }
 
-#initial_weighting_fit_linear_model = function(visible_data, non_linear_term, covariates, pi_formula, max_it, ncomp, tol_ll, pi_link, verbose, model_coefficient_tolerance, sd_initial)
-##NEED TO MAKE AN EM FIRST
+initial_weighting_fit_linear_model_reduced = function(visible_data, fixed_side, extra_row = extra_row, non_linear_term, covariates, pi_formula, max_it, ncomp, tol_ll, pi_link, verbose, model_coefficient_tolerance, sd_initial){
+  mu_formula = write_all_polynomial_formulas(non_linear_term = non_linear_term, degrees = rep(1, ncomp - 1), covariates = covariates)
+
+  visible_data %>%
+    EM_algorithm_reduced(
+      fixed_side = fixed_side,
+      extra_row = extra_row,
+      visible_data = .,
+      mu_formula = mu_formula,
+      pi_formula = pi_formula,
+      max_it = max_it,
+      ncomp = ncomp,
+      tol_ll = tol_ll,
+      pi_link = pi_link,
+      verbose = verbose,
+      model_coefficient_tolerance = model_coefficient_tolerance,
+      initial_weighting = 1,
+      sd_initial = sd_initial
+    ) %>% return()
+}
+
