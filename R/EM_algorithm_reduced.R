@@ -1,38 +1,36 @@
-output = EM_algorithm_reduced(
-  fixed_side = "LC",
-  extra_row = FALSE,
-  visible_data,
-  model = "surv", #"mgcv", "polynomial"
-  mu_formula = Surv(time = left_bound,
-                    time2 = right_bound,
-                    type = "interval2") ~ pspline(t, df = 5),
-  #mu_formula = yi ~ s(t),
-  pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
-  max_it = 3000,
-  ncomp = 2,
-  tol_ll = 1e-6,
-  browse_at_end = FALSE,
-  browse_each_step = FALSE,
-  plot_visuals = FALSE,
-  prior_step_plot = FALSE,
-  pause_on_likelihood_drop = TRUE,
-  pi_link = "logit",
-  verbose = 3,
-  model_coefficient_tolerance = 0.00001,
-  maxiter_survreg = 30,
-  initial_weighting = 2,
-  sd_initial = 0.2,
-  stop_on_likelihood_drop = FALSE,
-  non_linear_term = "t",
-  covariates = NULL
-)
-
-output
-
-
+#' Title
+#'
+#' @param fixed_side
+#' @param extra_row
+#' @param visible_data
+#' @param model
+#' @param mu_formula
+#' @param pi_formula
+#' @param max_it
+#' @param ncomp
+#' @param tol_ll
+#' @param browse_at_end
+#' @param browse_each_step
+#' @param plot_visuals
+#' @param prior_step_plot
+#' @param pause_on_likelihood_drop
+#' @param pi_link
+#' @param verbose
+#' @param model_coefficient_tolerance
+#' @param maxiter_survreg
+#' @param initial_weighting
+#' @param sd_initial
+#' @param stop_on_likelihood_drop
+#' @param non_linear_term
+#' @param covariates
+#'
+#' @return
+#' @export
+#'
+#' @examples
 EM_algorithm_reduced = function(
-  fixed_side = "RC",
-  extra_row = FALSE,
+    fixed_side = "RC",
+    extra_row = FALSE,
     visible_data,
     model = "surv", #"mgcv", "polynomial"
     mu_formula = Surv(time = left_bound,
@@ -68,8 +66,8 @@ EM_algorithm_reduced = function(
   converge = NA_character_
 
   if(ncomp == 1){
-      errorCondition("The reduced model is appropriate for more than 1 component")
-    }else{
+    errorCondition("The reduced model is appropriate for more than 1 component")
+  }else{
 
     #first E step-----
     possible_data = first_E_step_reduced(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, non_linear_term, covariates, pi_formula, max_it,tol_ll, pi_link, model_coefficient_tolerance)
@@ -91,7 +89,7 @@ EM_algorithm_reduced = function(
         prior_iteration = save_previous_iteration(mu_models_new, pi_model_new, log_likelihood_new, possible_data)
       }
 
-    mu_models_new = fit_all_mu_models_v2(possible_data = possible_data, ncomp = ncomp, mu_formula = mu_formula, fixed_side = fixed_side, maxiter_survreg = maxiter_survreg)
+      mu_models_new = fit_all_mu_models_v2(possible_data = possible_data, ncomp = ncomp, mu_formula = mu_formula, fixed_side = fixed_side, maxiter_survreg = maxiter_survreg)
       #mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
       #likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
       if(check_mu_models_convergence(mu_models_new, ncomp - 1)){
@@ -226,3 +224,42 @@ EM_algorithm_reduced = function(
 
 
 
+fit_all_mu_models_v2 = function(possible_data, ncomp, mu_formula, fixed_side = NULL, maxiter_survreg = 30){
+  fitted_comp = case_when(
+    is.null(fixed_side) ~ c(1:ncomp),
+    !is.null(fixed_side) && fixed_side == "LC" ~ c(2),
+    !is.null(fixed_side) && fixed_side == "RC" ~ c(1),
+    TRUE ~ -1
+  ) %>% unique()
+  if(length(fitted_comp) == 1 && fitted_comp < 0){
+    errorCondition("Invalid value of fixed side, use 'LC', 'RC', or 'NULL'")
+  }
+  if(!is.list(mu_formula)){
+    mu_formula = list(mu_formula)
+  }
+  if(length(mu_formula) < length(fitted_comp) && ((length(fitted_comp) %% length(mu_formula)) %% length(mu_formula)) == 0){
+    message(length)
+    rep(mu_formula, (length(fitted_comp) / length(mu_formula)) )
+  }
+
+  if(is.list(mu_formula) && length(mu_formula) == length(fitted_comp)){
+
+    if(attr(possible_data, "model") %in% c("surv", "polynomial")){
+      mu_models_new = purrr::map2(fitted_comp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
+      mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
+      attr(mu_models_new, "model") <- attr(possible_data, "model")
+    }else if(attr(possible_data, "model") == "mgcv"){
+      mu_models_new = purrr::map2(fitted_comp, mu_formula, ~fit_mu_model.mgcv(possible_data = possible_data, pred_comp = .x, mu_formula = .y))
+      mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
+      attr(mu_models_new, "model") <- attr(possible_data, "model")
+    }else{
+      errorCondition("model must be 'surv', 'polynomial', or 'mgcv'")
+    }
+
+  }else{
+    errorCondition("mu_formula should be a list of formulas equal to the number of component means being estimated or a single formula to be repeated for all the components")
+  }
+
+  attr(mu_models_new, "fixed_side") <- fixed_side
+  return(mu_models_new)
+}
