@@ -28,7 +28,7 @@ EM_algorithm_reduced = function(
     sd_initial = 0.2,
     stop_on_likelihood_drop = FALSE,
     #cut n_models = 100,
-    cut seed = NULL,
+    #cut seed = NULL,
     # cut randomize = "all",
     non_linear_term = "t",
     covariates = NULL
@@ -68,20 +68,10 @@ EM_algorithm_reduced = function(
         prior_iteration = save_previous_iteration(mu_models_new, pi_model_new, log_likelihood_new, possible_data)
       }
 
-
-
-
-
-      }
-
-
-
-
-
     mu_models_new = fit_all_mu_models_v2(possible_data = possible_data, ncomp = ncomp, mu_formula = mu_formula, fixed_side = fixed_side, maxiter_survreg = maxiter_survreg)
       #mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
       likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
-      if(check_mu_models_convergence(mu_models_new, ncomp)){
+      if(check_mu_models_convergence(mu_models_new, ncomp - 1)){
         converge = "NO"
         break #if wrapping into an M-step function, add list to list of outputs, then check between steps
       }
@@ -89,7 +79,7 @@ EM_algorithm_reduced = function(
       pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
       if(i > 1){
-        model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, prior_iteration$mu_models_old, prior_iteration$pi_model_old, model_coefficient_tolerance, ncomp)
+        model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, prior_iteration$mu_models_old, prior_iteration$pi_model_old, model_coefficient_tolerance, ncomp-1)
       }
 
 
@@ -97,16 +87,14 @@ EM_algorithm_reduced = function(
 
       #Next E step-------------
 
-      likelihood_documentation[i, "m_step_check_new"] <- m_step_check_maximizing(possible_data, mu_models_new, pi_model_new) ###use dimnames in matrix
-      if(i > 1){
-        likelihood_documentation[i, "m_step_check_old"] <- m_step_check_maximizing(possible_data, prior_iteration$mu_models_old, prior_iteration$pi_model_old) ###use dimnames in matrix
-      }else{
-        likelihood_documentation[i, "m_step_check_old"] <- NaN
-      }
+      # likelihood_documentation[i, "m_step_check_new"] <- m_step_check_maximizing(possible_data, mu_models_new, pi_model_new) ###use dimnames in matrix
+      # if(i > 1){
+      #   likelihood_documentation[i, "m_step_check_old"] <- m_step_check_maximizing(possible_data, prior_iteration$mu_models_old, prior_iteration$pi_model_old) ###use dimnames in matrix
+      # }else{
+      #   likelihood_documentation[i, "m_step_check_old"] <- NaN
+      # }
 
-
-
-      possible_data = E_step(possible_data, mu_models_new, pi_model_new)
+      possible_data = E_step_reduced(possible_data, mu_models_new, pi_model_new, fixed_side = fixed_side, extra_row = extra_row)
 
       if(verbose > 2){
         print(pi_model_new)
@@ -226,7 +214,74 @@ EM_algorithm_reduced = function(
 
 
 
+calculate_density_obs_reduced = function(possible_data, mu_models, fixed_side, extra_row){
+  if(fixed_side == "RC" & !extra_row){
+    possible_data %>%
+      mutate(
+        `E[Y|t,c]` = if_else(c == 1, predict(mu_models[[1]], newdata = possible_data), NA_real_),
+        `sd[Y|t,c]` = if_else(c == 1, mu_models[[1]]$scale, NA_real_),
+        `P(Y|t,c)` = case_when(
+          c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+            pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 1 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+            pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+          TRUE ~ (right_bound == Inf) %>% as.numeric()
+        )
+      )
+  }else if(fixed_side == "LC" & !extra_row){
+    possible_data %>%
+      mutate(
+        `E[Y|t,c]` = if_else(c == 2, predict(mu_models[[1]], newdata = possible_data), NA_real_),
+        `sd[Y|t,c]` = if_else(c == 2, mu_models[[1]]$scale, NA_real_),
+        `P(Y|t,c)` = case_when(
+          c == 2 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 2 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+            pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 2 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+            pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+          TRUE ~ (left_bound == -Inf ) %>% as.numeric()
+        )
+      )
+  }else if(fixed_side == "RC" & extra_row){
+    possible_data %>%
+      mutate(
+        `E[Y|t,c]` = if_else(c == 1, predict(mu_models[[1]], newdata = possible_data), NA_real_),
+        `sd[Y|t,c]` = if_else(c == 1, mu_models[[1]]$scale, NA_real_),
+        `P(Y|t,c)` = case_when(
+          c == 1 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 1 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+            pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 1 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+            pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+          TRUE ~ (right_bound == Inf | right_bound == high_con) %>% as.numeric()
+        )
+      )
+  }else if(fixed_side == "LC" & extra_row){
+    possible_data %>%
+      mutate(
+        `E[Y|t,c]` = if_else(c == 2, predict(mu_models[[1]], newdata = possible_data), NA_real_),
+        `sd[Y|t,c]` = if_else(c == 2, mu_models[[1]]$scale, NA_real_),
+        `P(Y|t,c)` = case_when(
+          c == 2 & left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 2 & left_bound <= `E[Y|t,c]` ~ pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`) -
+            pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`),
+          c == 2 ~ pnorm(left_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE) -
+            pnorm(right_bound, mean = `E[Y|t,c]`, sd =  `sd[Y|t,c]`, lower.tail = FALSE),
+          TRUE ~ (left_bound == -Inf | left_bound == low_con) %>% as.numeric()
+        )
+      )
+  }else{
+    errorCondition("Invalid value for either fixed_side or extra_row")
+  }
 
+}
+
+E_step_reduced = function(possible_data, mu_models, pi_model, fixed_side, extra_row){
+  possible_data %<>% calculate_density_obs_reduced(., mu_models, fixed_side, extra_row) %>%
+    pi_model_predictions(., pi_model) %>%
+    calculate_new_weights() %>% return()
+}
 
 
 first_E_step_reduced = function(initial_weighting, visible_data, plot_visuals, sd_initial = 0.2, ncomp = 2, non_linear_term, covariates, pi_formula, max_it, tol_ll, pi_link, model_coefficient_tolerance){
