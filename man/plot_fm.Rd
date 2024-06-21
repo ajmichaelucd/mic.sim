@@ -13,7 +13,7 @@ plot_fm(
   use_prior_step = FALSE,
   range_zoom = FALSE,
   plot_range = NULL,
-  start_date = 2007
+  start_date = 0
 )
 }
 \arguments{

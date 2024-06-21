@@ -78,11 +78,29 @@
 #' randomize = "all")
 #' plot_fm(output_surv$top_output$output, title = "Surv")
 #'
-plot_fm <- function(output, title ="", add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 2007){
+plot_fm <- function(output, title ="", add_log_reg = FALSE, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0){
 
   if(!is.null(output$prior_step_models) & use_prior_step){
     output$mu_model = output$prior_step_models$mu_models
   }
+
+  if(!is.null(output$fixed_side)){
+    if(output$fixed_side == "LC"){
+      check = check_comp_conv(output$mu_model[[1]])
+      dnc = c(TRUE, check)
+      ncomp = 1 - check
+      results = tibble(c = 1:2, dnc)
+      fitted_comp = output$mu_model[[1]]
+    }else if(output$fixed_side == "RC"){
+      check = check_comp_conv(output$mu_model[[1]])
+      dnc = c(check, TRUE)
+      ncomp = 1 - check
+      results = tibble(c = 1:2, dnc)
+      fitted_comp = output$mu_model[[1]]
+    }else{
+      errorCondition("Invalid value for fixed_side")
+    }
+  }else{
 
     if(output$ncomp == "2"){
       results <- tibble(c = 1:2, dnc = purrr::map_lgl(output$mu_model, ~check_comp_conv(.x)))
@@ -97,6 +115,7 @@ plot_fm <- function(output, title ="", add_log_reg = FALSE, s_breakpoint = NA, r
       fitted_comp = output$mu_model
       ncomp = 1
     }
+}
 
   df = output$possible_data %>% mutate(cens =
                                          case_when(
@@ -275,7 +294,7 @@ mean <- df %>%
 
       return(mean)
 
-    }else{
+    }else if (output$ncomp == 2 & ncomp == 1){
       ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
         mutate(
           c1pred = predict(fitted_comp, tibble(t), se = T)$fit,
@@ -381,6 +400,17 @@ mean = mean +
           xlab("Time") + ylab("Proportion") + theme_minimal() + guides(linetype = "none")
       }
       return(mean/pi)
+    }
+    else{
+      warningCondition("No components converged")
+      df %>% ggplot() +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "int")), alpha = 0.3) +
+        geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = cens), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+        geom_point(aes(x = t, y = left_bound,  color = cens), data = df %>% filter(left_bound != -Inf), alpha = 0.3) +
+        geom_point(aes(x = t, y = right_bound,  color = cens), data = df %>% filter(right_bound != Inf), alpha = 0.3) +
+        theme_minimal()
+
     }
   }
 
