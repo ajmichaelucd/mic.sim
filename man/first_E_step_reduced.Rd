@@ -16,7 +16,9 @@ first_E_step_reduced(
   max_it,
   tol_ll,
   pi_link,
-  model_coefficient_tolerance
+  model_coefficient_tolerance,
+  fixed_side,
+  extra_row
 )
 }
 \arguments{

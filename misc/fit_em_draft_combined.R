@@ -1,4 +1,5 @@
 fit_EM = function(model = "surv", #"polynomial",
+                  #approach = "full", #"reduced"
                        pre_set_degrees = NULL, #c(7,7)
                        max_degree = 8,
                        degree_sets = "matched",
@@ -9,7 +10,7 @@ fit_EM = function(model = "surv", #"polynomial",
                        covariates = NULL,
                        pi_formula = c == "2" ~ s(t),
                        max_it = 3000,
-                       ncomp = 2,
+                       ncomp = 2, #relevant
                        tol_ll = 1e-6,
                        pi_link = "logit",
                        verbose = 3,

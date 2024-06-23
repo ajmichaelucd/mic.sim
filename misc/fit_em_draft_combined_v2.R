@@ -17,6 +17,7 @@ fit_EM = function(model = "surv", #"polynomial",
                   pi_link = "logit",
                   verbose = 3,
                   model_coefficient_tolerance = 0.00001,
+                  maxiter_survreg = 30,
                   initial_weighting = 9,
                   sd_initial = 0.2) {
   ##check here if approach is reduced but fixed side is null then we have a problem
@@ -39,6 +40,7 @@ fit_EM = function(model = "surv", #"polynomial",
       pi_link = pi_link,
       verbose = verbose,
       model_coefficient_tolerance = model_coefficient_tolerance,
+      maxiter_survreg = maxiter_survreg,
       initial_weighting = initial_weighting,
       sd_initial = sd_initial
     )
@@ -65,6 +67,8 @@ fit_EM = function(model = "surv", #"polynomial",
     cv_results = NULL
   }
   ##add a choice here between full and reduced models FIX
+
+  if(approach == "full"){
   output = EM_algorithm(
     visible_data = visible_data,
     model = model,
@@ -81,7 +85,7 @@ fit_EM = function(model = "surv", #"polynomial",
     pi_link = pi_link,
     verbose = verbose,
     model_coefficient_tolerance = model_coefficient_tolerance,
-    maxiter_survreg = 30,
+    maxiter_survreg = maxiter_survreg,
     initial_weighting = initial_weighting,
     sd_initial = sd_initial,
     stop_on_likelihood_drop = FALSE,
@@ -89,6 +93,34 @@ fit_EM = function(model = "surv", #"polynomial",
     seed = NULL,
     randomize = "all"
   )
+  }else if(approach == "reduced" & !is.null(fixed_side)){
+    output = EM_algorithm_reduced(fixed_side = fixed_side,
+                         extra_row = extra_row,
+                         visible_data = visible_data,
+                         model = model,
+                         mu_formula = mu_formula,
+                         pi_formula = pi_formula,
+                         max_it = max_it,
+                         ncomp = ncomp,
+                         tol_ll = tol_ll,
+                         browse_at_end = FALSE,
+                         browse_each_step = FALSE,
+                         plot_visuals = FALSE,
+                         prior_step_plot = FALSE,
+                         pause_on_likelihood_drop = FALSE,
+                         pi_link = pi_link,
+                         verbose = verbose,
+                         model_coefficient_tolerance = model_coefficient_tolerance,
+                         maxiter_survreg = maxiter_survreg,
+                         initial_weighting = initial_weighting,
+                         sd_initial = sd_initial,
+                         stop_on_likelihood_drop = FALSE,
+                         non_linear_term = non_linear_term,
+                         covariates = covariates
+    )
+  }else{
+    errorCondition("Values for approach are 'full' and 'reduced', if using reduced model, supply a value for fixed_side (RC or LC) and consider extra_row")
+  }
 
   output$cv_results = cv_results
 
@@ -116,6 +148,7 @@ full_cv = function(
                         pi_link = "logit",
                         verbose = 3,
                         model_coefficient_tolerance = 0.00001,
+                        maxiter_survreg = 30,
                         initial_weighting = 9,
                         sd_initial = 0.2,
                         scale = NULL){
@@ -139,6 +172,7 @@ full_cv = function(
         pi_link = pi_link,
         verbose = verbose,
         model_coefficient_tolerance = model_coefficient_tolerance,
+        maxiter_survreg = maxiter_survreg,
         initial_weighting = initial_weighting,
         sd_initial = sd_initial,
         scale = scale
@@ -166,7 +200,8 @@ single_cv_all = function(model = "surv",
                           pi_link = "logit",
                           verbose = 3,
                           model_coefficient_tolerance = 0.00001,
-                          initial_weighting = 8,
+    maxiter_survreg = 30,
+                          initial_weighting = 9,
                           sd_initial = 0.2,
                           scale = NULL) {
   message("CV for degrees", degrees)
@@ -190,6 +225,7 @@ single_cv_all = function(model = "surv",
       pi_link = pi_link,
       verbose = verbose,
       model_coefficient_tolerance = model_coefficient_tolerance,
+      maxiter_survreg = maxiter_survreg,
       initial_weighting = initial_weighting,
       sd_initial = sd_initial,
       scale = scale
@@ -216,12 +252,13 @@ get_fold_likelihood_all = function(model = "surv",
                                     pi_link = "logit",
                                     verbose = 3,
                                     model_coefficient_tolerance = 0.00001,
-                                    initial_weighting = 8,
+                                   maxiter_survreg = 30,
+                                    initial_weighting = 9,
                                     sd_initial = 0.2,
                                     scale = NULL) {
   test = i
 
-  mu_formula = write_all_formulas(non_linear_term, degrees, covariates, model, approach)
+  mu_formula = write_all_formulas(non_linear_term, degrees, covariates, model)
 
   ##add check for if fold column exists
   training_set = visible_data %>% filter(fold != test)
@@ -246,7 +283,7 @@ get_fold_likelihood_all = function(model = "surv",
     pi_link = pi_link,
     verbose = verbose,
     model_coefficient_tolerance = model_coefficient_tolerance,
-    maxiter_survreg = 30,
+    maxiter_survreg = maxiter_survreg,
     initial_weighting = initial_weighting,
     sd_initial = sd_initial,
     stop_on_likelihood_drop = FALSE,
@@ -256,8 +293,9 @@ get_fold_likelihood_all = function(model = "surv",
     non_linear_term = non_linear_term,
     covariates = covariates,
     scale = scale
-  )}else if(approach == "reduced"){
-    EM_algorithm_reduced(fixed_side = fixed_side,
+  )
+  }else if(approach == "reduced"){
+    trained_model = EM_algorithm_reduced(fixed_side = fixed_side,
                          extra_row = extra_row,
                          visible_data = training_set,
                          model = model,
@@ -284,9 +322,11 @@ get_fold_likelihood_all = function(model = "surv",
   }else{
     errorCondition("Use 'full' or 'reduced' for approach")
   }
-  calculate_fold_likelihood(testing_set, trained_model$mu_model, trained_model$pi_model)
-  ###MAY NEED TO FIX THIS TOO
-}
+
+  calculate_fold_likelihood_all(testing_set, trained_mu_model = trained_model$mu_model, trained_pi_model = trained_model$pi_model, approach = approach, fixed_side = fixed_side, extra_row = extra_row) %>%
+    return()  ###MAY NEED TO FIX THIS TOO
+
+  }
 
 
 write_single_formula.surv = function(non_linear_term, degrees, covariates){
@@ -314,7 +354,7 @@ write_all_formulas = function(non_linear_term, degrees, covariates, model){
     purrr::map(degrees, ~ write_single_formula.polynomial(non_linear_term, .x, covariates)) %>% return()
 
   }else if(model == "surv"){
-    purrr::map(degrees, ~ write_single_formula.polynomial(non_linear_term, .x, covariates)) %>% return()
+    purrr::map(degrees, ~ write_single_formula.surv(non_linear_term, .x, covariates)) %>% return()
   }else{
     errorCondition("Please use 'surv' or 'polynomial' for model")
   }
@@ -364,5 +404,48 @@ add_single_degree_to_fold_likelihood = function(df, i, j, nfolds){
 add_all_degrees_to_fold_likelihood = function(df, degrees, nfolds){
   map2_dfc(1:length(degrees), degrees, ~add_single_degree_to_fold_likelihood(df, .x, .y, nfolds))
 }
+
+calculate_fold_likelihood_all = function(testing_set,
+                                         trained_mu_model,
+                                         trained_pi_model,
+                                         approach = "full",
+                                         fixed_side = NULL,
+                                         extra_row = FALSE) {
+  if (approach == "full") {
+    calculate_fold_likelihood.full(testing_set, trained_mu_model, trained_pi_model) %>% return()
+  } else if (approach == "reduced" & !is.null(fixed_side)) {
+    calculate_fold_likelihood.reduced(testing_set,
+                                      trained_mu_model,
+                                      trained_pi_model,
+                                      fixed_side,
+                                      extra_row) %>% return()
+  } else{
+    errorCondition("If using reduced model, need to supply a value for fixed_side")
+  }
+}
+
+calculate_fold_likelihood.full = function(testing_set, trained_mu_model, trained_pi_model){
+
+  testing_set %>% add_obs_id() %>% reframe(.by = everything(),
+                                           c = as.character(1:2)) %>%
+    calculate_density_obs(., trained_mu_model) %>%
+    pi_model_predictions(., trained_pi_model) %>%
+    calculate_new_weights(.) %>%
+    calculate_log_likelihood(.) %>% return()
+}
+
+calculate_fold_likelihood.reduced = function(testing_set, trained_mu_model, trained_pi_model, fixed_side, extra_row){
+  testing_set %>% add_obs_id() %>% reframe(.by = everything(),
+                                           c = as.character(1:2)) %>%
+    calculate_density_obs_reduced(., trained_mu_model, fixed_side, extra_row) %>%
+    pi_model_predictions(., trained_pi_model) %>%
+    calculate_new_weights(.) %>%
+    calculate_log_likelihood(.) %>% return()
+
+
+
+}
+
+
 
 

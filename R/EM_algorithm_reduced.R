@@ -70,7 +70,7 @@ EM_algorithm_reduced = function(
   }else{
 
     #first E step-----
-    possible_data = first_E_step_reduced(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, non_linear_term, covariates, pi_formula, max_it,tol_ll, pi_link, model_coefficient_tolerance)
+    possible_data = first_E_step_reduced(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, non_linear_term, covariates, pi_formula, max_it,tol_ll, pi_link, model_coefficient_tolerance, fixed_side, extra_row)
 
     #wrapper function
     #plot_initial_weighting_regression(possible_data = possible_data)
@@ -80,7 +80,8 @@ EM_algorithm_reduced = function(
 
 
 
-    for(i in 1:max_it){
+
+      for(i in 1:max_it){
       message_iteration_count(i, verbose)
       #first M step--------
       #MLE of all parameters
@@ -194,12 +195,6 @@ EM_algorithm_reduced = function(
       )
     }
 
-    if(initial_weighting == 7){
-      random_start_set = randomize
-    }else{
-      random_start_set = NA_character_
-    }
-
     return(
       list(
         likelihood = tibble_like(likelihood_documentation),
@@ -211,8 +206,6 @@ EM_algorithm_reduced = function(
         converge = converge,
         ncomp = ncomp,
         prior_step_models = prior_iteration,
-        #seed = seed,
-        random_start_set = random_start_set,
         sd_initial = sd_initial,  # ifelse(initial_weighting >= 7, sd_initial, NaN),
         mu_formula = mu_formula,
         fixed_side = fixed_side,

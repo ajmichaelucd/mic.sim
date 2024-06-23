@@ -17,7 +17,7 @@
 #' @export
 #'
 #' @examples
-first_E_step_reduced = function(initial_weighting, visible_data, plot_visuals, sd_initial = 0.2, ncomp = 2, non_linear_term, covariates, pi_formula, max_it, tol_ll, pi_link, model_coefficient_tolerance){
+first_E_step_reduced = function(initial_weighting, visible_data, plot_visuals, sd_initial = 0.2, ncomp = 2, non_linear_term, covariates, pi_formula, max_it, tol_ll, pi_link, model_coefficient_tolerance, fixed_side, extra_row){
   if(initial_weighting == 1){
     possible_data = initial_weighting_reduced(visible_data = visible_data, fixed_side = fixed_side, extra_row = extra_row )
   }else{

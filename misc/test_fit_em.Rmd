@@ -1,0 +1,162 @@
+---
+title: "try_out_fit_em"
+output: html_document
+date: "2024-06-23"
+---
+
+```{r setup, include=FALSE}
+
+```
+
+```{r}
+n = 300
+ncomp = 2
+pi = function(t) {
+  z <- 0.07 + 0.03 * t - 0.00045 * t^2
+  #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+  tibble("1" = 1 - z, "2" = z)
+}
+`E[X|T,C]` = function(t, c)
+{
+  case_when(
+    c == "1" ~ -4.0 + (0.24 * t) - (0.0055 * t^2),
+    c == "2" ~ 3 + 0.001 * t,
+    TRUE ~ NaN
+  )
+}
+t_dist = function(n){runif(n, min = 0, max = 16)}
+attr(t_dist, "min") = 0
+attr(t_dist, "max") = 16
+sd_vector = c("1" = 1, "2" = 1.05)
+low_con = -3
+high_con = 6
+scale = "log"
+example_data = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log") %>% suppressMessages()
+```
+
+```{r}
+example_data %>% 
+  mutate(verbose_comp = case_when(
+    comp == 1 ~ "Component 1",
+    TRUE ~ "Component 2"
+  )) %>% 
+  ggplot() +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(left_bound != -Inf & right_bound != Inf)), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = verbose_comp), data = (. %>% filter(left_bound == -Inf) %>% mutate(left_bound = low_con - 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_point(aes(x = t, y = left_bound, color = verbose_comp), data = . %>% filter(left_bound != -Inf), alpha = 0.3) +
+  geom_point(aes(x = t, y = right_bound, color = verbose_comp), data = . %>% filter(right_bound != Inf), alpha = 0.3) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, aes(color = "Component 1 Mean")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, aes(color = "Component 2 Mean")) +
+  xlim(attr(t_dist, "min") ,attr(t_dist, "max")) +
+  ylim(low_con - 2, high_con + 2) %>% suppressWarnings()
+```
+
+```{r}
+out_1 = fit_EM(
+  model = "surv",
+  approach = "full",
+  visible_data = example_data,
+  max_degree = 5,
+  verbose = 0
+)
+
+plot_likelihood(out_1$likelihood)
+plot_fm(out_1, title = "Surv Full")
+```
+
+```{r}
+out_2 = fit_EM(
+  model = "polynomial",
+  approach = "full",
+  visible_data = example_data,
+  max_degree = 5,
+  verbose = 0
+)
+
+plot_likelihood(out_2$likelihood)
+plot_fm(out_2, title = "Polynomial Full")
+```
+
+
+```{r}
+n = 300
+ncomp = 2
+pi = function(t) {
+  z <- 0.07 + 0.03 * t - 0.00045 * t^2
+  #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
+  tibble("1" = 1 - z, "2" = z)
+}
+`E[X|T,C]` = function(t, c)
+{
+  case_when(
+    c == "1" ~ -4.0 + (0.24 * t) - (0.0055 * t^2),
+    c == "2" ~ 3 + 0.001 * t,
+    TRUE ~ NaN
+  )
+}
+t_dist = function(n){runif(n, min = 0, max = 16)}
+attr(t_dist, "min") = 0
+attr(t_dist, "max") = 16
+sd_vector = c("1" = 1, "2" = 1.05)
+low_con = -3
+high_con = 1
+scale = "log"
+example_data_cens = simulate_mics(n = n, t_dist = t_dist, pi = pi, `E[X|T,C]` = `E[X|T,C]`, sd_vector = sd_vector, covariate_list = NULL, covariate_effect_vector = c(0), low_con = low_con, high_con = high_con, scale = "log") %>% suppressMessages()
+```
+
+```{r}
+example_data_cens %>% 
+  mutate(verbose_comp = case_when(
+    comp == 1 ~ "Component 1",
+    TRUE ~ "Component 2"
+  )) %>% 
+  ggplot() +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(left_bound != -Inf & right_bound != Inf)), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = verbose_comp), data = (. %>% filter(left_bound == -Inf) %>% mutate(left_bound = low_con - 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = verbose_comp), data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+  geom_point(aes(x = t, y = left_bound, color = verbose_comp), data = . %>% filter(left_bound != -Inf), alpha = 0.3) +
+  geom_point(aes(x = t, y = right_bound, color = verbose_comp), data = . %>% filter(right_bound != Inf), alpha = 0.3) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "1")}, aes(color = "Component 1 Mean")) +
+  geom_function(fun = function(t){`E[X|T,C]`(t, c = "2")}, aes(color = "Component 2 Mean")) +
+  xlim(attr(t_dist, "min") ,attr(t_dist, "max")) +
+  ylim(low_con - 2, high_con + 2) %>% suppressWarnings()
+```
+
+
+
+
+
+
+
+
+```{r}
+out_3 = fit_EM(
+  model = "surv",
+  approach = "reduced",
+  visible_data = example_data_cens,
+  fixed_side = "RC",
+  extra_row = FALSE,
+  max_degree = 5,
+  verbose = 4
+)
+
+plot_likelihood(out_3$likelihood)
+plot_fm(out_3, title = "Surv Reduced")
+```
+
+
+```{r}
+out_4 = fit_EM(
+  model = "polynomial",
+  approach = "reduced",
+  visible_data = example_data_cens,
+  fixed_side = "RC",
+  extra_row = FALSE,
+  max_degree = 5,
+  verbose = 0
+)
+
+plot_likelihood(out_4$likelihood)
+plot_fm(out_4, title = "Polynomial Reduced")
+```
