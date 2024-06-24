@@ -154,7 +154,8 @@ out_4 = fit_EM(
   fixed_side = "RC",
   extra_row = FALSE,
   max_degree = 5,
-  verbose = 0
+  verbose = 0,
+  initial_weighting = 1
 )
 
 plot_likelihood(out_4$likelihood)

@@ -19,7 +19,7 @@ EM_algorithm_reduced(
   browse_each_step = FALSE,
   plot_visuals = FALSE,
   prior_step_plot = FALSE,
-  pause_on_likelihood_drop = TRUE,
+  pause_on_likelihood_drop = FALSE,
   pi_link = "logit",
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
