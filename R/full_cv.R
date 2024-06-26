@@ -47,7 +47,8 @@ full_cv = function(
     maxiter_survreg = 30,
     initial_weighting = 9,
     sd_initial = 0.2,
-    scale = NULL){
+    scale = NULL,
+    reruns_allowed = 3){
   create_degree_combinations_all(max_degree, ncomp, degree_sets, model, approach) %>%
     map(
       .,
@@ -71,7 +72,8 @@ full_cv = function(
         maxiter_survreg = maxiter_survreg,
         initial_weighting = initial_weighting,
         sd_initial = sd_initial,
-        scale = scale
+        scale = scale,
+        reruns_allowed = reruns_allowed
       )
     ) %>% data.table::rbindlist() %>% tibble %>% return()
 

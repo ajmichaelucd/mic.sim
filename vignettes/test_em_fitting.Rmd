@@ -1,11 +1,30 @@
 ---
-title: "try_out_fit_em"
-output: html_document
-date: "2024-06-23"
+title: "Test EM Fitting"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Test EM Fitting}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 
+```{r setup}
+library(mic.sim)
+library(mgcv)
+library(dplyr)
+library(ggplot2)
+library(ggnewscale)
+library(survival)
+library(patchwork)
+library(purrr)
+library(data.table)
+library(ggnewscale)
 ```
 
 ```{r}

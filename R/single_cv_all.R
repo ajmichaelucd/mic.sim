@@ -52,7 +52,7 @@ single_cv_all = function(model = "surv",
 
     fold_output = tibble(fold_likelihood = map_dbl(
       1:nfolds,
-      ~ get_fold_likelihood_all_safe_single_output(
+      ~ get_fold_likelihood_all(#_safe_single_output(
         model = model,
         approach = approach,
         .x,
@@ -87,4 +87,13 @@ single_cv_all = function(model = "surv",
   tibble(fold_output, add_all_degrees_to_fold_likelihood(fold_output, degrees, nfolds)) %>%
     mutate(repeats = rep) %>%
     return()
+}
+
+
+add_single_degree_to_fold_likelihood = function(df, i, j, nfolds){
+  tibble(!!paste0("degree_", i) := rep(j,nfolds))
+}
+
+add_all_degrees_to_fold_likelihood = function(df, degrees, nfolds){
+  map2_dfc(1:length(degrees), degrees, ~add_single_degree_to_fold_likelihood(df, .x, .y, nfolds))
 }

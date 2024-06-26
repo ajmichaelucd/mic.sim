@@ -28,7 +28,8 @@ EM_algorithm_reduced(
   sd_initial = 0.2,
   stop_on_likelihood_drop = FALSE,
   non_linear_term = "t",
-  covariates = NULL
+  covariates = NULL,
+  scale = NULL
 )
 }
 \arguments{

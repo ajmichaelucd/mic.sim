@@ -23,7 +23,7 @@ first_E_step(
 )
 }
 \arguments{
-\item{model}{}
+\item{model_coefficient_tolerance}{}
 }
 \description{
 Title

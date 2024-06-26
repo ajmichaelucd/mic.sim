@@ -20,6 +20,10 @@ get_fold_likelihood_all = function(model = "surv",
                                    scale = NULL) {
   test = i
 
+  if(verbose >= 1){
+    message(paste0("fold ", i))
+  }
+
   mu_formula = write_all_formulas(non_linear_term, degrees, covariates, model)
 
   ##add check for if fold column exists
@@ -79,7 +83,8 @@ get_fold_likelihood_all = function(model = "surv",
                                          sd_initial = sd_initial,
                                          stop_on_likelihood_drop = FALSE,
                                          non_linear_term = non_linear_term,
-                                         covariates = covariates
+                                         covariates = covariates,
+                                         scale = scale
     )
   }else{
     errorCondition("Use 'full' or 'reduced' for approach")

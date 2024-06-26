@@ -8,6 +8,13 @@
 #' @param randomize
 #' @param n_models
 #' @param model
+#' @param non_linear_term
+#' @param covariates
+#' @param pi_formula
+#' @param max_it
+#' @param tol_ll
+#' @param pi_link
+#' @param model_coefficient_tolerance
 #'
 #' @return
 #' @export

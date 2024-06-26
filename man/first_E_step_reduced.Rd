@@ -18,11 +18,13 @@ first_E_step_reduced(
   pi_link,
   model_coefficient_tolerance,
   fixed_side,
-  extra_row
+  extra_row,
+  model,
+  verbose
 )
 }
 \arguments{
-\item{model_coefficient_tolerance}{}
+\item{model}{}
 }
 \description{
 Title

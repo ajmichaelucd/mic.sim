@@ -54,7 +54,8 @@ EM_algorithm_reduced = function(
     sd_initial = 0.2,
     stop_on_likelihood_drop = FALSE,
     non_linear_term = "t",
-    covariates = NULL
+    covariates = NULL,
+    scale = NULL
 ){
   #add attribute model to visible data
 
@@ -70,7 +71,7 @@ EM_algorithm_reduced = function(
   }else{
 
     #first E step-----
-    possible_data = first_E_step_reduced(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, non_linear_term, covariates, pi_formula, max_it,tol_ll, pi_link, model_coefficient_tolerance, fixed_side, extra_row)
+    possible_data = first_E_step_reduced(initial_weighting = initial_weighting, visible_data = visible_data, plot_visuals = plot_visuals, sd_initial = sd_initial, ncomp = ncomp, non_linear_term = non_linear_term, covariates = covariates, pi_formula = pi_formula, max_it = max_it, tol_ll = tol_ll, pi_link = pi_link, model_coefficient_tolerance = model_coefficient_tolerance, fixed_side = fixed_side, extra_row = extra_row, model = model, verbose = verbose)
 
     #wrapper function
     #plot_initial_weighting_regression(possible_data = possible_data)
@@ -90,7 +91,7 @@ EM_algorithm_reduced = function(
         prior_iteration = save_previous_iteration(mu_models_new, pi_model_new, log_likelihood_new, possible_data)
       }
 
-      mu_models_new = fit_all_mu_models_v2(possible_data = possible_data, ncomp = ncomp, mu_formula = mu_formula, fixed_side = fixed_side, maxiter_survreg = maxiter_survreg)
+      mu_models_new = fit_all_mu_models(possible_data = possible_data, ncomp = ncomp, mu_formula = mu_formula, approach = "reduced", fixed_side = fixed_side, maxiter_survreg = maxiter_survreg)
       #mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
       #likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
       if(check_mu_models_convergence(mu_models_new, ncomp - 1)){
@@ -137,15 +138,15 @@ EM_algorithm_reduced = function(
         browser("likelihood decreased")
       }
 
-      if(browse_each_step & plot_visuals){
-
-        browser(message("End of step ", i))
-        plot_fm_step(pi_model_new, mu_models_new, ncomp, possible_data, prior_step_plot, i)
-
-        if(i > 1){
-          plot_likelihood(likelihood_documentation, format = "matrix")
-        }
-      }
+      # if(browse_each_step & plot_visuals){
+      #
+      #   browser(message("End of step ", i))
+      #   plot_fm_step(pi_model_new, mu_models_new, ncomp, possible_data, prior_step_plot, i)
+      #
+      #   if(i > 1){
+      #     plot_likelihood(likelihood_documentation, format = "matrix")
+      #   }
+      # }
 
       if(browse_each_step & !plot_visuals){browser(message("End of step ", i))}
 
@@ -153,7 +154,7 @@ EM_algorithm_reduced = function(
         ##too much overlap with 103
         check_ll = (log_likelihood_new - prior_iteration$log_likelihood_old)
 
-        if(check_ll < 0){
+        if(check_ll < 0 & verbose >= 2){
           warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
         }
 
@@ -176,7 +177,7 @@ EM_algorithm_reduced = function(
 
     ####group 149 to 173
     if(i > 1){
-      if(i == max_it & !(check_ll < tol_ll & model_coefficient_checks_results)){
+      if(i == max_it & !((check_ll < tol_ll) & model_coefficient_checks_results)){
         converge = "iterations"
       }
     }
@@ -217,42 +218,3 @@ EM_algorithm_reduced = function(
 
 
 
-fit_all_mu_models_v2 = function(possible_data, ncomp, mu_formula, fixed_side = NULL, maxiter_survreg = 30){
-  fitted_comp = case_when(
-    is.null(fixed_side) ~ c(1:ncomp),
-    !is.null(fixed_side) && fixed_side == "LC" ~ c(2),
-    !is.null(fixed_side) && fixed_side == "RC" ~ c(1),
-    TRUE ~ -1
-  ) %>% unique()
-  if(length(fitted_comp) == 1 && fitted_comp < 0){
-    errorCondition("Invalid value of fixed side, use 'LC', 'RC', or 'NULL'")
-  }
-  if(!is.list(mu_formula)){
-    mu_formula = list(mu_formula)
-  }
-  if(length(mu_formula) < length(fitted_comp) && ((length(fitted_comp) %% length(mu_formula)) %% length(mu_formula)) == 0){
-    message(length)
-    rep(mu_formula, (length(fitted_comp) / length(mu_formula)) )
-  }
-
-  if(is.list(mu_formula) && length(mu_formula) == length(fitted_comp)){
-
-    if(attr(possible_data, "model") %in% c("surv", "polynomial")){
-      mu_models_new = purrr::map2(fitted_comp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
-      mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
-      attr(mu_models_new, "model") <- attr(possible_data, "model")
-    }else if(attr(possible_data, "model") == "mgcv"){
-      mu_models_new = purrr::map2(fitted_comp, mu_formula, ~fit_mu_model.mgcv(possible_data = possible_data, pred_comp = .x, mu_formula = .y))
-      mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
-      attr(mu_models_new, "model") <- attr(possible_data, "model")
-    }else{
-      errorCondition("model must be 'surv', 'polynomial', or 'mgcv'")
-    }
-
-  }else{
-    errorCondition("mu_formula should be a list of formulas equal to the number of component means being estimated or a single formula to be repeated for all the components")
-  }
-
-  attr(mu_models_new, "fixed_side") <- fixed_side
-  return(mu_models_new)
-}

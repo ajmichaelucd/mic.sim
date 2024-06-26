@@ -47,7 +47,9 @@ fit_EM = function(model = "surv", #"polynomial",
                   model_coefficient_tolerance = 0.00001,
                   maxiter_survreg = 30,
                   initial_weighting = 9,
-                  sd_initial = 0.2) {
+                  sd_initial = 0.2,
+                  scale = NULL,
+                  reruns_allowed = 3) {
   ##check here if approach is reduced but fixed side is null then we have a problem
   if (is.null(pre_set_degrees)) {
     cv_results_intermediate = full_cv(
@@ -70,7 +72,9 @@ fit_EM = function(model = "surv", #"polynomial",
       model_coefficient_tolerance = model_coefficient_tolerance,
       maxiter_survreg = maxiter_survreg,
       initial_weighting = initial_weighting,
-      sd_initial = sd_initial
+      sd_initial = sd_initial,
+      scale = scale,
+      reruns_allowed = reruns_allowed
     )
 
 
@@ -120,7 +124,8 @@ fit_EM = function(model = "surv", #"polynomial",
       stop_on_likelihood_drop = FALSE,
       n_models = 100,
       seed = NULL,
-      randomize = "all"
+      randomize = "all",
+      scale = scale
     )
   }else if(approach == "reduced" & !is.null(fixed_side)){
     output = EM_algorithm_reduced(fixed_side = fixed_side,
@@ -145,7 +150,8 @@ fit_EM = function(model = "surv", #"polynomial",
                                   sd_initial = sd_initial,
                                   stop_on_likelihood_drop = FALSE,
                                   non_linear_term = non_linear_term,
-                                  covariates = covariates
+                                  covariates = covariates,
+                                  scale = scale
     )
   }else{
     errorCondition("Values for approach are 'full' and 'reduced', if using reduced model, supply a value for fixed_side (RC or LC) and consider extra_row")
@@ -155,4 +161,11 @@ fit_EM = function(model = "surv", #"polynomial",
 
   output %>% return()
 
+}
+
+
+
+
+pull_top_degree_set = function(cv_results) {
+  cv_results %>% select(-c(log_likelihood,total_repeats)) %>% purrr::map_dbl(., head(1)) %>% unname %>% return()
 }

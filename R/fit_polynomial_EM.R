@@ -101,6 +101,4 @@ fit_polynomial_EM = function(pre_set_degrees = NULL, #c(7,7)
 
 }
 
-pull_top_degree_set = function(cv_results) {
-  cv_results %>% select(-log_likelihood) %>% purrr::map_dbl(., head(1)) %>% unname %>% return()
-}
+

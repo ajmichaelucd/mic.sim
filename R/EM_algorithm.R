@@ -95,7 +95,7 @@ EM_algorithm = function(
         prior_iteration = save_previous_iteration(mu_models_new, pi_model_new, log_likelihood_new, possible_data)
       }
 
-      mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
+      mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, approach = "full", fixed_side = NULL, maxiter_survreg)
       likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
       if(check_mu_models_convergence(mu_models_new, ncomp)){
         converge = "NO"
@@ -159,7 +159,7 @@ EM_algorithm = function(
         ##too much overlap with 103
         check_ll = (log_likelihood_new - prior_iteration$log_likelihood_old)
 
-        if(check_ll < 0){
+        if(check_ll < 0 & verbose >= 2){
           warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
         }
 
@@ -326,42 +326,6 @@ save_previous_iteration = function(mu_models_new, pi_model_new, log_likelihood_n
     log_likelihood_old = log_likelihood_new,
     possible_data_old = possible_data
   ) %>% return()
-}
-
-set_model_attr = function(model, possible_data){attr(model, "model")  = attr(possible_data, "model")
-return(model)}
-
-fit_all_mu_models.mgcv = function(possible_data, ncomp, mu_formula){
-  mu_models_new = purrr::map(1:ncomp, ~fit_mu_model.mgcv(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
-  mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
-  attr(mu_models_new, "model") <- attr(possible_data, "model")
-  return(mu_models_new)
-}
-
-fit_all_mu_models.polynomial = function(possible_data, ncomp, mu_formula, maxiter_survreg = 30){
-  mu_models_new = purrr::map2(1:ncomp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
-  mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
-  attr(mu_models_new, "model") <- attr(possible_data, "model")
-  return(mu_models_new)
-}
-
-fit_all_mu_models.surv.split = function(possible_data, ncomp, mu_formula, maxiter_survreg){
-  mu_models_new = purrr::map2(1:ncomp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
-  mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
-  attr(mu_models_new, "model") <- attr(possible_data, "model")
-  return(mu_models_new)
-} ##note is identical to fit_all_mu_models.polynomial
-
-fit_all_mu_models = function(possible_data, ncomp, mu_formula, maxiter_survreg = 30){
-  if(attr(possible_data, "model") == "mgcv"){
-    fit_all_mu_models.mgcv(possible_data, ncomp, mu_formula) %>% return()
-  }else if(attr(possible_data, "model") == "polynomial"){
-    fit_all_mu_models.polynomial(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
-  }else if(attr(possible_data, "model") == "surv" & is.list(mu_formula) && length(mu_formula) == ncomp){
-    fit_all_mu_models.surv.split(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
-  }else {
-    fit_all_mu_models.surv(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
-  }
 }
 
 M_step_likelihood_matrix_updates.mgcv = function(likelihood_documentation, i, mu_models_new){
