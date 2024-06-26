@@ -10,11 +10,28 @@
 #' @export
 #'
 #' @examples
-import_mics_with_metadata = function(mic_column, metadata_cols = NULL, code_column = NULL, combination_agent = FALSE, log_reg_value = FALSE){
-df = import_mics(mic_column = mic_column, code_column = code_column, combination_agent = combination_agent, log_reg_value = log_reg_value) %>%
-    mutate(metadata_cols)
-if(!is.null(metadata_cols)){
-  attr(df, "metadata") = TRUE
-}
-return(df)
+import_mics_with_metadata = function(data, mic_column, metadata_columns = NULL, code_column = NULL, combination_agent = NULL, log_reg_value = FALSE, scale = "log", round = FALSE){
+  mic_col = data %>% select(all_of(mic_column)) %>% pull()
+  if(!is.null(metadata_columns)){
+    metadata_col = data %>% select(all_of(metadata_columns))
+  }else{
+    metadata_col = NULL
+  }
+
+  if(!is.null(code_column)){
+    code_col = data %>% select(all_of(code_column)) %>% pull()
+  }else{
+    code_col = NULL
+  }
+
+  df = import_mics(mic_column = mic_col, code_column = code_col, combination_agent = combination_agent, log_reg_value = log_reg_value, scale = scale, round = round) %>%
+    mutate(metadata_col)
+  if(!is.null(metadata_col)){
+    attr(df, "metadata") = TRUE
+    attr(df, "metadata_names") = metadata_columns
+  }
+
+  df = df %>% mutate(obs_id = row_number()) %>% relocate(obs_id, .before = everything())
+
+  return(df)
 }

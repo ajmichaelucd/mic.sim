@@ -7,8 +7,10 @@
 import_mics(
   mic_column,
   code_column = NULL,
-  combination_agent = FALSE,
-  log_reg_value = FALSE
+  combination_agent = NULL,
+  log_reg_value = FALSE,
+  scale = "log",
+  round = FALSE
 )
 }
 \arguments{

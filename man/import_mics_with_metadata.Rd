@@ -5,11 +5,14 @@
 \title{Title}
 \usage{
 import_mics_with_metadata(
+  data,
   mic_column,
-  metadata_cols = NULL,
+  metadata_columns = NULL,
   code_column = NULL,
-  combination_agent = FALSE,
-  log_reg_value = FALSE
+  combination_agent = NULL,
+  log_reg_value = FALSE,
+  scale = "log",
+  round = FALSE
 )
 }
 \arguments{
