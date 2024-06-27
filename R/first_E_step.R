@@ -16,6 +16,8 @@
 #' @param pi_link
 #' @param model_coefficient_tolerance
 #'
+#' @importFrom tidyr pivot_wider
+#'
 #' @return
 #' @export
 #'
