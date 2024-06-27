@@ -97,3 +97,11 @@ add_single_degree_to_fold_likelihood = function(df, i, j, nfolds){
 add_all_degrees_to_fold_likelihood = function(df, degrees, nfolds){
   map2_dfc(1:length(degrees), degrees, ~add_single_degree_to_fold_likelihood(df, .x, .y, nfolds))
 }
+
+assign_folds = function(visible_data, nfolds){
+  visible_data = visible_data %>% ungroup() %>% mutate(fold =
+                                                         sample(
+                                                           rep(1:nfolds, each = (
+                                                             nrow(visible_data) / nfolds
+                                                             %>% ceiling)), nrow(visible_data)))
+}
