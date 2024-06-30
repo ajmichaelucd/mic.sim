@@ -5,7 +5,7 @@
 #' @param combination_agent
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom dplyr mutate case_when
 #' @importFrom magrittr %>%

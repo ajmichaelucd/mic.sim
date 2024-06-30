@@ -7,7 +7,7 @@
 #' @param distr
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom stats vcov
 #'

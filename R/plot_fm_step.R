@@ -10,7 +10,7 @@
 #' @param pi_model_old
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 plot_fm_step = function(pi_model_new, mu_models_new, ncomp, possible_data, prior_step_plot = FALSE, i, mu_models_old = NULL, pi_model_old = NULL){

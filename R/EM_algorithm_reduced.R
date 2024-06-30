@@ -79,7 +79,7 @@ EM_algorithm_reduced = function(
     likelihood_documentation = set_up_likelihood_matrix(max_it)
     possible_data = modify_bounds(possible_data)
 
-
+    possible_data = add_scale(possible_data, attr(visible_data, "scale"))
 
 
       for(i in 1:max_it){

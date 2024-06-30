@@ -8,7 +8,7 @@
 #' @param scale
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom dplyr mutate case_when
 #' @importFrom magrittr %>%

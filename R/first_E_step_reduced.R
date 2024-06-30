@@ -15,7 +15,7 @@
 #' @param model
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 first_E_step_reduced = function(initial_weighting, visible_data, plot_visuals, sd_initial = 0.2, ncomp = 2, non_linear_term, covariates, pi_formula, max_it, tol_ll, pi_link, model_coefficient_tolerance, fixed_side, extra_row, model, verbose){

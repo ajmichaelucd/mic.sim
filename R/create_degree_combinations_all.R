@@ -1,3 +1,15 @@
+#' Title
+#'
+#' @param max_degree
+#' @param ncomp
+#' @param degree_sets
+#' @param model
+#' @param approach
+#'
+#' @return
+#' @keywords internal
+#'
+#' @examples
 create_degree_combinations_all = function(max_degree, ncomp, degree_sets = "matched", model, approach) {
   if(approach == "reduced"){
     ncomp_adjusted = ncomp - 1

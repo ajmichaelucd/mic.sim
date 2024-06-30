@@ -1,3 +1,30 @@
+#' Title
+#'
+#' @param model
+#' @param approach
+#' @param i
+#' @param visible_data
+#' @param degrees
+#' @param non_linear_term
+#' @param covariates
+#' @param pi_formula
+#' @param fixed_side
+#' @param extra_row
+#' @param max_it
+#' @param ncomp
+#' @param tol_ll
+#' @param pi_link
+#' @param verbose
+#' @param model_coefficient_tolerance
+#' @param maxiter_survreg
+#' @param initial_weighting
+#' @param sd_initial
+#' @param scale
+#'
+#' @return
+#' @keywords internal
+#'
+#' @examples
 get_fold_likelihood_all = function(model = "surv",
                                    approach = "full",
                                    i,
@@ -97,7 +124,7 @@ get_fold_likelihood_all = function(model = "surv",
 
 
 
-get_fold_likelihood_all_safe = safely(get_fold_likelihood_all, otherwise = NaN)
+get_fold_likelihood_all_safe = purrr::possibly(get_fold_likelihood_all, otherwise = NaN)
 
 
 get_fold_likelihood_all_safe_single_output =

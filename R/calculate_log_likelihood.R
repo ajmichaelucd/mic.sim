@@ -4,7 +4,7 @@
 #' @param verbose
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 calculate_log_likelihood = function(possible_data, verbose = 0){

@@ -8,7 +8,7 @@
 #' @param maxiter_survreg maximum number of iterations for survreg to fit the model
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 fit_mu_model = function(possible_data, pred_comp, mu_formula, maxiter_survreg = 30){

@@ -4,7 +4,7 @@
 #' @param start_date start date in decimal years
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom lubridate date_decimal
 #'

@@ -7,7 +7,7 @@
 #' @param maxiter_survreg
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 fit_all_mu_models = function(possible_data, ncomp, mu_formula, approach = NULL, fixed_side = NULL, maxiter_survreg = 30){

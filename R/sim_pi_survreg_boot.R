@@ -6,7 +6,7 @@
 #' @param nSims
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 sim_pi_survreg_boot = function (df, fit, alpha = 0.05, nSims = 10000){

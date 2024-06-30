@@ -8,7 +8,7 @@
 #' @param sd_vector
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom dplyr tibble mutate inner_join
 #' @importFrom magrittr %>%

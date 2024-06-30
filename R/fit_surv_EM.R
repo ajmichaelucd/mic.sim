@@ -18,7 +18,7 @@
 #' @param sd_initial
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 fit_surv_EM = function(pre_set_degrees = NULL, #c(7,7)

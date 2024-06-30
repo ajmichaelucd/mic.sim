@@ -23,7 +23,7 @@
 #' @param scale
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 full_cv = function(

@@ -7,7 +7,7 @@
 #' @param extra_row
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 E_step_reduced = function(possible_data, mu_models, pi_model, fixed_side, extra_row){

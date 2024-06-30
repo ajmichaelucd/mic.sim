@@ -27,10 +27,11 @@ library(ggnewscale)
 ```
 
 ```{r}
+set.seed(112)
 n = 300
 ncomp = 2
 pi = function(t) {
-  z <- 0.07 + 0.03 * t - 0.00045 * t^2
+  z <- 0.17 + 0.025 * t - 0.00045 * t^2
   #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
   tibble("1" = 1 - z, "2" = z)
 }
@@ -83,6 +84,7 @@ out_1 = fit_EM(
 
 plot_likelihood(out_1$likelihood)
 plot_fm(out_1, title = "Surv Full")
+out_1$cv_results
 ```
 
 ```{r}
@@ -96,6 +98,7 @@ out_2 = fit_EM(
 
 plot_likelihood(out_2$likelihood)
 plot_fm(out_2, title = "Polynomial Full")
+out_2$cv_results
 ```
 
 
@@ -164,6 +167,7 @@ out_3 = fit_EM(
 
 plot_likelihood(out_3$likelihood)
 plot_fm(out_3, title = "Surv Reduced")
+out_3$cv_results
 ```
 
 
@@ -181,4 +185,5 @@ out_4 = fit_EM(
 
 plot_likelihood(out_4$likelihood)
 plot_fm(out_4, title = "Polynomial Reduced")
+out_4$cv_results
 ```

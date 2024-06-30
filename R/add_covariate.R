@@ -6,7 +6,7 @@
 #' @param input
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom dplyr as_tibble tibble
 #' @importFrom purrr map

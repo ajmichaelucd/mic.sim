@@ -8,7 +8,7 @@
 #' @param extra_row
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 calculate_fold_likelihood_all = function(testing_set,

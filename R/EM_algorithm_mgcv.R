@@ -21,7 +21,7 @@
 #' @importFrom purrr safely
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 EM_algorithm_mgcv = function(
