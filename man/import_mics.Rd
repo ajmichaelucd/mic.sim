@@ -10,7 +10,8 @@ import_mics(
   combination_agent = NULL,
   log_reg_value = FALSE,
   scale = "log",
-  round = FALSE
+  round = FALSE,
+  include_mic_bounds = FALSE
 )
 }
 \arguments{

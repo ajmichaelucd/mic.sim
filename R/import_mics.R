@@ -13,11 +13,25 @@
 #' @importFrom readr parse_number
 #'
 #' @examples
-import_mics = function(mic_column, code_column = NULL, combination_agent = NULL, log_reg_value = FALSE, scale = "log", round = FALSE){
+import_mics = function(mic_column, code_column = NULL, combination_agent = NULL, log_reg_value = FALSE, scale = "log", round = FALSE, include_mic_bounds = FALSE){
 
-  if(!is.null(combination_agent)){
+  if(combination_agent == 2 & is.null(code_column)){
+    code_column = tibble(mic_column) %>% mutate(
+      code_column = dplyr::case_when(
+        grepl(pattern = "(≤)|(<=)|(=<)", x = mic_column) ~ "<=",
+        grepl(pattern = ">", x = mic_column) ~ ">",
+        TRUE ~ NA
+      )
+    ) %>% pull(code_column)
+  }
+
+
+  if(combination_agent %in% c(1,2)){
     mic_column = stringr::str_split_i(mic_column, "/", combination_agent)
   }
+
+
+
   df_temp <- dplyr::tibble(mic_column, code_column)
 
 
@@ -71,6 +85,13 @@ import_mics = function(mic_column, code_column = NULL, combination_agent = NULL,
         right_bound = round(right_bound)
       ) %>%
       relocate(all_of(c("left_bound", "right_bound")), .before = everything())
+  }
+
+  if(!include_mic_bounds){
+    df = df %>%
+      select(-c(left_bound_mic,
+             right_bound_mic)
+             )
   }
 
 

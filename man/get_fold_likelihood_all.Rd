@@ -22,7 +22,7 @@ get_fold_likelihood_all(
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
-  initial_weighting = 9,
+  initial_weighting = 3,
   sd_initial = 0.2,
   scale = NULL
 )
