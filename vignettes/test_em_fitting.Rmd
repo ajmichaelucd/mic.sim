@@ -93,7 +93,8 @@ out_2 = fit_EM(
   approach = "full",
   visible_data = example_data,
   max_degree = 5,
-  verbose = 0
+  verbose = 0,
+  initial_weighting = 3
 )
 
 plot_likelihood(out_2$likelihood)

@@ -32,7 +32,7 @@ initial_weighting_fit_linear_model = function(visible_data, non_linear_term, cov
       pi_link = pi_link,
       verbose = verbose,
       model_coefficient_tolerance = model_coefficient_tolerance,
-      initial_weighting = 8,
+      initial_weighting = 1,
       sd_initial = sd_initial
     ) %>% return()
 }

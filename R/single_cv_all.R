@@ -43,7 +43,7 @@ single_cv_all = function(model = "surv",
                          verbose = 3,
                          model_coefficient_tolerance = 0.00001,
                          maxiter_survreg = 30,
-                         initial_weighting = 9,
+                         initial_weighting = 3,
                          sd_initial = 0.2,
                          scale = NULL,
                          reruns_allowed = 3) {

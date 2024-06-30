@@ -22,7 +22,7 @@ EM_algorithm(
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
-  initial_weighting = 8,
+  initial_weighting = 1,
   sd_initial = 0.2,
   stop_on_likelihood_drop = FALSE,
   n_models = 100,

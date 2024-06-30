@@ -16,3 +16,4 @@ check_survreg_iteration_maxout(mu_models, ncomp, maxiter_survreg)
 \description{
 Returns a logical value if the number of iterations for survreg to converge is equal to the maximum number of iterations specified
 }
+\keyword{internal}

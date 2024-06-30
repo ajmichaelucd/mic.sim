@@ -12,3 +12,4 @@ censor_values(simulated_obs, scale = "log")
 \description{
 adds new columns with left and right censoring indicators, setting up the creation of a Surv object with interval2 format
 }
+\keyword{internal}

@@ -29,3 +29,4 @@ fit_polynomial_EM(
 \description{
 Title
 }
+\keyword{internal}

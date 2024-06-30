@@ -17,3 +17,4 @@ fit_single_component_model_surv(
 \description{
 Title
 }
+\keyword{internal}

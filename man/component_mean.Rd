@@ -25,3 +25,4 @@ component_mean(
 \description{
 component_mean
 }
+\keyword{internal}

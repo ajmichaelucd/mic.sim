@@ -12,3 +12,4 @@ add_covariate(covariate_list, input)
 \description{
 adds the covariates based on the covariate_list and input vector
 }
+\keyword{internal}
