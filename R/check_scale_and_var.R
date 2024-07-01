@@ -1,5 +1,7 @@
 #' Title
 #'
+#' @inheritParams plot_fm
+#'
 #' @param output
 #'
 #' @importFrom purrr pmap

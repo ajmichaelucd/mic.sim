@@ -7,6 +7,10 @@
 write_all_formulas(non_linear_term, degrees, covariates, model)
 }
 \arguments{
+\item{non_linear_term}{String, non-linear term to be included in the model. Variable in the pspline term in the pspline model or in the polynomial term in the polynomial model.}
+
+\item{covariates}{String, covariates to be included in mu model aside from the non-linear term.}
+
 \item{model}{}
 }
 \description{

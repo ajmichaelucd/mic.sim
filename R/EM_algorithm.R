@@ -1,27 +1,29 @@
 #' Title
 #'
+#'
+#' @inheritParams fit_EM
 #' @param visible_data
 #' @param model
-#' @param mu_formula
+#' @param mu_formula A formula for a survreg object from the survival package, left side of equation should be a surv object using "interval2" format, right side should be the non-linear term (polynomial or pspline) and any covariates. Can be a single formula or a list of formulas where length is equal to the number of components where the trend in the mean is being estimated.
 #' @param pi_formula
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
-#' @param browse_at_end
-#' @param browse_each_step
-#' @param plot_visuals
-#' @param prior_step_plot
-#' @param pause_on_likelihood_drop
+#' @param browse_at_end For internal model testing
+#' @param browse_each_step For internal model testing
+#' @param plot_visuals For internal model testing
+#' @param prior_step_plot For internal model testing
+#' @param pause_on_likelihood_drop For internal model testing
 #' @param pi_link
 #' @param verbose
 #' @param model_coefficient_tolerance
 #' @param maxiter_survreg
-#' @param initial_weighting
+#' @param initial_weighting Numeric, if 1: initial observation weights are estimated using linear regression at the highest and lowest tested concentrations. If 2, used a randomized start suitable for simulation studies on model validity but otherwise not recommended. If 3 or greater, fits a linear models to the components and estimates intial weights based on this model fit.
 #' @param sd_initial
-#' @param stop_on_likelihood_drop
-#' @param n_models
-#' @param seed
-#' @param randomize
+#' @param stop_on_likelihood_drop For internal model testing
+#' @param n_models Currently deprecated, will be used in future versions as part of model validation
+#' @param seed Currently deprecated, will be used in future versions as part of model validation
+#' @param randomize Currently deprecated, will be used in future versions as part of model validation
 #'
 #' @return
 #' @export
@@ -35,7 +37,7 @@ EM_algorithm = function(
     model = "surv", #"mgcv", "polynomial"
     mu_formula = Surv(time = left_bound,
                       time2 = right_bound,
-                      type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
+                      type = "interval2") ~ pspline(t, df = 4),
     #mu_formula = yi ~ s(t),
     pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
     max_it = 3000,
@@ -45,7 +47,7 @@ EM_algorithm = function(
     browse_each_step = FALSE,
     plot_visuals = FALSE,
     prior_step_plot = FALSE,
-    pause_on_likelihood_drop = TRUE,
+    pause_on_likelihood_drop = FALSE,
     pi_link = "logit",
     verbose = 3,
     model_coefficient_tolerance = 0.00001,

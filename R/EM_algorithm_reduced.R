@@ -1,5 +1,8 @@
 #' Title
 #'
+#' @inheritParams fit_EM
+#' @inheritParams EM_algorithm
+#'
 #' @param fixed_side
 #' @param extra_row
 #' @param visible_data
@@ -18,11 +21,11 @@
 #' @param verbose
 #' @param model_coefficient_tolerance
 #' @param maxiter_survreg
-#' @param initial_weighting
+#' @param initial_weighting For the reduced model fitting: 1 sets initial weights corresponding to fixed side (and extra_row) where observations not outside the range on the side corresponding to the fixed side are forced to be in the component where mu is being estimated. For initial weighting two a linear model is fit for the component still being estimated to provide initial observation weights.
 #' @param sd_initial
 #' @param stop_on_likelihood_drop
 #' @param non_linear_term
-#' @param covariates
+#' @param covariates String, covariates to be included in mu model aside from the non-linear term.
 #'
 #' @return
 #' @export

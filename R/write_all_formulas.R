@@ -1,9 +1,13 @@
-#' Title
+#' Write Formulas for Mu Models
+#'
+#' Used to write the formulas for mu models, returns either a single formula or a list of formulas.
+#'
+#' @inheritParams fit_EM
 #'
 #' @param non_linear_term
-#' @param degrees
+#' @param degrees Vector of length equal to the number of component means being estimated. Elements are numeric and correspond to the number of degrees (polynomial) or degrees of freedom (pspline) in each mu model. First element corresponds to lowest component, last element corresponds to highest component.
 #' @param covariates
-#' @param model
+#' @param model String, "pspline" or "polynomial". Which non-linear term should be used in model
 #'
 #' @return
 #' @export
