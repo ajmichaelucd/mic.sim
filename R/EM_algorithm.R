@@ -60,6 +60,10 @@ EM_algorithm = function(
     covariates = NULL,
     scale = NULL
 ){
+  if(model == "pspline"){
+    model = "surv"
+  }
+
   #add attribute model to visible data
 
   visible_data = modify_visible_data(visible_data, model)

@@ -1,10 +1,5 @@
 ---
-title: "Test EM Fitting"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Test EM Fitting}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+title: "Fit EM Options"
 ---
 
 ```{r, include = FALSE}

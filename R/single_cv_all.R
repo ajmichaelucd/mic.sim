@@ -47,7 +47,7 @@ single_cv_all = function(model = "surv",
                          sd_initial = 0.2,
                          scale = NULL,
                          reruns_allowed = 3) {
-  for(i in 1:reruns_allowed){
+  for(i in 1:(1+reruns_allowed)){
     message("CV for degrees", degrees, "; attempt", i)
 
     fold_output = tibble(fold_likelihood = map_dbl(

@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_fm.R
 \name{plot_fm}
 \alias{plot_fm}
-\title{Title}
+\title{Plot Output of Model Fitting}
 \usage{
 plot_fm(
   output,
@@ -17,74 +17,47 @@ plot_fm(
 )
 }
 \arguments{
-\item{r_breakpoint}{}
+\item{output}{List, output of a fit_EM()}
+
+\item{title}{String, title of plot}
+
+\item{add_log_reg}{Logical, add a curve to the pi (component weight) plot showing proportion resistant and susceptible}
+
+\item{s_breakpoint}{String, represents S breakpoint (e.g. <= 2) on MIC scale (not log2 scale)}
+
+\item{r_breakpoint}{String, represents R breakpoint (e.g. >= 32) on MIC scale (not log2 scale)}
+
+\item{use_prior_step}{Logical, if one mu model did not converge, can try plotting mu models from previous step by setting this to TRUE}
+
+\item{range_zoom}{Logical, zoom y axis to range of tested concentrations}
+
+\item{plot_range}{Vector of length 2, minimum and maximum values of y axis of plot}
+
+\item{start_date}{Integer, value at which x axis shoudl start (year).}
 }
 \description{
-Title
+Takes output of a fit_EM() run and plots it.
+Logistic regression fitting is in progress (currently does not accept covariates and non-linear term must be "t")
 }
 \examples{
-library(mic.sim)
-library(mgcv)
-library(dplyr)
-library(ggplot2)
-library(ggnewscale)
-library(survival)
-library(patchwork)
-library(purrr)
-library(data.table)
-library(ggnewscale)
-n = 300
-ncomp = 2
-pi = function(t) {
-  z <- 0.07 + 0.03 * t - 0.00045 * t^2
-  #z <- (1+ exp(-m))^-1 #if exp(m) gets large, it won't add the 1 so we write like this
-  tibble("1" = 1 - z, "2" = z)
-}
-`E[X|T,C]` = function(t, c)
-{
-  case_when(
-    c == "1" ~ -4.0 + (0.24 * t) - (0.0055 * t^2),
-    c == "2" ~ 3 + 0.001 * t,
-    TRUE ~ NaN
-  )
-}
-t_dist = function(n){runif(n, min = 0, max = 16)}
-attr(t_dist, "min") = 0
-attr(t_dist, "max") = 16
-sd_vector = c("1" = 1, "2" = 1.05)
-low_con = -3
-high_con = 3
-scale = "log"
-set.seed(1)
-example_data = simulate_mics(
-  n = n,
-  t_dist = t_dist,
-  pi = pi,
-  `E[X|T,C]` = `E[X|T,C]`,
-  sd_vector = sd_vector,
-  covariate_list = NULL,
-  covariate_effect_vector = c(0),
-  low_con = low_con,
-  high_con = high_con,
-  scale = "log"
-) \%>\% suppressMessages()
-output_surv = fit_surv_EM(
-random_seeds_vector = 1:10,
-visible_data = example_data,
-mu_formula = Surv(time = left_bound,
-                 time2 = right_bound,
-                 type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
+data = simulate_mics()
+output = fit_EM(model = "pspline",
+approach = "full",
+pre_set_degrees = c(4,4),
+visible_data = data,
+non_linear_term = "t",
+covariates = NULL,
 pi_formula = c == "2" ~ s(t),
-max_it = 500,
+max_it = 300,
 ncomp = 2,
 tol_ll = 1e-6,
 pi_link = "logit",
 verbose = 1,
-initial_weighting = 7,
 model_coefficient_tolerance = 0.00001,
-maxiter_survreg = 30,
-sd_initial = 0.2,
-randomize = "all")
-plot_fm(output_surv$top_output$output, title = "Surv")
+initial_weighting = 3,
+sd_initial = 0.2
+)
+plot_fm(output = output, title = "Example", add_log_reg = TRUE, s_breakpoint = "<=1", r_breakpoint = ">=4")
+
 
 }

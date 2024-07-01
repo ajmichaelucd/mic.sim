@@ -2,13 +2,37 @@
 % Please edit documentation in R/plot_likelihood.R
 \name{plot_likelihood}
 \alias{plot_likelihood}
-\title{Title}
+\title{Plot Likelihood Curve}
 \usage{
 plot_likelihood(likelihood_documentation, format = "tibble")
 }
 \arguments{
-\item{format}{}
+\item{likelihood_documentation}{tibble of likelihood per step of model fitting, part of the output of `fit_EM()`}
+
+\item{format}{string, either "tibble" or "matrix". Describes format of likelihood documentation.}
 }
 \description{
-Title
+Plot likelihood curve of fitted model over the steps of the EM algorithm
+}
+\examples{
+data = simulate_mics()
+output = fit_EM(model = "pspline",
+approach = "full",
+pre_set_degrees = c(4,4),
+visible_data = data,
+non_linear_term = "t",
+covariates = NULL,
+pi_formula = c == "2" ~ s(t),
+max_it = 300,
+ncomp = 2,
+tol_ll = 1e-6,
+pi_link = "logit",
+verbose = 1,
+model_coefficient_tolerance = 0.00001,
+initial_weighting = 3,
+sd_initial = 0.2
+)
+plot_likelihood(likelihood_documentation = output$likelihood)
+
+
 }
