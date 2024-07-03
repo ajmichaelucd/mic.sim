@@ -12,14 +12,22 @@
 #'
 #' @examples
 fit_mu_model = function(possible_data, pred_comp, mu_formula, maxiter_survreg = 30){
-  possible_data %>% filter(`P(C=c|y,t)` > 0 & c == pred_comp) %>%
+  mu = possible_data %>% filter(`P(C=c|y,t)` > 0 & c == pred_comp) %>%
     mutate(`P(C=c|y,t)` =  paste0(`P(C=c|y,t)`) %>% as.numeric) %>%
-    survival::survreg(
+    survreg(
       formula = mu_formula,
       weights = `P(C=c|y,t)`,
       data = .,
       dist = "gaussian",
-      control = survreg.control(maxiter = maxiter_survreg)) %>%
-    return()
+      control = survreg.control(maxiter = maxiter_survreg)) %>% return()
+}
+
+#survreg_safe = purrr::safely(survival::survreg, otherwise = "Error")
+fit_mu_model_safe = purrr::safely(fit_mu_model, otherwise = "Error")
+
+fit_mu_model_safe_formatted = function(possible_data, pred_comp, mu_formula, maxiter_survreg = 30){
+  mu = fit_mu_model_safe(possible_data, pred_comp, mu_formula, maxiter_survreg = 30)
+  mu_model = reformat_safe(mu)
+  return(mu_model)
 }
 

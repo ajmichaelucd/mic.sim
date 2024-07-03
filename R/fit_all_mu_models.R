@@ -32,7 +32,7 @@ fit_all_mu_models = function(possible_data, ncomp, mu_formula, approach = NULL, 
   if(is.list(mu_formula) && length(mu_formula) == length(fitted_comp)){
 
     if(attr(possible_data, "model") %in% c("surv", "polynomial")){
-      mu_models_new = purrr::map2(fitted_comp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
+      mu_models_new = purrr::map2(fitted_comp, mu_formula, ~fit_mu_model_safe_formatted(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
       mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
       attr(mu_models_new, "model") <- attr(possible_data, "model")
     }else if(attr(possible_data, "model") == "mgcv"){
@@ -50,7 +50,6 @@ fit_all_mu_models = function(possible_data, ncomp, mu_formula, approach = NULL, 
   attr(mu_models_new, "fixed_side") <- fixed_side
   return(mu_models_new)
 }
-
 
 
 set_model_attr = function(model, possible_data){attr(model, "model")  = attr(possible_data, "model")

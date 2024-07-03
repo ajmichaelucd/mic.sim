@@ -109,7 +109,15 @@ EM_algorithm = function(
         break #if wrapping into an M-step function, add list to list of outputs, then check between steps
       }
 
-      pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
+      pi_model_new = fit_mgcv_pi_model_safe_reformat(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
+
+      if(check_error(pi_model_new)){
+        converge = "NO"
+        break
+      }
+
+      #pi_model_new = reformat_safe(pi_model_new_list)
+
 
       if(i > 1){
         model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, prior_iteration$mu_models_old, prior_iteration$pi_model_old, model_coefficient_tolerance, ncomp)
@@ -356,8 +364,12 @@ M_step_likelihood_matrix_updates = function(likelihood_documentation, i, mu_mode
   }
 }
 
-check_mu_models_convergence.mgcv = function(mu_models, n_comp){
-  purrr::map(1:n_comp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients))) %>% return()
+check_error = function(model){
+  !is.null(attr(model, "error")) %>% return()
+}
+
+check_mu_models_convergence.mgcv = function(mu_models, ncomp){
+  purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients))) %>% return()
 }
 
 check_mu_models_convergence.surv = function(mu_models, ncomp){
@@ -365,6 +377,10 @@ check_mu_models_convergence.surv = function(mu_models, ncomp){
 }
 
 check_mu_models_convergence = function(mu_models, ncomp){
+  if(any(purrr::map_lgl(1:ncomp, ~check_error(model = mu_models[[.x]])))){
+   return(TRUE)
+  }
+
   if(attr(mu_models, "model") == "mgcv"){
     check_mu_models_convergence.mgcv(mu_models, ncomp) %>% unlist %>% any %>% return()
   }else{
@@ -375,17 +391,35 @@ check_mu_models_convergence = function(mu_models, ncomp){
 fit_mgcv_pi_model = function(pi_formula, pi_link, possible_data){
 
   if(pi_link == "logit"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
+    pi_model = gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
   } else if(pi_link == "identity"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
+    pi_model = gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
   }
   if(pi_link == "logit_simple"){
     pi_model = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
-  }else{ errorCondition("pick logit or identity link function")}
-
+    }else{ errorCondition("pick logit or identity link function")}
 
   return(pi_model)
 }
+
+fit_mgcv_pi_model_safe = safely(fit_mgcv_pi_model, otherwise = "Error")
+
+fit_mgcv_pi_model_safe_reformat = function(pi_formula, pi_link, possible_data){
+pi_model_new_list = fit_mgcv_pi_model_safe(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
+
+pi_model_new = reformat_safe(pi_model_new_list)
+return(pi_model_new)
+}
+
+
+reformat_safe = function(model){
+  out = model$result
+  attr(out, "error") = model$error
+  return(out)
+}
+
+#gam_safe = safely(mgcv::gam, otherwise = "Error")
+#glm_safe = safely(glm, otherwise = "Error")
 
 model_coefficient_checks.mgcv = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
   #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
