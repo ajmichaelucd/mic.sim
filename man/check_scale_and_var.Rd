@@ -7,7 +7,7 @@
 check_scale_and_var(output)
 }
 \arguments{
-\item{output}{}
+\item{output}{List, output of a fit_EM()}
 }
 \description{
 Title

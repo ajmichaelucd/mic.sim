@@ -19,8 +19,6 @@
 #' @param approach
 #' @param pi_formula
 #' @param ncomp
-#' @param t_dist
-#' @param scale
 #' @param pre_set_degrees
 #' @param max_degree
 #' @param degree_sets
@@ -30,7 +28,6 @@
 #' @param fixed_side
 #' @param extra_row
 #' @param max_it
-#' @param ncomp
 #' @param tol_ll
 #' @param pi_link
 #' @param verbose
@@ -38,9 +35,7 @@
 #' @param maxiter_survreg
 #' @param initial_weighting
 #' @param sd_initial
-#' @param scale
 #' @param reruns_allowed
-#' @param i
 #'
 #' @return
 #' @export
@@ -70,8 +65,6 @@ simulation_run = function(i = 100,
                           approach = "full",
                           pi_formula = c == "2" ~ s(t),
                           ncomp = 2,
-                          t_dist = function(n){runif(n, min = 0, max = 15)},
-                          scale = "log",
                           pre_set_degrees = NULL,
                           max_degree = 8,
                           degree_sets = "matched",
@@ -81,7 +74,6 @@ simulation_run = function(i = 100,
                           fixed_side = NULL,
                           extra_row = FALSE,
                           max_it = 3000,
-                          ncomp = 2,
                           tol_ll = 1e-06,
                           pi_link = "logit",
                           verbose = 3,
@@ -89,7 +81,6 @@ simulation_run = function(i = 100,
                           maxiter_survreg = 30,
                           initial_weighting = 3,
                           sd_initial = 0.2,
-                          scale = NULL,
                           reruns_allowed = 3
                           ){
   set.seed(i)

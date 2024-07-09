@@ -1,8 +1,6 @@
 #' Title
 #'
-#' @inheritParams plot_fm
-#'
-#' @param output
+#' @param output List, output of a fit_EM()
 #'
 #' @importFrom purrr pmap
 #'

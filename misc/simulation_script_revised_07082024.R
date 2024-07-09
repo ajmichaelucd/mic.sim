@@ -48,7 +48,6 @@ covariates = NULL
 fixed_side = NULL
 extra_row = FALSE
 max_it = 3000
-ncomp = 2
 tol_ll = 1e-06
 pi_link = "logit"
 verbose = 3
@@ -56,7 +55,6 @@ model_coefficient_tolerance = 1e-05
 maxiter_survreg = 30
 initial_weighting = 3
 sd_initial = 0.2
-scale = NULL
 reruns_allowed = 3
 
 
@@ -100,18 +98,21 @@ output = map(iteration_numbers, ~simulation_run(i = .x,
                                                 scale = scale,
                                                 model = model,
                                                 approach = approach,
+                                                pi_formula = pi_formula,
+                                                ncomp = ncomp,
+
                                                 pre_set_degrees = pre_set_degrees,
                                                 max_degree = max_degree,
                                                 degree_sets = degree_sets,
-                                                visible_data = simulated_data,
                                                 nfolds = nfolds,
+
+
                                                 non_linear_term = non_linear_term,
                                                 covariates = covariates,
-                                                pi_formula = pi_formula,
+
                                                 fixed_side = fixed_side,
                                                 extra_row = extra_row,
                                                 max_it = max_it,
-                                                ncomp = ncomp,
                                                 tol_ll = tol_ll,
                                                 pi_link = pi_link,
                                                 verbose = verbose,
@@ -119,7 +120,6 @@ output = map(iteration_numbers, ~simulation_run(i = .x,
                                                 maxiter_survreg = maxiter_survreg,
                                                 initial_weighting = initial_weighting,
                                                 sd_initial = sd_initial,
-                                                scale = scale,
                                                 reruns_allowed = reruns_allowed))
 
 batch_result = list(
