@@ -10,6 +10,15 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
+library(mgcv)
+library(dplyr)
+library(ggplot2)
+library(ggnewscale)
+library(survival)
+library(patchwork)
+library(purrr)
+library(data.table)
+library(ggnewscale)
 library(mic.sim)
 ```
   

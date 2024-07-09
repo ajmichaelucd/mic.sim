@@ -3,6 +3,17 @@ print(sort(c("10", "1:")))
 
 args <- as.numeric(commandArgs(trailingOnly = TRUE))
 
+library(mgcv)
+library(dplyr)
+library(ggplot2)
+library(ggnewscale)
+library(survival)
+library(patchwork)
+library(purrr)
+library(data.table)
+library(ggnewscale)
+library(mic.sim)
+
 ###EDIT PARAMETERS HERE-------------------------------
 scenario = 1
 number_per_batch = 10
@@ -50,7 +61,7 @@ extra_row = FALSE
 max_it = 3000
 tol_ll = 1e-06
 pi_link = "logit"
-verbose = 3
+verbose = 1
 model_coefficient_tolerance = 1e-05
 maxiter_survreg = 30
 initial_weighting = 3
