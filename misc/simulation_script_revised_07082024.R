@@ -79,56 +79,6 @@ approach = params$approach
 pi_formula = params$pi_formula[[1]]
 
 
-fit_EM_safe = safely(fit_EM)
-simulation_run = function(i, ...){
-  set.seed(i)
-  simulated_data =
-    simulate_mics(
-      n = n,
-      t_dist = t_dist,
-      pi = pi,
-      `E[X|T,C]` = `E[X|T,C]`,
-      sd_vector = sd_vector,
-      covariate_list = covariate_list,
-      covariate_effect_vector = covariate_effect_vector,
-      conc_limits_table = conc_limits_table,
-      low_con = low_con,
-      high_con = high_con,
-      scale = scale
-    )
-  iteration_output = fit_EM_safe(
-    model = model,
-    approach = approach,
-    pre_set_degrees = pre_set_degrees,
-    max_degree = max_degree,
-    degree_sets = degree_sets,
-    visible_data = simulated_data,
-    nfolds = nfolds,
-    non_linear_term = non_linear_term,
-    covariates = covariates,
-    pi_formula = pi_formula,
-    fixed_side = fixed_side,
-    extra_row = extra_row,
-    max_it = max_it,
-    ncomp = ncomp,
-    tol_ll = tol_ll,
-    pi_link = pi_link,
-    verbose = verbose,
-    model_coefficient_tolerance = model_coefficient_tolerance,
-    maxiter_survreg = maxiter_survreg,
-    initial_weighting = initial_weighting,
-    sd_initial = sd_initial,
-    scale = scale,
-    reruns_allowed = reruns_allowed
-  )
-
-  iteration_output$iteration_number = i
-  return(iteration_output)
-}
-
-
-
-
 iteration_numbers = c((((args - 1) * number_per_batch) + 1): (args * number_per_batch))
 
 run_name = paste0("scenario_", scenario,"_row_", ceiling(args/(total_runs_per_parameter_set/number_per_batch)), "_12212023_run")
