@@ -35,6 +35,9 @@ ncomp = 2
 t_dist = function(n){runif(n, min = 0, max = 15)}
 attr(t_dist, "min") = 0
 attr(t_dist, "max") = 15
+covariate_list = NULL
+covariate_effect_vector = c(0)
+conc_limits_table = NULL
 scale = "log"
 pre_set_degrees = NULL
 max_degree = 8
@@ -58,11 +61,6 @@ reruns_allowed = 3
 
 
 ###EDIT ABOVE THIS LINE ONLY--------------------------------------------
-
-
-
-
-
 
 row = ceiling(args / (total_runs_per_parameter_set/number_per_batch))
 param_table = tidyr::expand_grid(n = n, pi_vals = pi, mu_vals = `E[X|T,C]`, lc = low_con, hc = high_con, sd_vals = sd_vector, model = model, approach = approach, pi_formula = pi_formula)
