@@ -30,7 +30,8 @@ Imports:
     tidyr,
     tidyselect,
     mgcv,
-    MASS
+    MASS,
+    lubridate
 URL: https://github.com/ajmichaelucd/mic.sim,
     https://ajmichaelucd.github.io/mic.sim/
 BugReports: https://github.com/ajmichaelucd/mic.sim/issues
