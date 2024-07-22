@@ -30,6 +30,10 @@
 #' @param sd_initial Numeric, value greater than 0 and less than 1. Proportion of the range from the highest concentration to lowest concentration that is used as the initial estimate of sigma for the estimated components. Default is 0.2
 #' @param reruns_allowed Numeric, if the cross-validation for a particular combination of degrees (polynomial) or degrees of freedom (pspline) fails, how many repeat attempts should be allowed?
 #'
+#'
+#' @importFrom purrr map_dfc
+#' @import purrr
+#'
 #' @return
 #' @export
 #'

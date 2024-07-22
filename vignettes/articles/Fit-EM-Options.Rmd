@@ -19,6 +19,7 @@ library(patchwork)
 library(purrr)
 library(data.table)
 library(ggnewscale)
+library(mic.sim)
 ```
 
 ```{r}
