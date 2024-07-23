@@ -7,7 +7,7 @@
 #' @param maxiter_survreg maximum number of iterations for survreg to fit the model
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 check_survreg_iteration_maxout = function(mu_models, ncomp, maxiter_survreg){

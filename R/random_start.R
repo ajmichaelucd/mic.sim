@@ -6,7 +6,7 @@
 #' @param randomize either "all" (default), "mu", "sigma", "pi"
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 random_start = function(visible_data, ncomp, sd_parameter = 0.2, n_models, randomize){

@@ -21,7 +21,7 @@
 #' @importFrom purrr safely
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 EM_algorithm_mgcv = function(
@@ -56,7 +56,7 @@ EM_algorithm_mgcv = function(
 converge = NA_character_
 
   if(ncomp == 1){
-    fit_single_component_model_mgcv(visible_data, mu_formula, verbose) %>% return()
+    fit_single_component_model.mgcv(visible_data, mu_formula, verbose) %>% return()
 
   }else{
 

@@ -29,3 +29,4 @@ c("categorical", 0.5, 0.2, 0.3),
 c("categorical", 0.2, 0.2, 0.2, 0.2, 0.2),
 c("numeric", "uniform", 1, 10))
 }
+\keyword{internal}

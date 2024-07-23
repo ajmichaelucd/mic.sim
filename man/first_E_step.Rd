@@ -12,12 +12,20 @@ first_E_step(
   ncomp = 2,
   randomize = "all",
   n_models = 100,
-  model
+  model,
+  non_linear_term,
+  covariates,
+  pi_formula,
+  max_it,
+  tol_ll,
+  pi_link,
+  model_coefficient_tolerance
 )
 }
 \arguments{
-\item{model}{}
+\item{model_coefficient_tolerance}{}
 }
 \description{
 Title
 }
+\keyword{internal}

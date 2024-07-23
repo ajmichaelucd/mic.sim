@@ -8,7 +8,7 @@ EM_algorithm(
   visible_data,
   model = "surv",
   mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
-    pspline(t, df = 0, caic = TRUE),
+    pspline(t, df = 4),
   pi_formula = c == "2" ~ s(t),
   max_it = 3000,
   ncomp = 2,
@@ -17,21 +17,70 @@ EM_algorithm(
   browse_each_step = FALSE,
   plot_visuals = FALSE,
   prior_step_plot = FALSE,
-  pause_on_likelihood_drop = TRUE,
+  pause_on_likelihood_drop = FALSE,
   pi_link = "logit",
   verbose = 3,
   model_coefficient_tolerance = 1e-05,
   maxiter_survreg = 30,
-  initial_weighting = 8,
+  initial_weighting = 1,
   sd_initial = 0.2,
   stop_on_likelihood_drop = FALSE,
   n_models = 100,
   seed = NULL,
-  randomize = "all"
+  randomize = "all",
+  non_linear_term = "t",
+  covariates = NULL,
+  scale = NULL
 )
 }
 \arguments{
-\item{randomize}{}
+\item{visible_data}{Data frame, data including the left and right bound of the MICs (use import_mics_with_metadata to format correctly) and any covariates (including the non-linear term)}
+
+\item{model}{String, "pspline" or "polynomial". Which non-linear term should be used in model}
+
+\item{mu_formula}{A formula for a survreg object from the survival package, left side of equation should be a surv object using "interval2" format, right side should be the non-linear term (polynomial or pspline) and any covariates. Can be a single formula or a list of formulas where length is equal to the number of components where the trend in the mean is being estimated.}
+
+\item{pi_formula}{Formula, for the component weight model. Model is fit using mgcv's gam function. Nonlinear terms include s() and lo(). Basis of s() function can be changed using bs argument to s(). Use c == "2" for the left side of the formula.}
+
+\item{max_it}{Numeric, maximum number of iterations for the EM algorithm for any given model fitting.}
+
+\item{ncomp}{Numeric, number of components to be fitted. When fitting a reduced model where one component is not estimated, that component should still contribute to the value in ncomp. E.g. a reduced model where the upper component is fixed and mu for the lower component is being estimated has a value of ncomp = 2.}
+
+\item{tol_ll}{Numeric, maximum tolerance for change in likelihood between steps of the algorithm for model convergence to be achieved.}
+
+\item{browse_at_end}{For internal model testing}
+
+\item{browse_each_step}{For internal model testing}
+
+\item{plot_visuals}{For internal model testing}
+
+\item{prior_step_plot}{For internal model testing}
+
+\item{pause_on_likelihood_drop}{For internal model testing}
+
+\item{pi_link}{String: "logit" or "identity", link function for the generalized linear model fit for the pi model (component weights).}
+
+\item{verbose}{Numeric, controls amount of information printed during model fitting}
+
+\item{model_coefficient_tolerance}{Numeric, maximum tolerance for change in model coefficients (insluding spline terms) between steps of the algorithm for model convergence to be achieved.}
+
+\item{maxiter_survreg}{Maximum iterations used in survreg model fitting, default is 30.}
+
+\item{initial_weighting}{Numeric, if 1: initial observation weights are estimated using linear regression at the highest and lowest tested concentrations. If 2, used a randomized start suitable for simulation studies on model validity but otherwise not recommended. If 3 or greater, fits a linear models to the components and estimates intial weights based on this model fit.}
+
+\item{sd_initial}{Numeric, value greater than 0 and less than 1. Proportion of the range from the highest concentration to lowest concentration that is used as the initial estimate of sigma for the estimated components. Default is 0.2}
+
+\item{stop_on_likelihood_drop}{For internal model testing}
+
+\item{n_models}{Currently deprecated, will be used in future versions as part of model validation}
+
+\item{seed}{Currently deprecated, will be used in future versions as part of model validation}
+
+\item{randomize}{Currently deprecated, will be used in future versions as part of model validation}
+
+\item{non_linear_term}{String, non-linear term to be included in the model. Variable in the pspline term in the pspline model or in the polynomial term in the polynomial model.}
+
+\item{covariates}{String, covariates to be included in mu model aside from the non-linear term.}
 }
 \description{
 Title

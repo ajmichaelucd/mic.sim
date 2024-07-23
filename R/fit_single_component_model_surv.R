@@ -6,7 +6,7 @@
 #' @param verbose
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 fit_single_component_model_surv = function(visible_data, mu_formula, maxiter_survreg, verbose){

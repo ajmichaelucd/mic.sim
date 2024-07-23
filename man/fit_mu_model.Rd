@@ -18,3 +18,4 @@ fit_mu_model(possible_data, pred_comp, mu_formula, maxiter_survreg = 30)
 \description{
 Function to filter the data to the desired component using the variable c and fit survreg to the data using a formula supplied by the user, typically passed in through the EM algorithm
 }
+\keyword{internal}

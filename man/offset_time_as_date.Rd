@@ -17,3 +17,4 @@ Convert Elapsed Time to Date
 \examples{
 offset_time_as_date(2.109589, 2007)
 }
+\keyword{internal}

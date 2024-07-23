@@ -6,7 +6,7 @@
 #' @param ncomp number of components in the model being fitted, this weighting scheme only is valid for 2 component models
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 initial_weighting_fixed_regression_at_boundaries = function(visible_data, ncomp, sd_parameter = 0.2){

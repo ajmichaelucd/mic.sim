@@ -18,3 +18,4 @@ Convert Date to Elapsed Time
 as_offset_time(lubridate::mdy("2/10/2010"), 2010)
 
 }
+\keyword{internal}

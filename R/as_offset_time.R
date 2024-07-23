@@ -4,7 +4,7 @@
 #' @param start_date Initial timepoint, in decimal years
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom lubridate decimal_date is.Date
 #'

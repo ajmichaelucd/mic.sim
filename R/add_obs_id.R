@@ -3,7 +3,7 @@
 #' @param data
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 add_obs_id = function(data){

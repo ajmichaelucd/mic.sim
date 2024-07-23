@@ -26,7 +26,7 @@
 #'
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 draw_covariates <- function(input, cov_list){

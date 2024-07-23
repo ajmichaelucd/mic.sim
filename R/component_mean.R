@@ -6,7 +6,7 @@
 #' @param `E[X|T,C]`
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom dplyr tibble mutate inner_join case_when
 #' @importFrom magrittr %>%

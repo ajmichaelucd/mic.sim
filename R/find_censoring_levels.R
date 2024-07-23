@@ -3,7 +3,7 @@
 #' @param visible_data
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 find_censoring_levels = function(visible_data){

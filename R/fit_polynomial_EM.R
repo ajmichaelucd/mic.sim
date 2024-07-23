@@ -16,7 +16,7 @@
 #' @param sd_initial
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 fit_polynomial_EM = function(pre_set_degrees = NULL, #c(7,7)
@@ -38,11 +38,21 @@ fit_polynomial_EM = function(pre_set_degrees = NULL, #c(7,7)
                              sd_initial = 0.2) {
   if (is.null(pre_set_degrees)) {
     cv_results = full_polynomial_cv(
-      max_degree,
-      degree_sets,
-      visible_data = visible_data %>% mutate(obs_id = row_number()),
-      nfolds = 10,
-      verbose = verbose
+      max_degree = max_degree,
+      degree_sets = degree_sets,
+      visible_data = visible_data,
+      nfolds = nfolds,
+      non_linear_term = non_linear_term,
+      covariates = covariates,
+      pi_formula = pi_formula,
+      max_it = max_it,
+      ncomp = ncomp,
+      tol_ll = tol_ll,
+      pi_link = pi_link,
+      verbose = verbose,
+      model_coefficient_tolerance = model_coefficient_tolerance,
+      initial_weighting = initial_weighting,
+      sd_initial = sd_initial
     ) %>%
       summarize(
         .by = c(degree_1, degree_2),
@@ -91,6 +101,4 @@ fit_polynomial_EM = function(pre_set_degrees = NULL, #c(7,7)
 
 }
 
-pull_top_degree_set = function(cv_results) {
-  cv_results %>% select(-log_likelihood) %>% purrr::map_dbl(., head(1)) %>% unname %>% return()
-}
+

@@ -5,27 +5,28 @@
 \title{Title}
 \usage{
 fit_surv_EM(
-  random_seeds_vector,
+  pre_set_degrees = NULL,
+  max_degree,
+  degree_sets = "matched",
   visible_data,
-  n_models = length(random_seeds_vector),
-  mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
-    pspline(t, df = 0, caic = TRUE),
+  nfolds,
+  non_linear_term = "t",
+  covariates = NULL,
   pi_formula = c == "2" ~ s(t),
-  max_it = 500,
+  max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
   pi_link = "logit",
-  verbose = 1,
-  initial_weighting = 7,
+  verbose = 3,
   model_coefficient_tolerance = 1e-05,
-  maxiter_survreg = 30,
-  sd_initial = 0.2,
-  randomize = "all"
+  initial_weighting = 9,
+  sd_initial = 0.2
 )
 }
 \arguments{
-\item{randomize}{}
+\item{sd_initial}{}
 }
 \description{
 Title
 }
+\keyword{internal}

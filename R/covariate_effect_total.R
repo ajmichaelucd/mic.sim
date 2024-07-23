@@ -6,7 +6,7 @@
 #' @param covariate_effect_vector
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @importFrom dplyr select starts_with
 #' @importFrom magrittr %>%

@@ -12,3 +12,4 @@ covariate_effect_total(data_tibble, covariate_effect_vector)
 \description{
 uses model.matrix to
 }
+\keyword{internal}

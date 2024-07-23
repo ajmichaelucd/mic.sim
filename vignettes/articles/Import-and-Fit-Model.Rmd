@@ -1,0 +1,53 @@
+---
+title: "Import and Fit Model"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(mic.sim)
+```
+
+```{r}
+set.seed(103)
+mic_data = simulate_mics(`E[X|T,C]` = function(t, c) {
+  case_when(c == "1" ~ -4 + (0.24 * t) - (0.0055 *
+                                            t^2), c == "2" ~ 3 + 0.08 * t, TRUE ~ NaN)
+}) %>% mutate(MIC = case_when(
+  right_bound == Inf ~ paste0(">", 2^left_bound),
+  left_bound == -Inf ~ paste0("<=", 2^right_bound),
+  TRUE ~ paste0(2^right_bound)
+)) %>% select(MIC, t)
+```
+
+```{r}
+imported_data = import_mics_with_metadata(data = mic_data, mic_column = "MIC", metadata_columns = "t")
+head(imported_data)
+```
+
+```{r}
+
+model_fit = fit_EM(max_degree = 5, visible_data = imported_data, verbose = 0)
+
+```
+
+```{r}
+model_fit$cv_results
+```
+
+
+```{r}
+plot_likelihood(model_fit$likelihood)
+
+```
+
+
+```{r}
+plot_fm(model_fit, title = "Model on Imported Data")
+```
+

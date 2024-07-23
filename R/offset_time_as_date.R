@@ -4,9 +4,9 @@
 #' @param start_date start date in decimal years
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
-#' @importFrom lubridate date_decimal
+#' @importFrom lubridate date_decimal is.Date
 #'
 #' @examples offset_time_as_date(2.109589, 2007)
 offset_time_as_date = function(t, start_date){

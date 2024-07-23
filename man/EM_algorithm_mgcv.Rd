@@ -29,3 +29,4 @@ EM_algorithm_mgcv(
 \description{
 EM_algorithm_mgcv
 }
+\keyword{internal}

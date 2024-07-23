@@ -248,8 +248,8 @@ dublin_bopo <-
 
 
 ##Modeling-----------
-drug = "TULATH"
-bug = "pm"
+drug = "FLORFE"
+bug = "mh"
 comps = 2
 if (bug == "mh") {
   set = brd_mh

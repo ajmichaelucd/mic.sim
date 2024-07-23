@@ -3,7 +3,7 @@
 #' @param possible_data
 #'
 #' @return
-#' @export
+#' @keywords internal
 #'
 #' @examples
 plot_initial_weighting_regression = function(possible_data){

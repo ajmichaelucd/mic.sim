@@ -4,7 +4,15 @@
 \alias{import_mics}
 \title{import_mics}
 \usage{
-import_mics(mic_column, code_column = NULL, combination_agent = FALSE)
+import_mics(
+  mic_column,
+  code_column = NULL,
+  combination_agent = NULL,
+  log_reg_value = FALSE,
+  scale = "log",
+  round = FALSE,
+  include_mic_bounds = FALSE
+)
 }
 \arguments{
 \item{combination_agent}{}
@@ -12,3 +20,4 @@ import_mics(mic_column, code_column = NULL, combination_agent = FALSE)
 \description{
 import_mics
 }
+\keyword{internal}

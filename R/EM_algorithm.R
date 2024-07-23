@@ -1,32 +1,35 @@
 #' Title
 #'
+#'
+#' @inheritParams fit_EM
 #' @param visible_data
 #' @param model
-#' @param mu_formula
+#' @param mu_formula A formula for a survreg object from the survival package, left side of equation should be a surv object using "interval2" format, right side should be the non-linear term (polynomial or pspline) and any covariates. Can be a single formula or a list of formulas where length is equal to the number of components where the trend in the mean is being estimated.
 #' @param pi_formula
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
-#' @param browse_at_end
-#' @param browse_each_step
-#' @param plot_visuals
-#' @param prior_step_plot
-#' @param pause_on_likelihood_drop
+#' @param browse_at_end For internal model testing
+#' @param browse_each_step For internal model testing
+#' @param plot_visuals For internal model testing
+#' @param prior_step_plot For internal model testing
+#' @param pause_on_likelihood_drop For internal model testing
 #' @param pi_link
 #' @param verbose
 #' @param model_coefficient_tolerance
 #' @param maxiter_survreg
-#' @param initial_weighting
+#' @param initial_weighting Numeric, if 1: initial observation weights are estimated using linear regression at the highest and lowest tested concentrations. If 2, used a randomized start suitable for simulation studies on model validity but otherwise not recommended. If 3 or greater, fits a linear models to the components and estimates intial weights based on this model fit.
 #' @param sd_initial
-#' @param stop_on_likelihood_drop
-#' @param n_models
-#' @param seed
-#' @param randomize
+#' @param stop_on_likelihood_drop For internal model testing
+#' @param n_models Currently deprecated, will be used in future versions as part of model validation
+#' @param seed Currently deprecated, will be used in future versions as part of model validation
+#' @param randomize Currently deprecated, will be used in future versions as part of model validation
 #'
 #' @return
 #' @export
 #'
 #' @importFrom magrittr %<>%
+#' @importFrom survival survreg.control survreg Surv pspline
 #'
 #' @examples
 EM_algorithm = function(
@@ -34,7 +37,7 @@ EM_algorithm = function(
     model = "surv", #"mgcv", "polynomial"
     mu_formula = Surv(time = left_bound,
                       time2 = right_bound,
-                      type = "interval2") ~ pspline(t, df = 0, caic = TRUE),
+                      type = "interval2") ~ pspline(t, df = 4),
     #mu_formula = yi ~ s(t),
     pi_formula = c == "2" ~ s(t), #or: c == "2" ~ lo(t)
     max_it = 3000,
@@ -44,21 +47,30 @@ EM_algorithm = function(
     browse_each_step = FALSE,
     plot_visuals = FALSE,
     prior_step_plot = FALSE,
-    pause_on_likelihood_drop = TRUE,
+    pause_on_likelihood_drop = FALSE,
     pi_link = "logit",
     verbose = 3,
     model_coefficient_tolerance = 0.00001,
     maxiter_survreg = 30,
-    initial_weighting = 8,
+    initial_weighting = 1,
     sd_initial = 0.2,
     stop_on_likelihood_drop = FALSE,
     n_models = 100,
     seed = NULL,
-    randomize = "all"
+    randomize = "all",
+    non_linear_term = "t",
+    covariates = NULL,
+    scale = NULL
 ){
+  if(model == "pspline"){
+    model = "surv"
+  }
+
   #add attribute model to visible data
 
   visible_data = modify_visible_data(visible_data, model)
+
+  visible_data = set_scale_log(visible_data, scale)
 
   set_algorithm_seed(seed)
 
@@ -70,7 +82,7 @@ EM_algorithm = function(
   }else{
 
     #first E step-----
-    possible_data = first_E_step(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, randomize, n_models, model)
+    possible_data = first_E_step(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, randomize, n_models, model, non_linear_term, covariates, pi_formula, max_it,tol_ll, pi_link, model_coefficient_tolerance)
 
     #wrapper function
     plot_initial_weighting_regression(possible_data = possible_data)
@@ -78,6 +90,7 @@ EM_algorithm = function(
     likelihood_documentation = set_up_likelihood_matrix(max_it)
     possible_data = modify_bounds(possible_data)
 
+    possible_data = add_scale(possible_data, attr(visible_data, "scale"))
 
 
     for(i in 1:max_it){
@@ -89,14 +102,24 @@ EM_algorithm = function(
         prior_iteration = save_previous_iteration(mu_models_new, pi_model_new, log_likelihood_new, possible_data)
       }
 
-      mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, maxiter_survreg)
-      likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
+      mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, approach = "full", fixed_side = NULL, maxiter_survreg)
       if(check_mu_models_convergence(mu_models_new, ncomp)){
         converge = "NO"
         break #if wrapping into an M-step function, add list to list of outputs, then check between steps
       }
 
-      pi_model_new = fit_mgcv_pi_model(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
+      likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
+
+
+      pi_model_new = fit_mgcv_pi_model_safe_reformat(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
+
+      if(check_error(pi_model_new)){
+        converge = "NO"
+        break
+      }
+
+      #pi_model_new = reformat_safe(pi_model_new_list)
+
 
       if(i > 1){
         model_coefficient_checks_results = model_coefficient_checks(mu_models_new, pi_model_new, prior_iteration$mu_models_old, prior_iteration$pi_model_old, model_coefficient_tolerance, ncomp)
@@ -153,7 +176,7 @@ EM_algorithm = function(
         ##too much overlap with 103
         check_ll = (log_likelihood_new - prior_iteration$log_likelihood_old)
 
-        if(check_ll < 0){
+        if(check_ll < 0 & verbose >= 2){
           warning("Log Likelihood decreased")  ###  HAS BEEN GETTING USED A LOT, WHY IS THE LOG LIKELIHOOD GOING DOWN????
         }
 
@@ -195,7 +218,7 @@ EM_algorithm = function(
       )
     }
 
-    if(initial_weighting == 7){
+    if(initial_weighting == 2){
       random_start_set = randomize
     }else{
       random_start_set = NA_character_
@@ -231,7 +254,7 @@ fit_single_component_model.mgcv = function(visible_data, mu_formula){
 
   possible_data = visible_data %>%
     modify_bounds.mgcv()
-  mu_model = mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), data = possible_data, method = "ML")
+  mu_model = mgcv::gam(mu_formula, family= mgcv::cnorm(link = "identity"), data = possible_data, method = "REML")
 
   return(list(possible_data = possible_data,
               mu_model = mu_model,
@@ -322,33 +345,6 @@ save_previous_iteration = function(mu_models_new, pi_model_new, log_likelihood_n
   ) %>% return()
 }
 
-set_model_attr = function(model, possible_data){attr(model, "model")  = attr(possible_data, "model")
-return(model)}
-
-fit_all_mu_models.mgcv = function(possible_data, ncomp, mu_formula){
-  mu_models_new = purrr::map(1:ncomp, ~fit_mu_model.mgcv(possible_data = possible_data, pred_comp = .x, mu_formula = mu_formula))
-  mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
-  attr(mu_models_new, "model") <- attr(possible_data, "model")
-  return(mu_models_new)
-}
-
-fit_all_mu_models.polynomial = function(possible_data, ncomp, mu_formula, maxiter_survreg = 30){
-  mu_models_new = purrr::map2(1:ncomp, mu_formula, ~fit_mu_model(possible_data = possible_data, pred_comp = .x, mu_formula = .y, maxiter_survreg = maxiter_survreg))
-  mu_models_new = purrr::map(mu_models_new, ~set_model_attr(.x, possible_data))
-  attr(mu_models_new, "model") <- attr(possible_data, "model")
-  return(mu_models_new)
-}
-
-fit_all_mu_models = function(possible_data, ncomp, mu_formula, maxiter_survreg = 30){
-  if(attr(possible_data, "model") == "mgcv"){
-    fit_all_mu_models.mgcv(possible_data, ncomp, mu_formula) %>% return()
-  }else if(attr(possible_data, "model") == "polynomial"){
-    fit_all_mu_models.polynomial(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
-  }else{
-    fit_all_mu_models.surv(possible_data, ncomp, mu_formula, maxiter_survreg) %>% return()
-  }
-}
-
 M_step_likelihood_matrix_updates.mgcv = function(likelihood_documentation, i, mu_models_new){
   likelihood_documentation[i, "scale_comp_1"] = mu_models_new[[1]]$family$getTheta(TRUE)
   likelihood_documentation[i, "scale_comp_2"] = mu_models_new[[2]]$family$getTheta(TRUE)
@@ -370,8 +366,12 @@ M_step_likelihood_matrix_updates = function(likelihood_documentation, i, mu_mode
   }
 }
 
-check_mu_models_convergence.mgcv = function(mu_models, n_comp){
-  purrr::map(1:n_comp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients))) %>% return()
+check_error = function(model){
+  !is.null(attr(model, "error")) %>% return()
+}
+
+check_mu_models_convergence.mgcv = function(mu_models, ncomp){
+  purrr::map(1:ncomp, ~any(is.na(mu_models[[.x]]$family$getTheta(TRUE)), is.na(mu_models[[.x]]$coefficients))) %>% return()
 }
 
 check_mu_models_convergence.surv = function(mu_models, ncomp){
@@ -379,6 +379,10 @@ check_mu_models_convergence.surv = function(mu_models, ncomp){
 }
 
 check_mu_models_convergence = function(mu_models, ncomp){
+  if(any(purrr::map_lgl(1:ncomp, ~check_error(model = mu_models[[.x]])))){
+   return(TRUE)
+  }
+
   if(attr(mu_models, "model") == "mgcv"){
     check_mu_models_convergence.mgcv(mu_models, ncomp) %>% unlist %>% any %>% return()
   }else{
@@ -389,17 +393,35 @@ check_mu_models_convergence = function(mu_models, ncomp){
 fit_mgcv_pi_model = function(pi_formula, pi_link, possible_data){
 
   if(pi_link == "logit"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
+    pi_model = gam(pi_formula, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
   } else if(pi_link == "identity"){
-    pi_model = mgcv::gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
+    pi_model = gam(pi_formula, family = binomial(link = "identity"), data = possible_data, weights = `P(C=c|y,t)`, method = "ML") %>% suppressWarnings()
   }
   if(pi_link == "logit_simple"){
     pi_model = glm(c == "2" ~ t, family = binomial(link = "logit"), data = possible_data, weights = `P(C=c|y,t)`) %>% suppressWarnings()
-  }else{ errorCondition("pick logit or identity link function")}
-
+    }else{ errorCondition("pick logit or identity link function")}
 
   return(pi_model)
 }
+
+fit_mgcv_pi_model_safe = safely(fit_mgcv_pi_model, otherwise = "Error")
+
+fit_mgcv_pi_model_safe_reformat = function(pi_formula, pi_link, possible_data){
+pi_model_new_list = fit_mgcv_pi_model_safe(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
+
+pi_model_new = reformat_safe(pi_model_new_list)
+return(pi_model_new)
+}
+
+
+reformat_safe = function(model){
+  out = model$result
+  attr(out, "error") = model$error
+  return(out)
+}
+
+#gam_safe = safely(mgcv::gam, otherwise = "Error")
+#glm_safe = safely(glm, otherwise = "Error")
 
 model_coefficient_checks.mgcv = function(mu_models_new, pi_model_new, mu_models_old, pi_model_old, model_coefficient_tolerance, ncomp){
   #do the weird coefficients gam returns chaange (only one for s(t) for some reason)
@@ -519,10 +541,30 @@ tibble_like <- function(likelihood_documentation, model = "surv"){
   likelihood_documentation %>% as_tibble %>% filter(!is.na(.data$loglikelihood)) %>% return()
 }
 
-modify_visible_data = function(visible_data, model){
+modify_visible_data = function(visible_data, model, scale = NULL){
   visible_data = add_attribute_data(visible_data, model)
   visible_data = add_obs_id(visible_data)
+  visible_data = add_scale(visible_data, scale)
   return(visible_data)
+}
+
+add_scale = function(data, scale){
+  if(is.null(attr(data, "scale"))){
+    if(is.null(scale)){
+      errorCondition("This data set does not have a scale attribute already attached, please use 'scale' argument to provide one: acceptable values are log, fold, log2, MIC")
+    }else{
+      scale_modified = case_when(
+        tolower(scale) %in% c("log", "fold", "log2") ~ "log",
+        tolower(scale) %in% c("mic", "concentration") ~ "MIC",
+        TRUE ~ "error"
+      )
+
+      if(scale_modified == "error"){errorCondition("Invalid value of scale, please use 'log', 'fold', 'log2', or 'MIC'")}
+
+      attr(data, "scale") = scale
+    }
+  }
+  return(data)
 }
 
 set_algorithm_seed = function(seed){
@@ -651,4 +693,13 @@ m_step_check_maximizing_mgcv = function(possible_data, mu_models, pi_model){
     mutate(m_step_check = `P(C=c|y,t)` * log(`P(c,y|t)`)) %>% pull(m_step_check) %>% sum %>% return()
 }
 
+set_scale_log = function(visible_data, scale){
+  visible_data = add_scale(visible_data, scale)
+  if(attr(visible_data, "scale") == "MIC"){
+    visible_data = visible_data %>% mutate(left_bound = log2(left_bound),
+                                           right_bound = log2(right_bound))
+  }
+  return(visible_data)
+
+}
 
