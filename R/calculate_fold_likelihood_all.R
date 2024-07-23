@@ -16,8 +16,9 @@ calculate_fold_likelihood_all = function(testing_set,
                                          trained_pi_model,
                                          approach = "full",
                                          fixed_side = NULL,
-                                         extra_row = FALSE) {
-  if (approach == "full") {
+                                         extra_row = FALSE,
+                                         ncomp = 2) {
+  if (approach == "full" & ncomp > 1) {
     calculate_fold_likelihood.full(testing_set, trained_mu_model, trained_pi_model) %>% return()
   } else if (approach == "reduced" & !is.null(fixed_side)) {
     calculate_fold_likelihood.reduced(testing_set,
@@ -25,7 +26,10 @@ calculate_fold_likelihood_all = function(testing_set,
                                       trained_pi_model,
                                       fixed_side,
                                       extra_row) %>% return()
-  } else{
+  } else if(ncomp == 1){
+    calculate_fold_likelihood.single_comp(testing_set,
+                                          trained_mu_model)
+  }else{
     errorCondition("If using reduced model, need to supply a value for fixed_side")
   }
 }
@@ -49,6 +53,23 @@ calculate_fold_likelihood.reduced = function(testing_set, trained_mu_model, trai
     calculate_log_likelihood(.) %>% return()
 
 
+
+}
+
+calculate_fold_likelihood.single_comp = function(testing_set, trained_mu_model){
+  testing_set %>% add_obs_id() %>% mutate(
+    `E[Y|t]` = predict(trained_mu_model, newdata = testing_set),
+    `sd[Y|t]` = get_scale(trained_mu_model),
+
+    `P(Y|t)` = case_when(
+      left_bound == right_bound ~ dnorm(x = left_bound, mean = `E[Y|t]`, sd =  `sd[Y|t]`),
+      left_bound <= `E[Y|t]` ~ pnorm(right_bound, mean = `E[Y|t]`, sd =  `sd[Y|t]`) -
+        pnorm(left_bound, mean = `E[Y|t]`, sd =  `sd[Y|t]`),
+      TRUE ~ pnorm(left_bound, mean = `E[Y|t]`, sd =  `sd[Y|t]`, lower.tail = FALSE) -
+        pnorm(right_bound, mean = `E[Y|t]`, sd =  `sd[Y|t]`, lower.tail = FALSE)
+    ),
+    log_likelihood_i = log(`P(Y|t)`)
+  ) %>% summarise(log_like = sum(log_likelihood_i)) %>% pull(log_like) %>% return()
 
 }
 

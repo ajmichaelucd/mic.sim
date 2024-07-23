@@ -117,7 +117,7 @@ get_fold_likelihood_all = function(model = "surv",
     errorCondition("Use 'full' or 'reduced' for approach")
   }
 
-  calculate_fold_likelihood_all(testing_set, trained_mu_model = trained_model$mu_model, trained_pi_model = trained_model$pi_model, approach = approach, fixed_side = fixed_side, extra_row = extra_row) %>%
+  calculate_fold_likelihood_all(testing_set, trained_mu_model = trained_model$mu_model, trained_pi_model = trained_model$pi_model, approach = approach, fixed_side = fixed_side, extra_row = extra_row, ncomp = ncomp) %>%
     return()  ###MAY NEED TO FIX THIS TOO
 
 }

@@ -29,7 +29,7 @@
 #' @export
 #'
 #' @importFrom magrittr %<>%
-#' @importFrom survival survreg.control survreg Surv pspline
+#' @importFrom survival survreg.control survreg Surv pspline coxph.wtest
 #'
 #' @examples
 EM_algorithm = function(
@@ -78,8 +78,10 @@ EM_algorithm = function(
   converge = NA_character_
 
   if(ncomp == 1){
-    fit_single_component_model(visible_data, mu_formula, maxiter_survreg) %>% return()
-  }else{
+    out = fit_single_component_model(visible_data, mu_formula, maxiter_survreg)
+  attr(out$mu_model, "model") = model
+  return(out)
+    }else{
 
     #first E step-----
     possible_data = first_E_step(initial_weighting, visible_data, plot_visuals, sd_initial, ncomp, randomize, n_models, model, non_linear_term, covariates, pi_formula, max_it,tol_ll, pi_link, model_coefficient_tolerance)
@@ -315,12 +317,21 @@ add_attribute_data = function(data, model){
 
 fit_single_component_model = function(visible_data, mu_formula, maxiter_survreg){
 
+  if(!is.list(mu_formula)){
+   mu_formula = list(mu_formula)
+  }
+
+
   if(attr(visible_data, "model") == "mgcv"){
-    fit_single_component_model.mgcv(visible_data, mu_formula) %>% return()
+   mu_fit = purrr::map(mu_formula, ~fit_single_component_model.mgcv(visible_data, .x)) %>% unlist(., recursive = FALSE)
   }
   if(attr(visible_data, "model") %in% c("surv", "polynomial")){
-    fit_single_component_model.surv(visible_data, mu_formula, maxiter_survreg) %>% return()
+   mu_fit = purrr::map(mu_formula, ~fit_single_component_model.surv(visible_data, .x, maxiter_survreg)) %>% unlist(., recursive = FALSE)
   }
+
+  attr(mu_fit, "model") = attr(visible_data, "model")
+  return(mu_fit)
+
 }
 
 
