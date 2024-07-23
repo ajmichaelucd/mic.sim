@@ -15,7 +15,7 @@
 #' @examples
 import_mics = function(mic_column, code_column = NULL, combination_agent = NULL, log_reg_value = FALSE, scale = "log", round = FALSE, include_mic_bounds = FALSE){
 
-  if(combination_agent == 2 & is.null(code_column)){
+  if(!is.null(combination_agent) && combination_agent == 2 & is.null(code_column)){
     code_column = tibble(mic_column) %>% mutate(
       code_column = dplyr::case_when(
         grepl(pattern = "(≤)|(<=)|(=<)", x = mic_column) ~ "<=",
@@ -26,7 +26,7 @@ import_mics = function(mic_column, code_column = NULL, combination_agent = NULL,
   }
 
 
-  if(combination_agent %in% c(1,2)){
+  if( !is.null(combination_agent) && combination_agent %in% c(1,2)){
     mic_column = stringr::str_split_i(mic_column, "/", combination_agent)
   }
 
