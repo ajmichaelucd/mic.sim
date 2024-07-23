@@ -75,7 +75,7 @@ We attempt to fit the full model to the heavily censored data set and by looking
 
 ```{r}
 out_full = fit_EM(
-  max_degree = 4, visible_data = example_data_reduced, verbose = 1, max_it = 30
+  max_degree = 3, visible_data = example_data_reduced, verbose = 1, max_it = 30, nfolds = 5
 )
 ```
 ```{r}
