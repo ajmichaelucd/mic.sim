@@ -24,6 +24,7 @@ mic_data = simulate_mics(`E[X|T,C]` = function(t, c) {
   TRUE ~ paste0(2^right_bound)
 )) %>% select(MIC, t)
 ```
+
 ```{r}
 imported_data = import_mics_with_metadata(data = mic_data, mic_column = "MIC", metadata_columns = "t")
 head(imported_data)

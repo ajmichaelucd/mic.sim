@@ -13,7 +13,10 @@ import_mics_with_metadata(
   log_reg_value = FALSE,
   scale = "log",
   round = FALSE,
-  include_mic_bounds = FALSE
+  include_mic_bounds = FALSE,
+  low_con = NULL,
+  high_con = NULL,
+  concentration_by_covariate = NULL
 )
 }
 \arguments{
@@ -34,6 +37,10 @@ import_mics_with_metadata(
 \item{round}{Set to true if log2(MIC values) are integers, but decimal MIC values are rounded (e.g. 0.12 in place of 0.125)}
 
 \item{include_mic_bounds}{Logical, if TRUE includes left and right boundaries of interval on MIC scale (in addition to on log2 scale if scale is "log")}
+
+\item{low_con}{Numerical, the highest concentration tested, specify on the same scale as the data. If left null and concentration_by_covariate table is not supplied, will be set based on the data}
+
+\item{concentration_by_covariate}{Data frame. Table, columns "low_con" and "high_con" are matched to data using covariates. Include one row for each combination of covariates.}
 }
 \description{
 Import MICs and Covariates

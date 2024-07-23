@@ -29,7 +29,7 @@
 #' @export
 #'
 #' @importFrom magrittr %<>%
-#' @importFrom survival survreg.control
+#' @importFrom survival survreg.control survreg Surv pspline
 #'
 #' @examples
 EM_algorithm = function(
@@ -103,11 +103,13 @@ EM_algorithm = function(
       }
 
       mu_models_new = fit_all_mu_models(possible_data, ncomp, mu_formula, approach = "full", fixed_side = NULL, maxiter_survreg)
-      likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
       if(check_mu_models_convergence(mu_models_new, ncomp)){
         converge = "NO"
         break #if wrapping into an M-step function, add list to list of outputs, then check between steps
       }
+
+      likelihood_documentation = M_step_likelihood_matrix_updates(likelihood_documentation, i, mu_models_new, ncomp, maxiter_survreg) ###use dimnames in matrix
+
 
       pi_model_new = fit_mgcv_pi_model_safe_reformat(pi_formula = pi_formula, pi_link = pi_link, possible_data = possible_data)
 
@@ -216,7 +218,7 @@ EM_algorithm = function(
       )
     }
 
-    if(initial_weighting == 7){
+    if(initial_weighting == 2){
       random_start_set = randomize
     }else{
       random_start_set = NA_character_
