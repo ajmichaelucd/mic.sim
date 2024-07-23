@@ -22,6 +22,7 @@
 #' @importFrom dplyr tibble mutate inner_join group_by case_when
 #' @importFrom magrittr %>%
 #' @importFrom purrr map as_vector map_chr map_dbl
+#' @importFrom tibble tibble
 #' @import dplyr
 #'
 #' @examples
