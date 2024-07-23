@@ -71,8 +71,8 @@ import_mics_with_metadata = function(data, mic_column, metadata_columns = NULL, 
 
   if(!is.null(low_con) & !is.null(high_con)){
     df = df %>% mutate(
-      low_con = ifelse(scale = "log", log2(low_con), low_con),
-      high_con = ifelse(scale = "log", log2(high_con), high_con)
+      low_con = ifelse(scale == "log", log2(low_con), low_con),
+      high_con = ifelse(scale == "log", log2(high_con), high_con)
     )
   }else if(!is.null(concentration_by_covariate)){
     names = colnames(concentration_by_covariate)
