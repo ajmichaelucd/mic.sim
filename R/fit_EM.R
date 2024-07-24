@@ -33,6 +33,7 @@
 #'
 #' @importFrom purrr map_dfc
 #' @import purrr
+#' @import survival
 #'
 #' @return
 #' @export
