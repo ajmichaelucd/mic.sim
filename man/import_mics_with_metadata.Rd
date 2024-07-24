@@ -38,7 +38,9 @@ import_mics_with_metadata(
 
 \item{include_mic_bounds}{Logical, if TRUE includes left and right boundaries of interval on MIC scale (in addition to on log2 scale if scale is "log")}
 
-\item{low_con}{Numerical, the highest concentration tested, specify on the same scale as the data. If left null and concentration_by_covariate table is not supplied, will be set based on the data}
+\item{low_con}{Numerical, the lowest concentration tested, specify on the same scale as the data. If left null and concentration_by_covariate table is not supplied, will be set based on the data}
+
+\item{high_con}{Numerical, the highest concentration tested, specify on the same scale as the data. If left null and concentration_by_covariate table is not supplied, will be set based on the data}
 
 \item{concentration_by_covariate}{Data frame. Table, columns "low_con" and "high_con" are matched to data using covariates. Include one row for each combination of covariates.}
 }
