@@ -6,6 +6,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom mgcv cnorm
 #' @importFrom mgcv gam
+#' @importFrom survival coxph.wtest
 #' @importFrom tibble tibble
 ## usethis namespace: end
 NULL
