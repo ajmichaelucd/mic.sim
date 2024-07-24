@@ -10,7 +10,7 @@
 #' @param round Set to true if log2(MIC values) are integers, but decimal MIC values are rounded (e.g. 0.12 in place of 0.125)
 #' @param include_mic_bounds Logical, if TRUE includes left and right boundaries of interval on MIC scale (in addition to on log2 scale if scale is "log")
 #' @param low_con Numerical, the lowest concentration tested, specify on the same scale as the data. If left null and concentration_by_covariate table is not supplied, will be set based on the data
-#' @param low_con Numerical, the highest concentration tested, specify on the same scale as the data. If left null and concentration_by_covariate table is not supplied, will be set based on the data
+#' @param high_con Numerical, the highest concentration tested, specify on the same scale as the data. If left null and concentration_by_covariate table is not supplied, will be set based on the data
 #' @param concentration_by_covariate Data frame. Table, columns "low_con" and "high_con" are matched to data using covariates. Include one row for each combination of covariates.
 #'
 #' @return
@@ -84,15 +84,15 @@ import_mics_with_metadata = function(data, mic_column, metadata_columns = NULL, 
 
   if(!"low_con" %in% present){
     df = df %>% mutate(low_con = case_when(
-      min(left_bound) == -Inf ~ min(right_bound),
-      TRUE ~ min(left_bound)
+      min(left_bound, na.rm = TRUE) == -Inf ~ min(right_bound, na.rm = TRUE),
+      TRUE ~ min(left_bound, na.rm = TRUE)
     ))
   }
 
   if(!"high_con" %in% present){
     df = df %>% mutate(high_con = case_when(
-      max(right_bound) == Inf ~ max(left_bound),
-      TRUE ~ max(right_bound)
+      max(right_bound, na.rm = TRUE) == Inf ~ max(left_bound, na.rm = TRUE),
+      TRUE ~ max(right_bound, na.rm = TRUE)
     ))
   }
 
