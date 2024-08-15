@@ -32,6 +32,7 @@
 #'
 #'
 #' @importFrom purrr map_dfc
+#' @importFrom survival survreg coxph.wtest
 #' @import purrr
 #' @import survival
 #'
