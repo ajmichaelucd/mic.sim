@@ -1,6 +1,7 @@
 Sys.setlocale (locale = "en_US.UTF-8")
 print(sort(c("10", "1:")))
 
+
 args <- as.numeric(commandArgs(trailingOnly = TRUE))
 
 library(mgcv)
@@ -15,9 +16,10 @@ library(ggnewscale)
 library(mic.sim)
 
 ###EDIT PARAMETERS HERE-------------------------------
+date = "08302024"
 scenario = 1
-number_per_batch = 10
-total_runs_per_parameter_set = 500
+#number_per_batch = 10
+total_runs_per_parameter_set = 200
 
 n = 300
 pi = c(function(t) {
@@ -71,7 +73,7 @@ reruns_allowed = 3
 
 ###EDIT ABOVE THIS LINE ONLY--------------------------------------------
 
-row = ceiling(args / (total_runs_per_parameter_set/number_per_batch))
+row = ceiling(args / total_runs_per_parameter_set)
 param_table = tidyr::expand_grid(n = n, pi_vals = pi, mu_vals = `E[X|T,C]`, lc = low_con, hc = high_con, sd_vals = sd_vector, model = model, approach = approach, pi_formula = pi_formula)
 params = param_table %>%
   mutate(id = row_number()) %>%
@@ -88,52 +90,52 @@ approach = params$approach
 pi_formula = params$pi_formula[[1]]
 
 
-iteration_numbers = c((((args - 1) * number_per_batch) + 1): (args * number_per_batch))
-
-run_name = paste0("scenario_", scenario,"_row_", ceiling(args/(total_runs_per_parameter_set/number_per_batch)), "_12212023_run")
+run_name = paste0("scenario_", scenario,"_row_", ceiling(args/total_runs_per_parameter_set), "_", date, "_run")
 file_name <- paste0(run_name,"_", args)
 path <- paste0(file_name, ".Rdata")
 
 
-output = map(iteration_numbers, ~simulation_run(i = .x,
-                                                n = n,
-                                                t_dist = t_dist,
-                                                pi = pi,
-                                                `E[X|T,C]` = `E[X|T,C]`,
-                                                sd_vector = sd_vector,
-                                                covariate_list = covariate_list,
-                                                covariate_effect_vector = covariate_effect_vector,
-                                                conc_limits_table = conc_limits_table,
-                                                low_con = low_con,
-                                                high_con = high_con,
-                                                scale = scale,
-                                                model = model,
-                                                approach = approach,
-                                                pi_formula = pi_formula,
-                                                ncomp = ncomp,
+output = simulation_run(
+  i = args,
+  n = n,
+  t_dist = t_dist,
+  pi = pi,
+  `E[X|T,C]` = `E[X|T,C]`,
+  sd_vector = sd_vector,
+  covariate_list = covariate_list,
+  covariate_effect_vector = covariate_effect_vector,
+  conc_limits_table = conc_limits_table,
+  low_con = low_con,
+  high_con = high_con,
+  scale = scale,
+  model = model,
+  approach = approach,
+  pi_formula = pi_formula,
+  ncomp = ncomp,
 
-                                                pre_set_degrees = pre_set_degrees,
-                                                max_degree = max_degree,
-                                                degree_sets = degree_sets,
-                                                nfolds = nfolds,
+  pre_set_degrees = pre_set_degrees,
+  max_degree = max_degree,
+  degree_sets = degree_sets,
+  nfolds = nfolds,
 
 
-                                                non_linear_term = non_linear_term,
-                                                covariates = covariates,
+  non_linear_term = non_linear_term,
+  covariates = covariates,
 
-                                                fixed_side = fixed_side,
-                                                extra_row = extra_row,
-                                                max_it = max_it,
-                                                tol_ll = tol_ll,
-                                                pi_link = pi_link,
-                                                verbose = verbose,
-                                                model_coefficient_tolerance = model_coefficient_tolerance,
-                                                maxiter_survreg = maxiter_survreg,
-                                                initial_weighting = initial_weighting,
-                                                sd_initial = sd_initial,
-                                                reruns_allowed = reruns_allowed))
+  fixed_side = fixed_side,
+  extra_row = extra_row,
+  max_it = max_it,
+  tol_ll = tol_ll,
+  pi_link = pi_link,
+  verbose = verbose,
+  model_coefficient_tolerance = model_coefficient_tolerance,
+  maxiter_survreg = maxiter_survreg,
+  initial_weighting = initial_weighting,
+  sd_initial = sd_initial,
+  reruns_allowed = reruns_allowed
+)
 
-batch_result = list(
+iter_result = list(
   output = output,
   settings = list(
     n = n,
@@ -171,11 +173,11 @@ batch_result = list(
     scale = scale,
     reruns_allowed = reruns_allowed
 ),
-batch = args,
+iter = args,
 row = row,
 param_table = param_table)
 
-save(batch_result, file = path)
+save(iter_result, file = path)
 
 
 
