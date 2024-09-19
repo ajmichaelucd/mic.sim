@@ -443,7 +443,9 @@ if(attr(df, "model") != "mgcv"){
 }
 
 check_comp_conv = function(models){
-  is.na(models$scale) | (tibble(a = models$coefficients) %>% filter(is.na(a)) %>% nrow) > 0
+  if((length(models) == 1 && models == "Error")){
+    return(TRUE)
+  }else{is.na(models$scale) | (tibble(a = models$coefficients) %>% filter(is.na(a)) %>% nrow) > 0}
 }
 
 get_two_comp_ci = function(output){
