@@ -261,7 +261,7 @@ fit_single_component_model.mgcv = function(visible_data, mu_formula){
   return(list(possible_data = possible_data,
               mu_model = mu_model,
               converge = ifelse(length(mu_model) > 1, "YES", "NO"),
-              ncomp = ncomp))
+              ncomp = 1))
 }
 
 fit_single_component_model.surv = function(visible_data, mu_formula, maxiter_survreg){
@@ -275,7 +275,7 @@ fit_single_component_model.surv = function(visible_data, mu_formula, maxiter_sur
   return(list(possible_data = visible_data,
               mu_model = mu_model,
               converge = "YES",
-              ncomp = ncomp,
+              ncomp = 1,
               likelihood = tibble(step = 1, likelihood = mu_model$loglik[2]))
   )
 }
