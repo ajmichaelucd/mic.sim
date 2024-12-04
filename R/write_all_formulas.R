@@ -17,7 +17,7 @@ write_all_formulas = function(non_linear_term, degrees, covariates, model){
   if(model == "polynomial"){
     purrr::map(degrees, ~ write_single_formula.polynomial(non_linear_term, .x, covariates)) %>% return()
 
-  }else if(model == "surv"){
+  }else if(model == "surv" | model == "pspline"){
     purrr::map(degrees, ~ write_single_formula.surv(non_linear_term, .x, covariates)) %>% return()
   }else{
     errorCondition("Please use 'surv' or 'polynomial' for model")
