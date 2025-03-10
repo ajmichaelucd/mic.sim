@@ -16,6 +16,7 @@
 #'
 #' @import ggplot2
 #' @import ggnewscale
+#' @importFrom patchwork wrap_plots
 #'
 #' @return
 #' @export
@@ -217,7 +218,7 @@ mean <- df %>%
           ylim(0,1)  +
           xlab("Time") + ylab("Proportion") + theme_minimal() + guides(linetype = "none")
       }
-    return(mean/pi)
+    return(patchwork::wrap_plots(mean,pi, ncol = 1))
 
   }else{
     if(output$ncomp == 1){
@@ -362,7 +363,7 @@ mean = mean +
           ylim(0,1)  +
           xlab("Time") + ylab("Proportion") + theme_minimal() + guides(linetype = "none")
       }
-      return(mean/pi)
+      return(patchwork::wrap_plots(mean,pi, ncol = 1))
     }
     else{
       warningCondition("No components converged")
