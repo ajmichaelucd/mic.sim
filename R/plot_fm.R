@@ -11,11 +11,12 @@
 #' @param use_prior_step Logical, if one mu model did not converge, can try plotting mu models from previous step by setting this to TRUE
 #' @param range_zoom Logical, zoom y axis to range of tested concentrations
 #' @param plot_range Vector of length 2, minimum and maximum values of y axis of plot
-#' @param start_date Integer, value at which x axis shoudl start (year).
+#' @param start_date Integer, value at which x axis should start (year).
 #'
 #'
 #' @import ggplot2
 #' @import ggnewscale
+#' @importFrom patchwork wrap_plots
 #'
 #' @return
 #' @export
@@ -217,7 +218,7 @@ mean <- df %>%
           ylim(0,1)  +
           xlab("Time") + ylab("Proportion") + theme_minimal() + guides(linetype = "none")
       }
-    return(mean/pi)
+    return(patchwork::wrap_plots(mean,pi, ncol = 1))
 
   }else{
     if(output$ncomp == 1){
@@ -362,7 +363,7 @@ mean = mean +
           ylim(0,1)  +
           xlab("Time") + ylab("Proportion") + theme_minimal() + guides(linetype = "none")
       }
-      return(mean/pi)
+      return(patchwork::wrap_plots(mean,pi, ncol = 1))
     }
     else{
       warningCondition("No components converged")
