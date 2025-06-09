@@ -111,8 +111,8 @@ plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, 
   #doesn't work with gaussian dist
 
 
-  mu.se.brd <- function(t, c, z){predict(output$mu_model[[c]], data.frame(t = t)) + z * predict(output$mu_model[[c]], data.frame(t = t), se = TRUE)$se.fit}
-  mu.se.brd.fms <- function(t, z){predict(fitted_comp, data.frame(t = t)) + z * predict(fitted_comp, data.frame(t = t), se = TRUE)$se.fit}
+  mu.se.brd <- function(t, c, z){predict(output$mu_model[[c]], data.frame(t = t)) + (z * predict(output$mu_model[[c]], data.frame(t = t), se = TRUE)$se.fit)}
+  mu.se.brd.fms <- function(t, z){predict(fitted_comp, data.frame(t = t)) + (z * predict(fitted_comp, data.frame(t = t), se = TRUE)$se.fit)}
 
   if(ncomp == 2){
 
