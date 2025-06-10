@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NULL){
+preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NULL, ECOFF_scale = "MIC"){
 
   if(is.null(y_max)){
     y_max = case_when(max(data$right_bound) == Inf ~ max(data$left_bound))
@@ -36,7 +36,7 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
   if(!is.null(ECOFF)){
     plot = plot +
       ggnewscale::new_scale_color() +
-      geom_hline(aes(yintercept = ECOFF, color = "ECOFF")) +
+      geom_hline(aes(yintercept = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), log2(ECOFF), ECOFF), color = "ECOFF")) +
       scale_color_manual(values = c("ECOFF" = "darkorange"), name = NULL)
   }
 
