@@ -30,16 +30,31 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
     geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound), color = "black", data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
     geom_point(aes(x = t, y = left_bound), color = "black", data = . %>% filter(left_bound != -Inf), alpha = 0.2) +
     geom_point(aes(x = t, y = right_bound), color = "black", data = . %>% filter(right_bound != Inf), alpha = 0.2) +
-    ylim(y_min - 2, y_max + 2) %>% suppressWarnings() +
     ggtitle(title) + ylab(bquote(log[2]~ MIC))
 
   if(!is.null(ECOFF)){
-    ECOFF_mod = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), ECOFF, log2(ECOFF))
+    ECOFF_mod = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), ECOFF, round(log2(ECOFF)))
 
     plot = plot +
       ggnewscale::new_scale_color() +
       geom_hline(aes(yintercept = ECOFF_mod, color = "ECOFF")) +
       scale_color_manual(values = c("ECOFF" = "darkorange"), name = NULL)
+
+    if(ECOFF > (y_max + 2)){
+      plot = plot +
+        ylim(y_min - 2, ECOFF + 2) %>% suppressWarnings()
+    }else if(ECOFF < (y_min - 2)){
+      plot = plot +
+        ylim(ECOFF - 2, y_max + 2) %>% suppressWarnings()
+    }else{
+      plot = plot +
+        ylim(y_min - 2, y_max + 2) %>% suppressWarnings()
+    }
+
+
+  }else{
+    plot = plot +
+      ylim(y_min - 2, y_max + 2) %>% suppressWarnings()
   }
 
   plot %>% return()
