@@ -34,10 +34,12 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
     ggtitle(title) + ylab(bquote(log[2]~ MIC))
 
   if(!is.null(ECOFF)){
+    ECOFF_mod = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), log2(ECOFF), ECOFF)
+
     plot = plot +
       ggnewscale::new_scale_color() +
-      geom_hline(aes(yintercept = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), log2(ECOFF), ECOFF), color = "ECOFF")) +
-      scale_color_manual(values = c("ECOFF" = "darkorange"), name = NULL)
+      geom_hline(aes(yintercept = ECOFF_mod, color = "ECOFF_mod")) +
+      scale_color_manual(values = c("ECOFF_mod" = "darkorange"), name = NULL)
   }
 
   plot %>% return()
