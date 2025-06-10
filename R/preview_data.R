@@ -34,7 +34,7 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
     ggtitle(title) + ylab(bquote(log[2]~ MIC))
 
   if(!is.null(ECOFF)){
-    ECOFF_mod = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), log2(ECOFF), ECOFF)
+    ECOFF_mod = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), ECOFF, log2(ECOFF))
 
     plot = plot +
       ggnewscale::new_scale_color() +
