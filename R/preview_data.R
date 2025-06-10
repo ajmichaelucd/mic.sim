@@ -38,8 +38,8 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
 
     plot = plot +
       ggnewscale::new_scale_color() +
-      geom_hline(aes(yintercept = ECOFF_mod, color = "ECOFF_mod")) +
-      scale_color_manual(values = c("ECOFF_mod" = "darkorange"), name = NULL)
+      geom_hline(aes(yintercept = ECOFF_mod, color = "ECOFF")) +
+      scale_color_manual(values = c("ECOFF" = "darkorange"), name = NULL)
   }
 
   plot %>% return()
