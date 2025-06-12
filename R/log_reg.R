@@ -80,9 +80,9 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
           TRUE ~ "int"
         ),
         mic = case_when(
-          cens == "int" ~ parse_number(mic_column),
-          cens == "LC" ~ parse_number(mic_column) * 0.5,
-          cens == "RC" ~ parse_number(mic_column) * 2,
+          cens == "int" ~ parse_number(as.character(mic_column)),
+          cens == "LC" ~ parse_number(as.character(mic_column)) * 0.5,
+          cens == "RC" ~ parse_number(as.character(mic_column)) * 2,
           TRUE ~ NaN
         )
       )
