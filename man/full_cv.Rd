@@ -16,7 +16,7 @@ full_cv(
   pi_formula = c == "2" ~ s(t),
   fixed_side = NULL,
   extra_row = FALSE,
-  max_it = 3000,
+  max_it = 300,
   ncomp = 2,
   tol_ll = 1e-06,
   pi_link = "logit",

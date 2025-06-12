@@ -4,7 +4,14 @@
 \alias{preview_data}
 \title{Plot Data}
 \usage{
-preview_data(data, title = "", y_min = NULL, y_max = NULL)
+preview_data(
+  data,
+  title = "",
+  y_min = NULL,
+  y_max = NULL,
+  ECOFF = NULL,
+  ECOFF_scale = "MIC"
+)
 }
 \arguments{
 \item{data}{Tibble or data frame from simulate_mics or import_mics_with_metadata}

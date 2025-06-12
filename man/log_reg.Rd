@@ -6,13 +6,15 @@
 \usage{
 log_reg(
   data,
+  split_by = "ecoff",
   data_type,
   drug,
   date_col,
   date_type,
   first_year,
   s_breakpoint,
-  r_breakpoint
+  r_breakpoint,
+  ecoff
 )
 }
 \arguments{

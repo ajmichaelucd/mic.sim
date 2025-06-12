@@ -8,6 +8,7 @@ plot_fm(
   output,
   title = "",
   add_log_reg = FALSE,
+  ecoff = NA,
   s_breakpoint = NA,
   r_breakpoint = NA,
   use_prior_step = FALSE,
@@ -23,6 +24,8 @@ plot_fm(
 
 \item{add_log_reg}{Logical, add a curve to the pi (component weight) plot showing proportion resistant and susceptible}
 
+\item{ecoff}{Numeric or String, represents an ECOFF on the MIC Scale to define the upper limit of the WT component, A number is interpreted as WT being <= ECOFF.}
+
 \item{s_breakpoint}{String, represents S breakpoint (e.g. <= 2) on MIC scale (not log2 scale)}
 
 \item{r_breakpoint}{String, represents R breakpoint (e.g. >= 32) on MIC scale (not log2 scale)}
@@ -33,7 +36,7 @@ plot_fm(
 
 \item{plot_range}{Vector of length 2, minimum and maximum values of y axis of plot}
 
-\item{start_date}{Integer, value at which x axis shoudl start (year).}
+\item{start_date}{Integer, value at which x axis should start (year).}
 }
 \description{
 Takes output of a fit_EM() run and plots it.
