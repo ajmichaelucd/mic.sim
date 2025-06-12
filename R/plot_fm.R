@@ -196,15 +196,15 @@ mean <- df %>%
         scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF"))  + guides(linetype = "none")
 
       s_line = case_when(
-        grepl("≤",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-        grepl("=",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-        grepl("<",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2 - 1,
+        grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+        grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+        grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
         TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
       )
       r_line = case_when(
-        grepl("≥",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-        grepl("=",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-        grepl(">",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2,
+        grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+        grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+        grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
         TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
       )
 
@@ -221,9 +221,9 @@ mean <- df %>%
           scale_color_manual(breaks = c("Component 1", "Component 2", "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
         ecoff_line = case_when(
-          grepl("≤", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("=", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("<", ecoff) ~ ecoff %>% parse_number() %>% log2 - 1,
+          grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
           TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
         )
 
@@ -241,22 +241,22 @@ mean <- df %>%
           scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant",  "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
         s_line = case_when(
-          grepl("≤",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-          grepl("=",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-          grepl("<",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2 - 1,
+          grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
           TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
         )
         r_line = case_when(
-          grepl("≥",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-          grepl("=",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-          grepl(">",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2,
+          grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
           TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
         )
 
         ecoff_line = case_when(
-          grepl("≤", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("=", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("<", ecoff) ~ ecoff %>% parse_number() %>% log2 - 1,
+          grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
           TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
         )
 
@@ -329,9 +329,9 @@ mean <- df %>%
 if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
       if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
         ecoff_line = case_when(
-          grepl("≤", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("=", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("<", ecoff) ~ ecoff %>% parse_number() %>% log2 - 1,
+          grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
           TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
         )
         mean = mean +
@@ -342,15 +342,15 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
       }else if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         s_line = case_when(
-          grepl("≤",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-          grepl("=",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-          grepl("<",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2 - 1,
+          grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
           TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
         )
         r_line = case_when(
-          grepl("≥",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-          grepl("=",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-          grepl(">",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2,
+          grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
           TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
         )
         mean = mean +
@@ -361,22 +361,22 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  + guides(linetype = "none", color = "none")
       }else{
         s_line = case_when(
-          grepl("≤",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-          grepl("=",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-          grepl("<",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2 - 1,
+          grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
           TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
         )
         r_line = case_when(
-          grepl("≥",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-          grepl("=",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-          grepl(">",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2,
+          grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
           TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
         )
 
         ecoff_line = case_when(
-          grepl("≤", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("=", ecoff) ~ ecoff %>% parse_number() %>% log2,
-          grepl("<", ecoff) ~ ecoff %>% parse_number() %>% log2 - 1,
+          grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
           TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
         )
 
@@ -476,15 +476,15 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF"))  + guides(linetype = "none")
 
             s_line = case_when(
-              grepl("≤",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-              grepl("=",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-              grepl("<",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2 - 1,
+              grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
               TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
             )
             r_line = case_when(
-              grepl("≥",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-              grepl("=",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-              grepl(">",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2,
+              grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
               TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
             )
 
@@ -501,9 +501,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               scale_color_manual(breaks = c("Component 1", "Component 2", "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
             ecoff_line = case_when(
-              grepl("≤", ecoff) ~ ecoff %>% parse_number() %>% log2,
-              grepl("=", ecoff) ~ ecoff %>% parse_number() %>% log2,
-              grepl("<", ecoff) ~ ecoff %>% parse_number() %>% log2 - 1,
+              grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
               TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
             )
 
@@ -521,22 +521,22 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant",  "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
             s_line = case_when(
-              grepl("≤",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-              grepl("=",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2,
-              grepl("<",s_breakpoint) ~ s_breakpoint %>% parse_number() %>% log2 - 1,
+              grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
               TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
             )
             r_line = case_when(
-              grepl("≥",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-              grepl("=",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2 - 1,
-              grepl(">",r_breakpoint) ~ r_breakpoint %>% parse_number() %>% log2,
+              grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
               TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
             )
 
             ecoff_line = case_when(
-              grepl("≤", ecoff) ~ ecoff %>% parse_number() %>% log2,
-              grepl("=", ecoff) ~ ecoff %>% parse_number() %>% log2,
-              grepl("<", ecoff) ~ ecoff %>% parse_number() %>% log2 - 1,
+              grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
               TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
             )
 
