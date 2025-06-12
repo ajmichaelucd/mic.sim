@@ -13,7 +13,8 @@
 #' @export
 #'
 #' @examples
-log_reg <- function(data, data_type, drug, date_col, date_type, first_year, s_breakpoint, r_breakpoint){
+log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_type, first_year, s_breakpoint, r_breakpoint, ecoff){
+  #assume ecoff is by default "an MIC that is less than or equal to ecoff is WT"
   if(date_type == "decimal"){
     df_temp = data %>% rename(t = date_col)
   }else if(date_type == "date"){
@@ -28,18 +29,39 @@ log_reg <- function(data, data_type, drug, date_col, date_type, first_year, s_br
     errorCondition("pick decimal or year")
   }
 
-  a = case_when(grepl(pattern = "(≤)|(<=)|(=<)", x = s_breakpoint) ~ parse_number(as.character(s_breakpoint)),
-                grepl(pattern = "(<)", x = s_breakpoint) & !grepl(pattern = "(≤)|(<=)|(=<)", x = s_breakpoint) ~ parse_number(as.character(s_breakpoint)) - 0.00001,
-                TRUE ~ parse_number(as.character(s_breakpoint))
-  )
+  if(split_by == "S" | split_by == "s_breakpoint"){
+    if(!is.null(s_breakpoint)){
+      divider = case_when(grepl(pattern = "(≤)|(<=)|(=<)", x = s_breakpoint) ~ parse_number(as.character(s_breakpoint)),
+                          grepl(pattern = "(<)", x = s_breakpoint) & !grepl(pattern = "(≤)|(<=)|(=<)", x = s_breakpoint) ~ parse_number(as.character(s_breakpoint)) - 0.00001,
+                          TRUE ~ parse_number(as.character(s_breakpoint))
+      )
+    }else{
+      errorCondition("split_by set to s_breakpoint and no s_breakpoint provided")
+    }
 
-  b = case_when(grepl(pattern = "(≥)|(>=)|(=>)", x = r_breakpoint) ~ parse_number(as.character(r_breakpoint)),
-                grepl(pattern = "(>)", x = r_breakpoint) & !grepl(pattern = "(≥)|(>=)|(=>)", x = r_breakpoint) ~ parse_number(as.character(r_breakpoint)) + 0.00001,
-                TRUE ~ parse_number(as.character(r_breakpoint))
-  )
+  }else if(split_by == "R" | split_by == "r_breakpoint"){
+    if(!is.null(r_breakpoint)){
+      divider = case_when(grepl(pattern = "(≥)|(>=)|(=>)", x = r_breakpoint) ~ parse_number(as.character(r_breakpoint)),
+                          grepl(pattern = "(>)", x = r_breakpoint) & !grepl(pattern = "(≥)|(>=)|(=>)", x = r_breakpoint) ~ parse_number(as.character(r_breakpoint)) + 0.00001,
+                          TRUE ~ parse_number(as.character(r_breakpoint))
+      )
+    }else{
+      errorCondition("split_by set to r_breakpoint and no r_breakpoint provided")
 
-  breakpoints = c(s_breakpoint = a, r_breakpoint = b)
+    }
+  }else{
 
+    if(!is.null(ecoff)){
+      divider = case_when(#grepl(pattern = "(≥)|(>=)|(=>)", x = ecoff) ~ parse_number(as.character(ecoff)),
+        grepl(pattern = "(<)", x =ecoff) & !grepl(pattern = "(≤)|(<=)|(=<)", x = ecoff) ~ parse_number(as.character(ecoff)) - 0.00001,
+        TRUE ~ parse_number(as.character(ecoff))
+      )
+    }else{
+      errorCondition("split_by set to ecoff and no ecoff provided, either change split_by to s_breakpoint or r_breakpoint or else provide a value for ecoff")
+
+    }
+
+  }
 
 
 
@@ -62,17 +84,10 @@ log_reg <- function(data, data_type, drug, date_col, date_type, first_year, s_br
           cens == "RC" ~ parse_number(mic_column) * 2,
           TRUE ~ NaN
         )
-      ) %>%
-      mutate(
-        sir = case_when(
-          mic >= parse_number(breakpoints[2]) ~ "R",
-          mic <= parse_number(breakpoints[1]) ~ "S",
-          mic > parse_number(breakpoints[1]) & mic < parse_number(breakpoints[2]) ~ "I",
-          TRUE ~ NA_character_
-        )
       )
+
   } else if(data_type == "possible_data"){
-    log_breakpoints = log2(breakpoints)
+    log_divider = log2(divider)
     df = df_temp %>% filter(c == 1) %>%
       mutate(
         cens = case_when(
@@ -86,23 +101,56 @@ log_reg <- function(data, data_type, drug, date_col, date_type, first_year, s_br
           cens == "RC" ~ left_bound + 0.01,
           TRUE ~ NaN
         )
-      ) %>%
-      mutate(
-        sir = case_when(
-          mic >= log_breakpoints[2] ~ "R",
-          mic <= log_breakpoints[1] ~ "S",
-          mic > log_breakpoints[1] & mic < log_breakpoints[2] ~ "I",
-          TRUE ~ NA_character_
-        )
       )
+
+
   }else{
     errorCondition("choose either import or possible_data for data_type")
   }
+  if(split_by == "s_breakpoint" | split_by == "S"){
+    df %>%
+      mutate(
+        sir = case_when(
+          mic <= log_divider ~ "S",
+          TRUE ~ "R"
+        )
+      ) %>%
+      mutate(dichot_res = case_when(
+        sir %in% c("R") ~ 1,
+        TRUE ~ 0
+      )) %>%
+      mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
+  }else if(split_by == "r_breakpoint" | split_by == "R"){
+    df %>%
+      mutate(
+        sir = case_when(
+          mic >= log_divider ~ "R",
+          TRUE ~ "S"
+        )
+      ) %>%
+      mutate(dichot_res = case_when(
+        sir %in% c("R") ~ 1,
+        TRUE ~ 0
+      )) %>%
+      mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
 
-  df %>%
-    mutate(dichot_res = case_when(
-      sir %in% c("I", "R") ~ 1,
-      TRUE ~ 0
-    )) %>%
-    mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
+  }else{
+    df %>%
+      mutate(
+        wtnwt = case_when(
+          mic <= log_divider ~ "WT",
+          TRUE ~ "NWT"
+        )
+      )
+
+    df %>%
+      mutate(dichot_res = case_when(
+        wtnwt %in% c("NWT") ~ 1,
+        TRUE ~ 0
+      )) %>%
+      mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
+
+  }
+
+
 }
