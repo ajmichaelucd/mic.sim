@@ -33,6 +33,8 @@ log_reg(
 \item{s_breakpoint}{string, the breakpoint on the MIC scale for what constitutes a susceptible isolate, e.g. ≤8 (µg/mL, do not incude units)}
 
 \item{r_breakpoint}{string, the breakpoint on the MIC scale for what constitutes a resistant isolate, e.g. ≥128 (µg/mL, do not incude units)}
+
+\item{ecoff}{string or numeric, see plot_fm()}
 }
 \description{
 Title

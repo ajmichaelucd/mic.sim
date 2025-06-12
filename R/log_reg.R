@@ -8,6 +8,7 @@
 #' @param first_year NULL if date_type is "decimal", otherwise a numeric year or decimal year value if using "year" or "date" for date_type respectively
 #' @param s_breakpoint string, the breakpoint on the MIC scale for what constitutes a susceptible isolate, e.g. ≤8 (µg/mL, do not incude units)
 #' @param r_breakpoint string, the breakpoint on the MIC scale for what constitutes a resistant isolate, e.g. ≥128 (µg/mL, do not incude units)
+#' @param ecoff string or numeric, see plot_fm()
 #'
 #' @return
 #' @export
@@ -141,11 +142,9 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
           mic <= log_divider ~ "WT",
           TRUE ~ "NWT"
         )
-      )
-
-    df %>%
+      ) %>%
       mutate(dichot_res = case_when(
-        wtnwt %in% c("NWT") ~ 1,
+        wtnwt == "NWT" ~ 1,
         TRUE ~ 0
       )) %>%
       mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
