@@ -5,6 +5,7 @@
 #'
 #' @param fixed_side
 #' @param extra_row
+#' @param ecoff
 #' @param visible_data
 #' @param model
 #' @param mu_formula
@@ -27,6 +28,8 @@
 #' @param non_linear_term
 #' @param covariates String, covariates to be included in mu model aside from the non-linear term.
 #'
+#' @importFrom readr parse_number
+#'
 #' @return
 #' @export
 #'
@@ -34,6 +37,7 @@
 EM_algorithm_reduced = function(
     fixed_side = "RC",
     extra_row = FALSE,
+    ecoff = NA,
     visible_data,
     model = "surv", #"mgcv", "polynomial"
     mu_formula = Surv(time = left_bound,
@@ -64,12 +68,15 @@ EM_algorithm_reduced = function(
   if(model == "pspline"){
     model = "surv"
   }
+
+
   #add attribute model to visible data
 
   visible_data = modify_visible_data(visible_data, model)
 
   visible_data = set_scale_log(visible_data, scale)
 
+  ECOFF = ecoff_into_log(ecoff = ecoff, visible_data = visible_data)
 
   converge = NA_character_
 
@@ -78,7 +85,7 @@ EM_algorithm_reduced = function(
   }else{
 
     #first E step-----
-    possible_data = first_E_step_reduced(initial_weighting = initial_weighting, visible_data = visible_data, plot_visuals = plot_visuals, sd_initial = sd_initial, ncomp = ncomp, non_linear_term = non_linear_term, covariates = covariates, pi_formula = pi_formula, max_it = max_it, tol_ll = tol_ll, pi_link = pi_link, model_coefficient_tolerance = model_coefficient_tolerance, fixed_side = fixed_side, extra_row = extra_row, model = model, verbose = verbose)
+    possible_data = first_E_step_reduced(initial_weighting = initial_weighting, visible_data = visible_data, plot_visuals = plot_visuals, sd_initial = sd_initial, ncomp = ncomp, non_linear_term = non_linear_term, covariates = covariates, pi_formula = pi_formula, max_it = max_it, tol_ll = tol_ll, pi_link = pi_link, model_coefficient_tolerance = model_coefficient_tolerance, fixed_side = fixed_side, extra_row = extra_row, ECOFF = ECOFF, model = model, verbose = verbose)
 
     #wrapper function
     #plot_initial_weighting_regression(possible_data = possible_data)
@@ -124,7 +131,7 @@ EM_algorithm_reduced = function(
       #   likelihood_documentation[i, "m_step_check_old"] <- NaN
       # }
 
-      possible_data = E_step_reduced(possible_data, mu_models_new, pi_model_new, fixed_side = fixed_side, extra_row = extra_row)
+      possible_data = E_step_reduced(possible_data, mu_models_new, pi_model_new, fixed_side = fixed_side, extra_row = extra_row, ECOFF = ECOFF)
 
       if(verbose > 2){
         print(pi_model_new)
@@ -217,11 +224,28 @@ EM_algorithm_reduced = function(
         sd_initial = sd_initial,  # ifelse(initial_weighting >= 7, sd_initial, NaN),
         mu_formula = mu_formula,
         fixed_side = fixed_side,
-        extra_row = extra_row
+        extra_row = extra_row,
+        ecoff = ecoff,
+        ECOFF =  ECOFF
       )
     )
   }
 }
 
 
+ecoff_into_log = function(ecoff, visible_data){  if(!is.na(ecoff)){
+  if(is.character(ecoff)){
+    ECOFF = readr::parse_number(as.character(ecoff)) %>% log2()
+  }else{
+    ECOFF = log2(ecoff)
+  }
+  if((ECOFF > max(visible_data$left_bound)) | (ECOFF < min(visible_data$right_bound))){
+    errorCondition("ecoff is outside the range of the data, will not split anything")
+  }
+
+}else{
+  ECOFF = NA
+}
+  return(ECOFF)
+}
 

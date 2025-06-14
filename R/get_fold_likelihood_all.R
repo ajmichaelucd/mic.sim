@@ -10,6 +10,7 @@
 #' @param pi_formula
 #' @param fixed_side
 #' @param extra_row
+#' @param ecoff
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
@@ -35,6 +36,7 @@ get_fold_likelihood_all = function(model = "surv",
                                    pi_formula = c == "2" ~ s(t),
                                    fixed_side = NULL,
                                    extra_row = FALSE,
+                                   ecoff = NA,
                                    max_it = 300,
                                    ncomp = 2,
                                    tol_ll = 1e-6,
@@ -90,6 +92,7 @@ get_fold_likelihood_all = function(model = "surv",
   }else if(approach == "reduced"){
     trained_model = EM_algorithm_reduced(fixed_side = fixed_side,
                                          extra_row = extra_row,
+                                         ecoff = ecoff,
                                          visible_data = training_set,
                                          model = model,
                                          mu_formula = mu_formula,
@@ -117,7 +120,7 @@ get_fold_likelihood_all = function(model = "surv",
     errorCondition("Use 'full' or 'reduced' for approach")
   }
 
-  calculate_fold_likelihood_all(testing_set, trained_mu_model = trained_model$mu_model, trained_pi_model = trained_model$pi_model, approach = approach, fixed_side = fixed_side, extra_row = extra_row, ncomp = ncomp) %>%
+  calculate_fold_likelihood_all(testing_set, trained_mu_model = trained_model$mu_model, trained_pi_model = trained_model$pi_model, approach = approach, fixed_side = fixed_side, extra_row = extra_row, ecoff = ecoff, ncomp = ncomp) %>%
     return()  ###MAY NEED TO FIX THIS TOO
 
 }

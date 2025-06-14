@@ -19,6 +19,7 @@
 #' @param pi_formula Formula, for the component weight model. Model is fit using mgcv's gam function. Nonlinear terms include s() and lo(). Basis of s() function can be changed using bs argument to s(). Use c == "2" for the left side of the formula.
 #' @param fixed_side String, if using a reduced model, specify which component the algorithm won't estimate mu for. "RC" corresponds to the upper component, "LC" corresponds to the lower. NULL if using the full model.
 #' @param extra_row Logical, if using a reduced model, the highest ("RC") or lowest ("LC") MIC value may be included in the set observations weighted as possibly in the fixed component
+#' @param ecoff String or numeric, represents the largest MIC value of the WT distribution on MIC scale. Model will use this in combination with the fixed side to assume the observations on the non-fixed side of the ecoff are not part of the component on the fixed side of the ecoff. Can be a number on the MIC scale: 32 or a string representation of WT classification "<=32", should be inclusive
 #' @param max_it Numeric, maximum number of iterations for the EM algorithm for any given model fitting.
 #' @param ncomp Numeric, number of components to be fitted. When fitting a reduced model where one component is not estimated, that component should still contribute to the value in ncomp. E.g. a reduced model where the upper component is fixed and mu for the lower component is being estimated has a value of ncomp = 2.
 #' @param tol_ll Numeric, maximum tolerance for change in likelihood between steps of the algorithm for model convergence to be achieved.
@@ -72,6 +73,7 @@ fit_EM = function(model = "pspline", #"polynomial",
                   pi_formula = c == "2" ~ s(t),
                   fixed_side = NULL,
                   extra_row = FALSE,
+                  ecoff = NA,
                   max_it = 3000,
                   ncomp = 2, #relevant
                   tol_ll = 1e-6,
@@ -101,6 +103,7 @@ fit_EM = function(model = "pspline", #"polynomial",
       pi_formula = pi_formula,
       fixed_side = fixed_side,
       extra_row = extra_row,
+      ecoff = ecoff,
       max_it = max_it,
       ncomp = ncomp,
       tol_ll = tol_ll,
