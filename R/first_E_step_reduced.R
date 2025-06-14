@@ -144,7 +144,7 @@ initial_weighting_fit_linear_model_reduced = function(visible_data, fixed_side, 
     EM_algorithm_reduced(
       fixed_side = fixed_side,
       extra_row = extra_row,
-      ECOFF = ECOFF,
+      ecoff = 2^ECOFF,
       visible_data = .,
       mu_formula = mu_formula,
       pi_formula = pi_formula,

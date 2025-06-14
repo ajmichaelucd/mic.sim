@@ -15,6 +15,7 @@ get_fold_likelihood_all(
   pi_formula = c == "2" ~ s(t),
   fixed_side = NULL,
   extra_row = FALSE,
+  ecoff = NA,
   max_it = 300,
   ncomp = 2,
   tol_ll = 1e-06,

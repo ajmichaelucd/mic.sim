@@ -19,11 +19,14 @@ first_E_step_reduced(
   model_coefficient_tolerance,
   fixed_side,
   extra_row,
+  ECOFF,
   model,
   verbose
 )
 }
 \arguments{
+\item{ECOFF}{Numeric, highest value of the WT distribution on the log2 scale}
+
 \item{model}{}
 }
 \description{

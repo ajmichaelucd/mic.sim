@@ -11,11 +11,12 @@ calculate_fold_likelihood_all(
   approach = "full",
   fixed_side = NULL,
   extra_row = FALSE,
+  ecoff = NA,
   ncomp = 2
 )
 }
 \arguments{
-\item{extra_row}{}
+\item{ncomp}{}
 }
 \description{
 Title
