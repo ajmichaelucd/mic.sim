@@ -170,6 +170,7 @@ fit_EM = function(model = "pspline", #"polynomial",
   }else if(approach == "reduced" & !is.null(fixed_side)){
     output = EM_algorithm_reduced(fixed_side = fixed_side,
                                   extra_row = extra_row,
+                                  ecoff = ecoff,
                                   visible_data = visible_data,
                                   model = model,
                                   mu_formula = mu_formula,
