@@ -54,7 +54,7 @@ single_cv_all = function(model = "surv",
 
     fold_output = tibble(fold_likelihood = map_dbl(
       1:nfolds,
-      ~ get_fold_likelihood_all(#_safe(#_safe_single_output(
+      ~ get_fold_likelihood_all_safe(#_safe_single_output(
         model = model,
         approach = approach,
         .x,
