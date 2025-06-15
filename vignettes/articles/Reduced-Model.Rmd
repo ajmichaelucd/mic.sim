@@ -88,13 +88,14 @@ Note that observations above or below the tested concentrations can still be wei
 
 ```{r}
 out_reduced = fit_EM(
-  approach = "reduced", fixed_side = "RC", extra_row = FALSE, max_degree = 4, visible_data = example_data_reduced, verbose = 1, ecoff = 2
+  approach = "reduced", fixed_side = "RC", extra_row = FALSE, max_degree = 4, visible_data = example_data_reduced, verbose = 0, ecoff = 2
 )
+out_reduced$cv_results
 ```
 
 
 ```{r}
-plot_fm(out_reduced, ecoff = 2, add_log_reg = TRUE)
+plot_fm(out_reduced, ecoff = 0.5, add_log_reg = TRUE)
 ```
 
 

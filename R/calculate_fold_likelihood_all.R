@@ -26,7 +26,7 @@ calculate_fold_likelihood_all = function(testing_set,
     calculate_fold_likelihood.full(testing_set, trained_mu_model, trained_pi_model) %>% return()
   } else if (approach == "reduced" & !is.null(fixed_side)) {
 
-ECOFF = ecoff_into_log(ecoff = ecoff, visible_data = visible_data)
+    ECOFF = readr::parse_number(as.character(ecoff)) %>% log2()
 
     calculate_fold_likelihood.reduced(testing_set,
                                       trained_mu_model,
