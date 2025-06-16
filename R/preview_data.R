@@ -6,6 +6,10 @@
 #' @param title Title of plot
 #' @param y_min Minimum value for plot, some extra space will be added below so the lowest tested concentration is a reasonable value
 #' @param y_max Maximum value for plot, some extra space will be added below so the highest tested concentration is a reasonable value
+#' @param ECOFF
+#' @param ECOFF_scale defaults to "MIC", meaning the ECOFF provided will be in concentration directly, if you have already taken log2(ECOFF) then change this to "log"
+#' @param covariate string, name of a column in data
+#' @param covariate_title what to name the legend for the covariate
 #'
 #' @importFrom ggnewscale new_scale_color
 #'
@@ -13,7 +17,7 @@
 #' @export
 #'
 #' @examples
-preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NULL, ECOFF_scale = "MIC"){
+preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NULL, ECOFF_scale = "MIC", covariate = NULL, covariate_title){
 
   if(is.null(y_max)){
     y_max = case_when(max(data$right_bound) == Inf ~ max(data$left_bound))
@@ -23,17 +27,40 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
     y_min = case_when(min(data$left_bound) == -Inf ~ min(data$right_bound))
   }
 
-  plot = data %>%
-    ggplot() +
-    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound), color = "black", data = (. %>% filter(left_bound != -Inf & right_bound != Inf)), alpha = 0.2) +
-    geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound), color = "black", data = (. %>% filter(left_bound == -Inf) %>% mutate(left_bound = low_con - 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-    geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound), color = "black", data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
-    geom_point(aes(x = t, y = left_bound), color = "black", data = . %>% filter(left_bound != -Inf), alpha = 0.2) +
-    geom_point(aes(x = t, y = right_bound), color = "black", data = . %>% filter(right_bound != Inf), alpha = 0.2) +
-    ggtitle(title) + ylab(bquote(log[2]~ MIC))
+
+
+  if(is.null(covariate)){
+    plot = data %>%
+      ggplot() +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound), color = "black", data = (. %>% filter(left_bound != -Inf & right_bound != Inf)), alpha = 0.2) +
+      geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound), color = "black", data = (. %>% filter(left_bound == -Inf) %>% mutate(left_bound = low_con - 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound), color = "black", data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+      geom_point(aes(x = t, y = left_bound), color = "black", data = . %>% filter(left_bound != -Inf), alpha = 0.2) +
+      geom_point(aes(x = t, y = right_bound), color = "black", data = . %>% filter(right_bound != Inf), alpha = 0.2) +
+      ggtitle(title) + ylab(bquote(log[2]~ MIC))
+  }else if(covariate %in% colnames(data)){
+    data = data %>% rename(group = covariate)
+
+    three_and_up = viridisLite::viridis(length(unique(data$group)) + 1 , option = "A")[-(length(unique(data$group)) + 1)]
+    two = c("#0E3386", "#CC3433")
+
+    hex_colors = case_when(length(unique(data$group)) > 2 ~ three_and_up, TRUE ~ two)
+
+    plot = data %>%
+      ggplot() +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = group), data = (. %>% filter(left_bound != -Inf & right_bound != Inf)), alpha = 0.2) +
+      geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = group), data = (. %>% filter(left_bound == -Inf) %>% mutate(left_bound = low_con - 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = group), data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
+      geom_point(aes(x = t, y = left_bound, color = group), data = . %>% filter(left_bound != -Inf), alpha = 0.2) +
+      geom_point(aes(x = t, y = right_bound, color = group), data = . %>% filter(right_bound != Inf), alpha = 0.2) +
+      ggtitle(title) + ylab(bquote(log[2]~ MIC)) +
+      scale_color_discrete(name = covariate_title, type = hex_colors)
+  }else{
+    errorCondition("covariate should be a string and the name of a column in data")
+  }
 
   if(!is.null(ECOFF)){
-    ECOFF_mod = ifelse(ECOFF_scale %in% c("log", "fold", "log2"), ECOFF, round(log2(ECOFF)))
+    ECOFF_mod = ifelse(!ECOFF_scale %in% c("MIC", "mic", "concentration"), ECOFF, round(log2(ECOFF)))
 
     plot = plot +
       ggnewscale::new_scale_color() +
