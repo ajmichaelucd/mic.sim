@@ -17,7 +17,7 @@
 #' @export
 #'
 #' @examples
-preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NULL, ECOFF_scale = "MIC", covariate = NULL, covariate_title){
+preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NULL, ECOFF_scale = "MIC", covariate = NULL, covariate_title = "Legend"){
 
   if(is.null(y_max)){
     y_max = case_when(max(data$right_bound) == Inf ~ max(data$left_bound))
@@ -60,11 +60,11 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
   }
 
   if(!is.null(ECOFF)){
-    ECOFF_mod = ifelse(!ECOFF_scale %in% c("MIC", "mic", "concentration"), ECOFF, round(log2(ECOFF)))
+    ECOFF = ifelse(!ECOFF_scale %in% c("MIC", "mic", "concentration"), ECOFF, round(log2(ECOFF)))
 
     plot = plot +
       ggnewscale::new_scale_color() +
-      geom_hline(aes(yintercept = ECOFF_mod, color = "ECOFF")) +
+      geom_hline(aes(yintercept = ECOFF, color = "ECOFF")) +
       scale_color_manual(values = c("ECOFF" = "darkorange"), name = NULL)
 
     if(ECOFF > (y_max + 2)){
