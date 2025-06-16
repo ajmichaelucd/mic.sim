@@ -20,11 +20,13 @@
 preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NULL, ECOFF_scale = "MIC", covariate = NULL, covariate_title = "Legend"){
 
   if(is.null(y_max)){
-    y_max = case_when(max(data$right_bound) == Inf ~ max(data$left_bound))
+    y_max = case_when(max(data$right_bound) == Inf ~ max(data$left_bound),
+                      TRUE ~ max(data$right_bound))
   }
 
   if(is.null(y_min)){
-    y_min = case_when(min(data$left_bound) == -Inf ~ min(data$right_bound))
+    y_min = case_when(min(data$left_bound) == -Inf ~ min(data$right_bound),
+                      TRUE ~ min(data$left_bound))
   }
 
 

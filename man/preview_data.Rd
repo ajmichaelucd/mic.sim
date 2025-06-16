@@ -12,7 +12,7 @@ preview_data(
   ECOFF = NULL,
   ECOFF_scale = "MIC",
   covariate = NULL,
-  covariate_title
+  covariate_title = "Legend"
 )
 }
 \arguments{
