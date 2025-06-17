@@ -32,7 +32,7 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
   if(!is.null(ECOFF) && !is.na(ECOFF)){
     ECOFF = parse_number(as.character(ECOFF))
       if(ECOFF_scale %in% c("MIC", "mic", "concentration")){
-        round(log2(ECOFF))
+    ECOFF = round(log2(ECOFF))
       }
 
 
