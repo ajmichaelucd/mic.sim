@@ -29,7 +29,22 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
                       TRUE ~ min(data$left_bound))
   }
 
+  if(!is.null(ECOFF) && !is.na(ECOFF)){
+    ECOFF = parse_number(as.character(ECOFF))
+      if(ECOFF_scale %in% c("MIC", "mic", "concentration")){
+        round(log2(ECOFF))
+      }
 
+
+
+
+  if(ECOFF > y_max){
+    y_max = ECOFF
+  }
+  if(ECOFF < y_min){
+    y_min = ECOFF
+  }
+}
 
   if(is.null(covariate)){
     plot = data %>%
@@ -62,23 +77,13 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
   }
 
   if(!is.null(ECOFF)){
-    ECOFF = ifelse(!ECOFF_scale %in% c("MIC", "mic", "concentration"), ECOFF, round(log2(ECOFF)))
 
     plot = plot +
       ggnewscale::new_scale_color() +
       geom_hline(aes(yintercept = ECOFF, color = "ECOFF")) +
       scale_color_manual(values = c("ECOFF" = "darkorange"), name = NULL)
 
-    if(ECOFF > (y_max + 2)){
-      plot = plot +
-        ylim(y_min - 2, ECOFF + 2) %>% suppressWarnings()
-    }else if(ECOFF < (y_min - 2)){
-      plot = plot +
-        ylim(ECOFF - 2, y_max + 2) %>% suppressWarnings()
-    }else{
-      plot = plot +
-        ylim(y_min - 2, y_max + 2) %>% suppressWarnings()
-    }
+
 
 
   }else{
