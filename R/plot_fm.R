@@ -136,16 +136,16 @@ mean <- df %>%
     mean = mean +
       geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15) +
       geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 2 Mu"), data = sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15) +
-      scale_fill_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#F8766D", "#00BFC4"), name = "Component Means")
+      scale_fill_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#e4190b", "#00999d"), name = "Component Means")
     }
     # if(add_log_reg){
-    #   mean = mean + scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#F8766D", "#00BFC4"))
+    #   mean = mean + scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#e4190b", "#00999d"))
     # }else{
-      mean = mean + scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#F8766D", "#00BFC4"), guide = "none")
+      mean = mean + scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#e4190b", "#00999d"), guide = "none")
     #}
     mean = mean +
       ggnewscale::new_scale_color() +
-      scale_colour_gradient2(high = "blue", low = "red", mid = "green", midpoint = 0.5, name = "P(C=2|y,t)") +
+      scale_colour_gradient2(high = "#00BFC4", low = "#F8766D", mid = "green", midpoint = 0.5, name = "P(C=2|y,t)") +
       #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
       geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2") %>% offset_time_as_date_in_df(., start_date)), alpha = 0.3) +
       geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(plot_min) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
@@ -186,14 +186,14 @@ mean <- df %>%
         ggplot(aes(x = t)) +
         geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1", linetype = "Fitted Model")) +
         geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2", linetype = "Fitted Model")) +
-        #scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
+        #scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00BFC4"), name = "Component Prevalence") +
         ylim(0,1)  +
         xlab("Time") + ylab("Proportion") + theme_minimal()
       if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
       pi = pi +
         geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
         geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-        scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF"))  + guides(linetype = "none")
+        scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant"), values = c("#e4190b", "#00BFC4", "#7CAE00", "#C77CFF"))  + guides(linetype = "none")
 
       s_line = case_when(
         grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -210,15 +210,15 @@ mean <- df %>%
 
       mean = mean +
         ggnewscale::new_scale_color() +
-        geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
-        geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
+        geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+        geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
         scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), values = c("#7CAE00", "#C77CFF")) +
         scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5), guide = "none")  #+ guides(linetype = "none", color = "none")
       }else if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
         pi = pi +
           geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
           geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-          scale_color_manual(breaks = c("Component 1", "Component 2", "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
+          scale_color_manual(breaks = c("Component 1", "Component 2", "WT", "NWT"), values = c("#e4190b", "#00BFC4", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
         ecoff_line = case_when(
           grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
@@ -229,8 +229,8 @@ mean <- df %>%
 
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
-          scale_color_manual(breaks = c("ECOFF"), values = c("#FE5A1D")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+          scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700")) +
           scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
       }else{
         pi = pi +
@@ -238,7 +238,7 @@ mean <- df %>%
           geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
           geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
           geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-          scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant",  "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
+          scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant",  "WT", "NWT"), values = c("#e4190b", "#00BFC4", "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
         s_line = case_when(
           grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -262,11 +262,11 @@ mean <- df %>%
 
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
-          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
-          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
 
-          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#FE5A1D")) +
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#ffd700")) +
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2), guide = "none")  #+ guides(linetype = "none", color = "none")
 
       }
@@ -278,7 +278,7 @@ mean <- df %>%
           ggplot(aes(x = t)) +
           geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
           geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
-          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
+          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00BFC4"), name = "Component Prevalence") +
           ylim(0,1)  +
           xlab("Time") + ylab("Proportion") + theme_minimal() + guides(linetype = "none")
       }
@@ -316,7 +316,7 @@ mean <- df %>%
         geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = "Observations"), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
         geom_point(aes(x = t, y = left_bound,  color = "Observations"), data = df %>% filter(left_bound != -Inf), alpha = 0.3) +
         geom_point(aes(x = t, y = right_bound,  color = "Observations"), data = df %>% filter(right_bound != Inf), alpha = 0.3) +
-        scale_colour_manual(values = c("Observations" = "red"), guide = "none") +
+        scale_colour_manual(values = c("Observations" = "#F8766D"), guide = "none") +
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
         xlab("Time") +
@@ -336,8 +336,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
-          scale_color_manual(breaks = c("ECOFF"), values = c("#FE5A1D")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+          scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700")) +
           scale_linetype_manual(breaks=c("Fitted Model","Cutoff", "Fitted Model SE"), values=c(1,2,3))  #+ guides(linetype = "none", color = "none")
 
       }else if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
@@ -355,8 +355,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
-          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), values = c("#7CAE00", "#C77CFF")) +
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  #+ guides(linetype = "none", color = "none")
       }else{
@@ -382,11 +382,11 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
-          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
-          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
 
-          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#FE5A1D")) +
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#ffd700")) +
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Fitted Model SE"), values=c(1,5,2,3))  #+ guides(linetype = "none", color = "none")
 
       }
@@ -405,8 +405,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           c1pred_ub = c1pred + 1.96 * c1pred_se
         )
       if((results %>% filter(!dnc) %>% pull(c)) == 1){
-      corresponding_color = "#F8766D"}else{ #comp1
-      corresponding_color = "#00BFC4"}#comp2
+      corresponding_color = "#e4190b"}else{ #comp1
+      corresponding_color = "#00999d"}#comp2
 
 
       mean <- df %>%
@@ -426,7 +426,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         mean = mean +
         scale_fill_manual(breaks = c("Component Mu"), values = c(corresponding_color), name = "Component Mu") +
         ggnewscale::new_scale_color() +
-        scale_colour_gradient2(high = "blue", low = "red", mid = "green", midpoint = 0.5, name = "P(C=2|y,t)") +
+        scale_colour_gradient2(high = "#00BFC4", low = "#F8766D", mid = "green", midpoint = 0.5, name = "P(C=2|y,t)") +
         #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
         geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "int" & c == "2") %>% offset_time_as_date_in_df(., start_date)), alpha = 0.2) +
         geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = `P(C=c|y,t)`), data = (df %>% filter(cens == "lc" & c == "2") %>% mutate(left_bound = plot_min) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
@@ -448,7 +448,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
       #   ggplot(aes(x = t)) +
       #   geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
       #   geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
-      #   scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
+      #   scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00BFC4"), name = "Component Prevalence") +
       #   ylim(0,1)  +
       #   xlab("Time") + ylab("Proportion") + theme_minimal()
 
@@ -466,14 +466,14 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
             ggplot(aes(x = t)) +
             geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1", linetype = "Fitted Model")) +
             geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2", linetype = "Fitted Model")) +
-            #scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
+            #scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00BFC4"), name = "Component Prevalence") +
             ylim(0,1)  +
             xlab("Time") + ylab("Proportion") + theme_minimal()
           if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
             pi = pi +
               geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
               geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF"))  + guides(linetype = "none")
+              scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant"), values = c("#e4190b", "#00999d", "#7CAE00", "#C77CFF"))  + guides(linetype = "none")
 
             s_line = case_when(
               grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -490,15 +490,15 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
             mean = mean +
               ggnewscale::new_scale_color() +
-              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
-              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
+              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
               scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), values = c("#7CAE00", "#C77CFF")) +
               scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  + guides(linetype = "none", color = "none")
           }else if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
             pi = pi +
               geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
               geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Component 1", "Component 2", "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
+              scale_color_manual(breaks = c("Component 1", "Component 2", "WT", "NWT"), values = c("#e4190b", "#00999d", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
             ecoff_line = case_when(
               grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
@@ -509,8 +509,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
             mean = mean +
               ggnewscale::new_scale_color() +
-              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
-              scale_color_manual(breaks = c("ECOFF"), values = c("#FE5A1D")) +
+              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+              scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700")) +
               scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2))  + guides(linetype = "none", color = "none")
           }else{
             pi = pi +
@@ -518,7 +518,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
               geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
               geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant",  "WT", "NWT"), values = c("#F8766D", "#00BFC4", "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
+              scale_color_manual(breaks = c("Component 1", "Component 2", "Susceptible", "Resistant",  "WT", "NWT"), values = c("#e4190b", "#00999d", "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"))  + guides(linetype = "none")
 
             s_line = case_when(
               grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -542,11 +542,11 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
             mean = mean +
               ggnewscale::new_scale_color() +
-              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
-              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
-              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
+              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
 
-              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#FE5A1D")) +
+              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#ffd700")) +
               scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2))  + guides(linetype = "none", color = "none")
 
           }
@@ -558,7 +558,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           ggplot(aes(x = t)) +
           geom_function(fun = function(t){(1 - predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Component 1 Proportion", linetype = "Fitted Model")) +
           geom_function(fun = function(t){predict(output$pi_model, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Component 2 Proportion", linetype = "Fitted Model")) +
-          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#F8766D", "#00BFC4"), name = "Component Prevalence") +
+          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), name = "Component Prevalence") +
           ylim(0,1)  +
           xlab("Time") + ylab("Proportion") + theme_minimal() + guides(linetype = "none")
       }
