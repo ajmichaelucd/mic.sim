@@ -213,7 +213,7 @@ mean <- df %>%
         geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
         geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
         scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), values = c("#7CAE00", "#C77CFF")) +
-        scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5))  + guides(linetype = "none", color = "none")
+        scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5), guide = "none")  #+ guides(linetype = "none", color = "none")
       }else if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
         pi = pi +
           geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
@@ -231,7 +231,7 @@ mean <- df %>%
           ggnewscale::new_scale_color() +
           geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
           scale_color_manual(breaks = c("ECOFF"), values = c("#FE5A1D")) +
-          scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2))  + guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
       }else{
         pi = pi +
           geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
@@ -267,7 +267,7 @@ mean <- df %>%
           geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
 
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#FE5A1D")) +
-          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2))  + guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2), guide = "none")  #+ guides(linetype = "none", color = "none")
 
       }
 
@@ -338,7 +338,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           ggnewscale::new_scale_color() +
           geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
           scale_color_manual(breaks = c("ECOFF"), values = c("#FE5A1D")) +
-          scale_linetype_manual(breaks=c("Fitted Model","Cutoff", "Fitted Model SE"), values=c(1,2,3))  + guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Fitted Model","Cutoff", "Fitted Model SE"), values=c(1,2,3))  #+ guides(linetype = "none", color = "none")
 
       }else if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         s_line = case_when(
@@ -358,7 +358,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype = "Breakpoint"), alpha = 0.4) +
           geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint"), alpha = 0.4) +
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), values = c("#7CAE00", "#C77CFF")) +
-          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  + guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  #+ guides(linetype = "none", color = "none")
       }else{
         s_line = case_when(
           grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -387,7 +387,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff"), alpha = 0.4) +
 
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"), values = c("#7CAE00", "#C77CFF", "#FE5A1D")) +
-          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Fitted Model SE"), values=c(1,5,2,3))  + guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Fitted Model SE"), values=c(1,5,2,3))  #+ guides(linetype = "none", color = "none")
 
       }
 
