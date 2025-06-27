@@ -52,12 +52,40 @@ single_cv_all = function(model = "surv",
   for(i in 1:(1+reruns_allowed)){
     message("CV for degrees", degrees, "; attempt", i)
 
-    fold_output = tibble(fold_likelihood = map_dbl(
-      1:nfolds,
-      ~ get_fold_likelihood_all_safe(#_safe_single_output(
+    # fold_output = tibble(fold_likelihood = map_dbl(
+    #   1:nfolds,
+    #   ~ get_fold_likelihood_all_safe(#_safe_single_output(
+    #     model = model,
+    #     approach = approach,
+    #     .x,
+    #     visible_data = assign_folds(visible_data, nfolds),
+    #     degrees,
+    #     non_linear_term = non_linear_term,
+    #     covariates = covariates,
+    #     pi_formula = pi_formula,
+    #     fixed_side = fixed_side,
+    #     extra_row = extra_row,
+    #     ecoff = ecoff,
+    #     max_it = max_it,
+    #     ncomp = ncomp,
+    #     tol_ll = tol_ll,
+    #     pi_link = pi_link,
+    #     verbose = verbose,
+    #     model_coefficient_tolerance = model_coefficient_tolerance,
+    #     maxiter_survreg = maxiter_survreg,
+    #     initial_weighting = initial_weighting,
+    #     sd_initial = sd_initial,
+    #     scale = scale
+    #   )
+    # ))
+
+    placeholder = matrix(data = NaN, nrow = nfolds, ncol = 1)
+
+    for(j in 1:nfolds){
+     fold_likelihood_j = get_fold_likelihood_all_safe(#_safe_single_output(
         model = model,
         approach = approach,
-        .x,
+        i = j,
         visible_data = assign_folds(visible_data, nfolds),
         degrees,
         non_linear_term = non_linear_term,
@@ -77,7 +105,19 @@ single_cv_all = function(model = "surv",
         sd_initial = sd_initial,
         scale = scale
       )
-    ))
+
+     if(is.nan(fold_likelihood_j)){
+       if(verbose > 0){
+         message("likelihood not found, moving to next repeat if available")
+       }
+       break
+     }else{
+       placeholder[j,] = fold_likelihood_j
+     }
+
+    }
+
+    fold_output = tibble(fold_likelihood = as.vector(placeholder))
 
     rep = i - 1
 
