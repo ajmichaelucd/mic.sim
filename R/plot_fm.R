@@ -18,6 +18,7 @@
 #' @import ggplot2
 #' @import ggnewscale
 #' @importFrom patchwork wrap_plots
+#' @importFrom latex2exp TeX
 #'
 #' @return
 #' @export
@@ -215,9 +216,9 @@ mean <- df %>%
 
       mean = mean +
         ggnewscale::new_scale_color() +
-        geom_hline(aes(yintercept = s_line, color = paste0("Susceptible Breakpoint: ", s_breakpoint), linetype =  "Breakpoint")) +
-        geom_hline(aes(yintercept = r_line, color = paste0("Resistant Breakpoint: ", r_breakpoint), linetype =  "Breakpoint")) +
-        scale_color_manual(breaks = c(paste0("Susceptible Breakpoint: ", s_breakpoint), paste0("Resistant Breakpoint: ", r_breakpoint)), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
+        geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+        geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+        scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
         scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5), guide = "none")  #+ guides(linetype = "none", color = "none")
       }else if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
         pi = pi +
@@ -236,8 +237,8 @@ mean <- df %>%
 
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = ecoff_line, color = paste0("ECOFF:", ecoff), linetype =  "Cutoff")) +
-          scale_color_manual(breaks = c(paste0("ECOFF: ", ecoff)), values = c("#ffd700"), name = "Breakpoints and Cutoffs") +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+          scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700"), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
           scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
       }else{
         pi = pi +
@@ -269,13 +270,19 @@ mean <- df %>%
           TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
         )
 
+        if(s_line == ecoff_line){
+          s_line = s_line + 0.05
+        }
+
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = paste0("Susceptible Breakpoint: ", s_breakpoint), linetype =  "Breakpoint")) +
-          geom_hline(aes(yintercept = r_line, color = paste0("Resistant Breakpoint: ", r_breakpoint), linetype =  "Breakpoint")) +
-          geom_hline(aes(yintercept = ecoff_line, color = paste0("ECOFF: ", ecoff), linetype =  "Cutoff")) +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
 
-          scale_color_manual(breaks = c(paste0("Susceptible Breakpoint: ", s_breakpoint), paste0("Resistant Breakpoint: ", r_breakpoint), paste0("ECOFF: ", ecoff)), values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
+                             labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
+                             values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2), guide = "none")  #+ guides(linetype = "none", color = "none")
 
       }
@@ -359,8 +366,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = ecoff_line, color = paste0("ECOFF: ", ecoff), linetype =  "Cutoff")) +
-          scale_color_manual(breaks = c(paste0("ECOFF: ", ecoff)), values = c("#ffd700"), name = "Breakpoints and Cutoffs") +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+          scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700"), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
           scale_linetype_manual(breaks=c("Fitted Model","Cutoff", "Fitted Model SE"), values=c(1,2,3))  #+ guides(linetype = "none", color = "none")
 
       }else if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
@@ -378,9 +385,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = paste0("Susceptible Breakpoint: ", s_breakpoint), linetype =  "Breakpoint")) +
-          geom_hline(aes(yintercept = r_line, color = paste0("Resistant Breakpoint: ", r_breakpoint), linetype =  "Breakpoint")) +
-          scale_color_manual(breaks = c(paste0("Susceptible Breakpoint: ", s_breakpoint), paste0("Resistant Breakpoint: ", r_breakpoint)), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  #+ guides(linetype = "none", color = "none")
       }else{
         s_line = case_when(
@@ -403,13 +410,20 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
         )
 
+
+        if(s_line == ecoff_line){
+          s_line = s_line + 0.05
+        }
+
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = paste0("Susceptible Breakpoint: ", s_breakpoint), linetype =  "Breakpoint")) +
-          geom_hline(aes(yintercept = r_line, color = paste0("Resistant Breakpoint: ", r_breakpoint), linetype =  "Breakpoint")) +
-          geom_hline(aes(yintercept = ecoff_line, color = paste0("ECOFF: ", ecoff), linetype =  "Cutoff")) +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
 
-          scale_color_manual(breaks = c(paste0("Susceptible Breakpoint: ", s_breakpoint), paste0("Resistant Breakpoint: ", r_breakpoint), paste0("ECOFF: ", ecoff)), values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
+                             labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
+                             values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Fitted Model SE"), values=c(1,5,2,3))  #+ guides(linetype = "none", color = "none")
 
       }
@@ -515,9 +529,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
             mean = mean +
               ggnewscale::new_scale_color() +
-              geom_hline(aes(yintercept = s_line, color = paste0("Susceptible Breakpoint: ", s_breakpoint), linetype =  "Breakpoint")) +
-              geom_hline(aes(yintercept = r_line, color = paste0("Resistant Breakpoint: ", r_breakpoint), linetype =  "Breakpoint")) +
-              scale_color_manual(breaks = c(paste0("Susceptible Breakpoint: ", s_breakpoint), paste0("Resistant Breakpoint: ", r_breakpoint)), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs", name = "Breakpoints and Cutoffs") +
+              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"),name = "Breakpoints and Cutoffs") +
               scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  + guides(linetype = "none")
           }else if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
             pi = pi +
@@ -536,8 +550,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
             mean = mean +
               ggnewscale::new_scale_color() +
-              geom_hline(aes(yintercept = ecoff_line, color = paste0("ECOFF: ", ecoff), linetype =  "Cutoff")) +
-              scale_color_manual(breaks = c(paste0("ECOFF: ", ecoff)), values = c("#ffd700"), name = "Breakpoints and Cutoffs") +
+              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+              scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700"), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
               scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2))  + guides(linetype = "none")
           }else{
             pi = pi +
@@ -569,13 +583,20 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
             )
 
+
+            if(s_line == ecoff_line){
+              s_line = s_line + 0.05
+            }
+
             mean = mean +
               ggnewscale::new_scale_color() +
-              geom_hline(aes(yintercept = s_line, color = paste0("Susceptible Breakpoint: ", s_breakpoint), linetype =  "Breakpoint")) +
-              geom_hline(aes(yintercept = r_line, color = paste0("Resistant Breakpoint: ", r_breakpoint), linetype =  "Breakpoint")) +
-              geom_hline(aes(yintercept = ecoff_line, color = paste0("ECOFF: ", ecoff), linetype =  "Cutoff")) +
+              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
 
-              scale_color_manual(breaks = c(paste0("Susceptible Breakpoint: ", s_breakpoint), paste0("Resistant Breakpoint: ", r_breakpoint), paste0("ECOFF: ", ecoff)), values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
+              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
+                                 labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
+                                 values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
               scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2))  + guides(linetype = "none")
 
           }
