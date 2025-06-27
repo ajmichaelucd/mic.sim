@@ -133,7 +133,7 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
         sir %in% c("R") ~ 1,
         TRUE ~ 0
       )) %>%
-      mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
+      mgcv::gam(formula = dichot_res ~ s(t), method = "REML", family = binomial(link = "logit")) %>% return()
 
   }else{
     df %>%
@@ -147,7 +147,7 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
         wtnwt == "NWT" ~ 1,
         TRUE ~ 0
       )) %>%
-      mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
+      mgcv::gam(formula = dichot_res ~ s(t), method = "REML", family = binomial(link = "logit")) %>% return()
 
   }
 
