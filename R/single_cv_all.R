@@ -22,6 +22,7 @@
 #' @param sd_initial
 #' @param scale
 #' @param reruns_allowed
+#' @param max_out_break
 #'
 #' @return
 #' @keywords internal
@@ -48,7 +49,8 @@ single_cv_all = function(model = "surv",
                          initial_weighting = 3,
                          sd_initial = 0.2,
                          scale = NULL,
-                         reruns_allowed = 3) {
+                         reruns_allowed = 3,
+                         max_out_break = FALSE) {
   for(i in 1:(1+reruns_allowed)){
     message("CV for degrees", degrees, "; attempt", i)
 
@@ -103,7 +105,8 @@ single_cv_all = function(model = "surv",
         maxiter_survreg = maxiter_survreg,
         initial_weighting = initial_weighting,
         sd_initial = sd_initial,
-        scale = scale
+        scale = scale,
+        max_out_break = max_out_break
       )
 
      if(is.nan(fold_likelihood_j) | is.na(fold_likelihood_j)){

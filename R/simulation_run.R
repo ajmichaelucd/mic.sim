@@ -19,6 +19,7 @@
 #' @param approach
 #' @param pi_formula
 #' @param ncomp
+#' @param ecoff
 #' @param pre_set_degrees
 #' @param max_degree
 #' @param degree_sets
@@ -36,6 +37,7 @@
 #' @param initial_weighting
 #' @param sd_initial
 #' @param reruns_allowed
+#' @param max_out_break
 #'
 #' @return
 #' @export
@@ -65,6 +67,7 @@ simulation_run = function(i = 100,
                           approach = "full",
                           pi_formula = c == "2" ~ s(t),
                           ncomp = 2,
+                          ecoff = NA,
                           pre_set_degrees = NULL,
                           max_degree = 8,
                           degree_sets = "matched",
@@ -81,7 +84,8 @@ simulation_run = function(i = 100,
                           maxiter_survreg = 30,
                           initial_weighting = 3,
                           sd_initial = 0.2,
-                          reruns_allowed = 3
+                          reruns_allowed = 3,
+                          max_out_break = FALSE
                           ){
   set.seed(i)
   simulated_data =
@@ -113,6 +117,7 @@ simulation_run = function(i = 100,
     extra_row = extra_row,
     max_it = max_it,
     ncomp = ncomp,
+    ecoff = ecoff,
     tol_ll = tol_ll,
     pi_link = pi_link,
     verbose = verbose,
@@ -121,7 +126,8 @@ simulation_run = function(i = 100,
     initial_weighting = initial_weighting,
     sd_initial = sd_initial,
     scale = scale,
-    reruns_allowed = reruns_allowed
+    reruns_allowed = reruns_allowed,
+    max_out_break = max_out_break
   )
 
   iteration_output$iteration_number = i

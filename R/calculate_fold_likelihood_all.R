@@ -8,6 +8,8 @@
 #' @param extra_row
 #' @param ecoff
 #' @param ncomp
+#' @param converge
+#' @param max_out_break
 #'
 #' @return
 #' @keywords internal
@@ -20,25 +22,35 @@ calculate_fold_likelihood_all = function(testing_set,
                                          fixed_side = NULL,
                                          extra_row = FALSE,
                                          ecoff = NA,
-                                         ncomp = 2
-                                         ) {
-  if (approach == "full" & ncomp > 1) {
-    calculate_fold_likelihood.full(testing_set, trained_mu_model, trained_pi_model) %>% return()
-  } else if (approach == "reduced" & !is.null(fixed_side)) {
+                                         ncomp = 2,
+                                         converge,
+                                         max_out_break = FALSE) {
+  if (converge == "NO") {
+    return(NaN)
+  } else{
+    if (max_out_break && converge == "iterations") {
+      return(NaN)
+    } else{
+      if (approach == "full" & ncomp > 1) {
+        calculate_fold_likelihood.full(testing_set, trained_mu_model, trained_pi_model) %>% return()
+      } else if (approach == "reduced" & !is.null(fixed_side)) {
+        ECOFF = readr::parse_number(as.character(ecoff)) %>% log2()
 
-    ECOFF = readr::parse_number(as.character(ecoff)) %>% log2()
-
-    calculate_fold_likelihood.reduced(testing_set,
-                                      trained_mu_model,
-                                      trained_pi_model,
-                                      fixed_side = fixed_side,
-                                      extra_row = extra_row,
-                                      ECOFF = ECOFF) %>% return()
-  } else if(ncomp == 1){
-    calculate_fold_likelihood.single_comp(testing_set,
-                                          trained_mu_model)
-  }else{
-    errorCondition("If using reduced model, need to supply a value for fixed_side")
+        calculate_fold_likelihood.reduced(
+          testing_set,
+          trained_mu_model,
+          trained_pi_model,
+          fixed_side = fixed_side,
+          extra_row = extra_row,
+          ECOFF = ECOFF
+        ) %>% return()
+      } else if (ncomp == 1) {
+        calculate_fold_likelihood.single_comp(testing_set,
+                                              trained_mu_model)
+      } else{
+        errorCondition("If using reduced model, need to supply a value for fixed_side")
+      }
+    }
   }
 }
 

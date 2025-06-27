@@ -22,6 +22,8 @@
 #' @param initial_weighting
 #' @param sd_initial
 #' @param scale
+#' @param reruns_allowed
+#' @param max_out_break
 #'
 #' @return
 #' @keywords internal
@@ -50,7 +52,8 @@ full_cv = function(
     initial_weighting = 3,
     sd_initial = 0.2,
     scale = NULL,
-    reruns_allowed = 3){
+    reruns_allowed = 3,
+    max_out_break = FALSE){
   create_degree_combinations_all(max_degree, ncomp, degree_sets, model, approach) %>%
     map(
       .,
@@ -76,7 +79,8 @@ full_cv = function(
         initial_weighting = initial_weighting,
         sd_initial = sd_initial,
         scale = scale,
-        reruns_allowed = reruns_allowed
+        reruns_allowed = reruns_allowed,
+        max_out_break = max_out_break
       )
     ) %>% data.table::rbindlist() %>% tibble %>% return()
 

@@ -46,7 +46,8 @@ get_fold_likelihood_all = function(model = "surv",
                                    maxiter_survreg = 30,
                                    initial_weighting = 3,
                                    sd_initial = 0.2,
-                                   scale = NULL) {
+                                   scale = NULL,
+                                   max_out_break = FALSE) {
   test = i
 
   if(verbose >= 1){
@@ -120,7 +121,7 @@ get_fold_likelihood_all = function(model = "surv",
     errorCondition("Use 'full' or 'reduced' for approach")
   }
 
-  calculate_fold_likelihood_all(testing_set, trained_mu_model = trained_model$mu_model, trained_pi_model = trained_model$pi_model, approach = approach, fixed_side = fixed_side, extra_row = extra_row, ecoff = ecoff, ncomp = ncomp) %>%
+  calculate_fold_likelihood_all(testing_set, trained_mu_model = trained_model$mu_model, trained_pi_model = trained_model$pi_model, approach = approach, fixed_side = fixed_side, extra_row = extra_row, ecoff = ecoff, ncomp = ncomp, converge = trained_model$converge, max_out_break = max_out_break) %>%
     return()  ###MAY NEED TO FIX THIS TOO
 
 }

@@ -25,7 +25,8 @@ get_fold_likelihood_all(
   maxiter_survreg = 30,
   initial_weighting = 3,
   sd_initial = 0.2,
-  scale = NULL
+  scale = NULL,
+  max_out_break = FALSE
 )
 }
 \arguments{

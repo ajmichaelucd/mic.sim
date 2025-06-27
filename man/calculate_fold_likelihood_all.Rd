@@ -12,11 +12,13 @@ calculate_fold_likelihood_all(
   fixed_side = NULL,
   extra_row = FALSE,
   ecoff = NA,
-  ncomp = 2
+  ncomp = 2,
+  converge,
+  max_out_break = FALSE
 )
 }
 \arguments{
-\item{ncomp}{}
+\item{max_out_break}{}
 }
 \description{
 Title

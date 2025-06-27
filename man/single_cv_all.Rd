@@ -26,11 +26,12 @@ single_cv_all(
   initial_weighting = 3,
   sd_initial = 0.2,
   scale = NULL,
-  reruns_allowed = 3
+  reruns_allowed = 3,
+  max_out_break = FALSE
 )
 }
 \arguments{
-\item{reruns_allowed}{}
+\item{max_out_break}{}
 }
 \description{
 Title
