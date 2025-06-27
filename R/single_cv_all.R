@@ -106,7 +106,7 @@ single_cv_all = function(model = "surv",
         scale = scale
       )
 
-     if(is.nan(fold_likelihood_j)){
+     if(is.nan(fold_likelihood_j) | is.na(fold_likelihood_j)){
        if(verbose > 0){
          message("likelihood not found, moving to next repeat if available")
        }
@@ -121,7 +121,7 @@ single_cv_all = function(model = "surv",
 
     rep = i - 1
 
-    if((fold_output %>% filter(is.nan(fold_likelihood)) %>% nrow()) == 0){
+    if((fold_output %>% filter(is.nan(fold_likelihood) | is.na(fold_likelihood)) %>% nrow()) == 0){
       break
     }
 
