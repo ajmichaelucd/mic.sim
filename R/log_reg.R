@@ -9,12 +9,12 @@
 #' @param s_breakpoint string, the breakpoint on the MIC scale for what constitutes a susceptible isolate, e.g. ≤8 (µg/mL, do not incude units)
 #' @param r_breakpoint string, the breakpoint on the MIC scale for what constitutes a resistant isolate, e.g. ≥128 (µg/mL, do not incude units)
 #' @param ecoff string or numeric, see plot_fm()
-#'
+#' @param k variable passed into logistic regression GAM
 #' @return
 #' @export
 #'
 #' @examples
-log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_type, first_year, s_breakpoint, r_breakpoint, ecoff){
+log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_type, first_year, s_breakpoint, r_breakpoint, ecoff, k = NULL){
   #assume ecoff is by default "an MIC that is less than or equal to ecoff is WT"
   if(date_type == "decimal"){
     df_temp = data %>% rename(t = date_col)
@@ -109,7 +109,7 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
     errorCondition("choose either import or possible_data for data_type")
   }
   if(split_by == "s_breakpoint" | split_by == "S"){
-    df %>%
+    split_df = df %>%
       mutate(
         sir = case_when(
           mic <= log_divider ~ "S",
@@ -119,10 +119,17 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
       mutate(dichot_res = case_when(
         sir %in% c("R") ~ 1,
         TRUE ~ 0
-      )) %>%
-      mgcv::gam(formula = dichot_res ~ s(t), family = binomial(link = "logit")) %>% return()
+      ))
+    if(is.null(k)){
+      split_df %>%
+      mgcv::gam(formula = dichot_res ~ s(t), method = "REML", family = binomial(link = "logit")) %>% return()
+    }else{
+      split_df %>%
+      mgcv::gam(formula = dichot_res ~ s(t), k = k, method = "REML", family = binomial(link = "logit")) %>% return()
+      }
+
   }else if(split_by == "r_breakpoint" | split_by == "R"){
-    df %>%
+    split_df = df %>%
       mutate(
         sir = case_when(
           mic >= log_divider ~ "R",
@@ -132,11 +139,17 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
       mutate(dichot_res = case_when(
         sir %in% c("R") ~ 1,
         TRUE ~ 0
-      )) %>%
-      mgcv::gam(formula = dichot_res ~ s(t), method = "REML", family = binomial(link = "logit")) %>% return()
+      ))
 
+    if(is.null(k)){
+      split_df %>%
+        mgcv::gam(formula = dichot_res ~ s(t), method = "REML", family = binomial(link = "logit")) %>% return()
+    }else{
+      split_df %>%
+        mgcv::gam(formula = dichot_res ~ s(t), k = k, method = "REML", family = binomial(link = "logit")) %>% return()
+    }
   }else{
-    df %>%
+    split_df = df %>%
       mutate(
         wtnwt = case_when(
           mic <= log_divider ~ "WT",
@@ -146,9 +159,14 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
       mutate(dichot_res = case_when(
         wtnwt == "NWT" ~ 1,
         TRUE ~ 0
-      )) %>%
-      mgcv::gam(formula = dichot_res ~ s(t), method = "REML", family = binomial(link = "logit")) %>% return()
-
+      ))
+      if(is.null(k)){
+        split_df %>%
+          mgcv::gam(formula = dichot_res ~ s(t), method = "REML", family = binomial(link = "logit")) %>% return()
+      }else{
+        split_df %>%
+          mgcv::gam(formula = dichot_res ~ s(t), k = k, method = "REML", family = binomial(link = "logit")) %>% return()
+      }
   }
 
 
