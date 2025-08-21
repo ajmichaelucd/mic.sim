@@ -235,9 +235,9 @@ EM_algorithm_reduced = function(
 
 ecoff_into_log = function(ecoff, visible_data){  if(!is.na(ecoff)){
   if(is.character(ecoff)){
-    ECOFF = readr::parse_number(as.character(ecoff)) %>% log2()
+    ECOFF = readr::parse_number(as.character(ecoff)) %>% log2() %>% round()
   }else{
-    ECOFF = log2(ecoff)
+    ECOFF = log2(ecoff) %>% round()
   }
   if((ECOFF > max(visible_data$left_bound)) | (ECOFF < min(visible_data$right_bound))){
     errorCondition("ecoff is outside the range of the data, will not split anything")
