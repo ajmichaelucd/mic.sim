@@ -17,6 +17,7 @@ fit_EM(
   pi_formula = c == "2" ~ s(t),
   fixed_side = NULL,
   extra_row = FALSE,
+  ecoff = NA,
   max_it = 3000,
   ncomp = 2,
   tol_ll = 1e-06,
@@ -27,7 +28,8 @@ fit_EM(
   initial_weighting = 3,
   sd_initial = 0.2,
   scale = NULL,
-  reruns_allowed = 3
+  reruns_allowed = 3,
+  max_out_break = FALSE
 )
 }
 \arguments{
@@ -55,6 +57,8 @@ fit_EM(
 
 \item{extra_row}{Logical, if using a reduced model, the highest ("RC") or lowest ("LC") MIC value may be included in the set observations weighted as possibly in the fixed component}
 
+\item{ecoff}{String or numeric, represents the largest MIC value of the WT distribution on MIC scale. Model will use this in combination with the fixed side to assume the observations on the non-fixed side of the ecoff are not part of the component on the fixed side of the ecoff. Can be a number on the MIC scale: 32 or a string representation of WT classification "<=32", should be inclusive}
+
 \item{max_it}{Numeric, maximum number of iterations for the EM algorithm for any given model fitting.}
 
 \item{ncomp}{Numeric, number of components to be fitted. When fitting a reduced model where one component is not estimated, that component should still contribute to the value in ncomp. E.g. a reduced model where the upper component is fixed and mu for the lower component is being estimated has a value of ncomp = 2.}
@@ -74,6 +78,8 @@ fit_EM(
 \item{sd_initial}{Numeric, value greater than 0 and less than 1. Proportion of the range from the highest concentration to lowest concentration that is used as the initial estimate of sigma for the estimated components. Default is 0.2}
 
 \item{reruns_allowed}{Numeric, if the cross-validation for a particular combination of degrees (polynomial) or degrees of freedom (pspline) fails, how many repeat attempts should be allowed?}
+
+\item{max_out_break}{Logical, if TRUE when a CV fold reaches maximum iterations it breaks the loop and moves to next rerun if applicable}
 }
 \description{
 Function that uses the EM Algorithm to fit a model to output from either import_mics_with_metadata() or simulate_mics().

@@ -7,6 +7,7 @@
 EM_algorithm_reduced(
   fixed_side = "RC",
   extra_row = FALSE,
+  ecoff = NA,
   visible_data,
   model = "surv",
   mu_formula = Surv(time = left_bound, time2 = right_bound, type = "interval2") ~
@@ -36,6 +37,8 @@ EM_algorithm_reduced(
 \item{fixed_side}{String, if using a reduced model, specify which component the algorithm won't estimate mu for. "RC" corresponds to the upper component, "LC" corresponds to the lower. NULL if using the full model.}
 
 \item{extra_row}{Logical, if using a reduced model, the highest ("RC") or lowest ("LC") MIC value may be included in the set observations weighted as possibly in the fixed component}
+
+\item{ecoff}{String or numeric, represents the largest MIC value of the WT distribution on MIC scale. Model will use this in combination with the fixed side to assume the observations on the non-fixed side of the ecoff are not part of the component on the fixed side of the ecoff. Can be a number on the MIC scale: 32 or a string representation of WT classification "<=32", should be inclusive}
 
 \item{visible_data}{Data frame, data including the left and right bound of the MICs (use import_mics_with_metadata to format correctly) and any covariates (including the non-linear term)}
 

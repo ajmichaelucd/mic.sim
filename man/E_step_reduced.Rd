@@ -4,10 +4,17 @@
 \alias{E_step_reduced}
 \title{Title}
 \usage{
-E_step_reduced(possible_data, mu_models, pi_model, fixed_side, extra_row)
+E_step_reduced(
+  possible_data,
+  mu_models,
+  pi_model,
+  fixed_side,
+  extra_row,
+  ECOFF
+)
 }
 \arguments{
-\item{extra_row}{}
+\item{ECOFF}{}
 }
 \description{
 Title

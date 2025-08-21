@@ -30,6 +30,7 @@ simulation_run(
   approach = "full",
   pi_formula = c == "2" ~ s(t),
   ncomp = 2,
+  ecoff = NA,
   pre_set_degrees = NULL,
   max_degree = 8,
   degree_sets = "matched",
@@ -46,7 +47,8 @@ simulation_run(
   maxiter_survreg = 30,
   initial_weighting = 3,
   sd_initial = 0.2,
-  reruns_allowed = 3
+  reruns_allowed = 3,
+  max_out_break = FALSE
 )
 }
 \arguments{
@@ -72,7 +74,7 @@ simulation_run(
 
 \item{scale}{What scale ("log" or "MIC") the data returned by simulate_mics is. Default is "log" which corresponds to log2(MIC)}
 
-\item{reruns_allowed}{}
+\item{max_out_break}{}
 }
 \description{
 Title

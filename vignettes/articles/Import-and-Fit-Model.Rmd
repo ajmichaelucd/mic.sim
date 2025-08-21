@@ -50,6 +50,6 @@ plot_likelihood(model_fit$likelihood)
 
 
 ```{r}
-plot_fm(model_fit, title = "Model on Imported Data")
+plot_fm(model_fit, title = "Model on Imported Data", add_log_reg = TRUE, ecoff = 0.5)
 ```
 

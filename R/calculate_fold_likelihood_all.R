@@ -6,6 +6,10 @@
 #' @param approach
 #' @param fixed_side
 #' @param extra_row
+#' @param ecoff
+#' @param ncomp
+#' @param converge
+#' @param max_out_break
 #'
 #' @return
 #' @keywords internal
@@ -17,20 +21,36 @@ calculate_fold_likelihood_all = function(testing_set,
                                          approach = "full",
                                          fixed_side = NULL,
                                          extra_row = FALSE,
-                                         ncomp = 2) {
-  if (approach == "full" & ncomp > 1) {
-    calculate_fold_likelihood.full(testing_set, trained_mu_model, trained_pi_model) %>% return()
-  } else if (approach == "reduced" & !is.null(fixed_side)) {
-    calculate_fold_likelihood.reduced(testing_set,
-                                      trained_mu_model,
-                                      trained_pi_model,
-                                      fixed_side,
-                                      extra_row) %>% return()
-  } else if(ncomp == 1){
-    calculate_fold_likelihood.single_comp(testing_set,
-                                          trained_mu_model)
-  }else{
-    errorCondition("If using reduced model, need to supply a value for fixed_side")
+                                         ecoff = NA,
+                                         ncomp = 2,
+                                         converge,
+                                         max_out_break = FALSE) {
+  if (converge == "NO") {
+    return(NaN)
+  } else{
+    if (max_out_break && converge == "iterations") {
+      return(NaN)
+    } else{
+      if (approach == "full" & ncomp > 1) {
+        calculate_fold_likelihood.full(testing_set, trained_mu_model, trained_pi_model) %>% return()
+      } else if (approach == "reduced" & !is.null(fixed_side)) {
+        ECOFF = readr::parse_number(as.character(ecoff)) %>% log2()
+
+        calculate_fold_likelihood.reduced(
+          testing_set,
+          trained_mu_model,
+          trained_pi_model,
+          fixed_side = fixed_side,
+          extra_row = extra_row,
+          ECOFF = ECOFF
+        ) %>% return()
+      } else if (ncomp == 1) {
+        calculate_fold_likelihood.single_comp(testing_set,
+                                              trained_mu_model)
+      } else{
+        errorCondition("If using reduced model, need to supply a value for fixed_side")
+      }
+    }
   }
 }
 
@@ -44,10 +64,10 @@ calculate_fold_likelihood.full = function(testing_set, trained_mu_model, trained
     calculate_log_likelihood(.) %>% return()
 }
 
-calculate_fold_likelihood.reduced = function(testing_set, trained_mu_model, trained_pi_model, fixed_side, extra_row){
+calculate_fold_likelihood.reduced = function(testing_set, trained_mu_model, trained_pi_model, fixed_side, extra_row, ECOFF){
   testing_set %>% add_obs_id() %>% reframe(.by = everything(),
                                            c = as.character(1:2)) %>%
-    calculate_density_obs_reduced(., trained_mu_model, fixed_side, extra_row) %>%
+    calculate_density_obs_reduced(., trained_mu_model, fixed_side, extra_row, ECOFF) %>%
     pi_model_predictions(., trained_pi_model) %>%
     calculate_new_weights(.) %>%
     calculate_log_likelihood(.) %>% return()

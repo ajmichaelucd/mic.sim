@@ -6,13 +6,16 @@
 \usage{
 log_reg(
   data,
+  split_by = "ecoff",
   data_type,
   drug,
   date_col,
   date_type,
   first_year,
   s_breakpoint,
-  r_breakpoint
+  r_breakpoint,
+  ecoff,
+  k = NULL
 )
 }
 \arguments{
@@ -31,6 +34,10 @@ log_reg(
 \item{s_breakpoint}{string, the breakpoint on the MIC scale for what constitutes a susceptible isolate, e.g. ≤8 (µg/mL, do not incude units)}
 
 \item{r_breakpoint}{string, the breakpoint on the MIC scale for what constitutes a resistant isolate, e.g. ≥128 (µg/mL, do not incude units)}
+
+\item{ecoff}{string or numeric, see plot_fm()}
+
+\item{k}{variable passed into logistic regression GAM}
 }
 \description{
 Title

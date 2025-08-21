@@ -16,7 +16,8 @@ full_cv(
   pi_formula = c == "2" ~ s(t),
   fixed_side = NULL,
   extra_row = FALSE,
-  max_it = 3000,
+  ecoff = NA,
+  max_it = 300,
   ncomp = 2,
   tol_ll = 1e-06,
   pi_link = "logit",
@@ -26,11 +27,12 @@ full_cv(
   initial_weighting = 3,
   sd_initial = 0.2,
   scale = NULL,
-  reruns_allowed = 3
+  reruns_allowed = 3,
+  max_out_break = FALSE
 )
 }
 \arguments{
-\item{scale}{}
+\item{max_out_break}{}
 }
 \description{
 Title

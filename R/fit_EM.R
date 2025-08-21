@@ -19,6 +19,7 @@
 #' @param pi_formula Formula, for the component weight model. Model is fit using mgcv's gam function. Nonlinear terms include s() and lo(). Basis of s() function can be changed using bs argument to s(). Use c == "2" for the left side of the formula.
 #' @param fixed_side String, if using a reduced model, specify which component the algorithm won't estimate mu for. "RC" corresponds to the upper component, "LC" corresponds to the lower. NULL if using the full model.
 #' @param extra_row Logical, if using a reduced model, the highest ("RC") or lowest ("LC") MIC value may be included in the set observations weighted as possibly in the fixed component
+#' @param ecoff String or numeric, represents the largest MIC value of the WT distribution on MIC scale. Model will use this in combination with the fixed side to assume the observations on the non-fixed side of the ecoff are not part of the component on the fixed side of the ecoff. Can be a number on the MIC scale: 32 or a string representation of WT classification "<=32", should be inclusive
 #' @param max_it Numeric, maximum number of iterations for the EM algorithm for any given model fitting.
 #' @param ncomp Numeric, number of components to be fitted. When fitting a reduced model where one component is not estimated, that component should still contribute to the value in ncomp. E.g. a reduced model where the upper component is fixed and mu for the lower component is being estimated has a value of ncomp = 2.
 #' @param tol_ll Numeric, maximum tolerance for change in likelihood between steps of the algorithm for model convergence to be achieved.
@@ -29,7 +30,7 @@
 #' @param initial_weighting Numeric, For the "full" model fitting: if 1: initial observation weights are estimated using linear regression at the highest and lowest tested concentrations. If 2, used a randomized start suitable for simulation studies on model validity but otherwise not recommended. If 3 or greater, fits a linear models to the components and estimates intial weights based on this model fit. For the reduced model fitting: 1 sets initial weights corresponding to fixed side (and extra_row) where observations not outside the range on the side corresponding to the fixed side are forced to be in the component where mu is being estimated. For initial weighting two a linear model is fit for the component still being estimated to provide initial observation weights.
 #' @param sd_initial Numeric, value greater than 0 and less than 1. Proportion of the range from the highest concentration to lowest concentration that is used as the initial estimate of sigma for the estimated components. Default is 0.2
 #' @param reruns_allowed Numeric, if the cross-validation for a particular combination of degrees (polynomial) or degrees of freedom (pspline) fails, how many repeat attempts should be allowed?
-#'
+#' @param max_out_break Logical, if TRUE when a CV fold reaches maximum iterations it breaks the loop and moves to next rerun if applicable
 #'
 #' @importFrom purrr map_dfc
 #' @importFrom survival survreg coxph.wtest
@@ -72,6 +73,7 @@ fit_EM = function(model = "pspline", #"polynomial",
                   pi_formula = c == "2" ~ s(t),
                   fixed_side = NULL,
                   extra_row = FALSE,
+                  ecoff = NA,
                   max_it = 3000,
                   ncomp = 2, #relevant
                   tol_ll = 1e-6,
@@ -82,7 +84,8 @@ fit_EM = function(model = "pspline", #"polynomial",
                   initial_weighting = 3,
                   sd_initial = 0.2,
                   scale = NULL,
-                  reruns_allowed = 3) {
+                  reruns_allowed = 3,
+                  max_out_break = FALSE) {
   ##check here if approach is reduced but fixed side is null then we have a problem
  if(model == "pspline"){
    model = "surv"
@@ -101,6 +104,7 @@ fit_EM = function(model = "pspline", #"polynomial",
       pi_formula = pi_formula,
       fixed_side = fixed_side,
       extra_row = extra_row,
+      ecoff = ecoff,
       max_it = max_it,
       ncomp = ncomp,
       tol_ll = tol_ll,
@@ -111,7 +115,8 @@ fit_EM = function(model = "pspline", #"polynomial",
       initial_weighting = initial_weighting,
       sd_initial = sd_initial,
       scale = scale,
-      reruns_allowed = reruns_allowed
+      reruns_allowed = reruns_allowed,
+      max_out_break = max_out_break
     )
 
 
@@ -167,6 +172,7 @@ fit_EM = function(model = "pspline", #"polynomial",
   }else if(approach == "reduced" & !is.null(fixed_side)){
     output = EM_algorithm_reduced(fixed_side = fixed_side,
                                   extra_row = extra_row,
+                                  ecoff = ecoff,
                                   visible_data = visible_data,
                                   model = model,
                                   mu_formula = mu_formula,

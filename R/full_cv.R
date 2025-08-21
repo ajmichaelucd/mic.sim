@@ -11,6 +11,7 @@
 #' @param pi_formula
 #' @param fixed_side
 #' @param extra_row
+#' @param ecoff
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
@@ -21,6 +22,8 @@
 #' @param initial_weighting
 #' @param sd_initial
 #' @param scale
+#' @param reruns_allowed
+#' @param max_out_break
 #'
 #' @return
 #' @keywords internal
@@ -38,6 +41,7 @@ full_cv = function(
     pi_formula = c == "2" ~ s(t),
     fixed_side = NULL,
     extra_row = FALSE,
+    ecoff = NA,
     max_it = 300,
     ncomp = 2,
     tol_ll = 1e-6,
@@ -48,7 +52,8 @@ full_cv = function(
     initial_weighting = 3,
     sd_initial = 0.2,
     scale = NULL,
-    reruns_allowed = 3){
+    reruns_allowed = 3,
+    max_out_break = FALSE){
   create_degree_combinations_all(max_degree, ncomp, degree_sets, model, approach) %>%
     map(
       .,
@@ -63,6 +68,7 @@ full_cv = function(
         pi_formula = pi_formula,
         fixed_side = fixed_side,
         extra_row = extra_row,
+        ecoff = ecoff,
         max_it = max_it,
         ncomp = ncomp,
         tol_ll = tol_ll,
@@ -73,7 +79,8 @@ full_cv = function(
         initial_weighting = initial_weighting,
         sd_initial = sd_initial,
         scale = scale,
-        reruns_allowed = reruns_allowed
+        reruns_allowed = reruns_allowed,
+        max_out_break = max_out_break
       )
     ) %>% data.table::rbindlist() %>% tibble %>% return()
 

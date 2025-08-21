@@ -10,6 +10,7 @@
 #' @param pi_formula
 #' @param fixed_side
 #' @param extra_row
+#' @param ecoff
 #' @param max_it
 #' @param ncomp
 #' @param tol_ll
@@ -21,6 +22,7 @@
 #' @param sd_initial
 #' @param scale
 #' @param reruns_allowed
+#' @param max_out_break
 #'
 #' @return
 #' @keywords internal
@@ -36,6 +38,7 @@ single_cv_all = function(model = "surv",
                          pi_formula = c == "2" ~ s(t),
                          fixed_side = NULL,
                          extra_row = FALSE,
+                         ecoff = NA,
                          max_it = 3000,
                          ncomp = 2,
                          tol_ll = 1e-6,
@@ -46,16 +49,45 @@ single_cv_all = function(model = "surv",
                          initial_weighting = 3,
                          sd_initial = 0.2,
                          scale = NULL,
-                         reruns_allowed = 3) {
+                         reruns_allowed = 3,
+                         max_out_break = FALSE) {
   for(i in 1:(1+reruns_allowed)){
     message("CV for degrees", degrees, "; attempt", i)
 
-    fold_output = tibble(fold_likelihood = map_dbl(
-      1:nfolds,
-      ~ get_fold_likelihood_all_safe(#_safe_single_output(
+    # fold_output = tibble(fold_likelihood = map_dbl(
+    #   1:nfolds,
+    #   ~ get_fold_likelihood_all_safe(#_safe_single_output(
+    #     model = model,
+    #     approach = approach,
+    #     .x,
+    #     visible_data = assign_folds(visible_data, nfolds),
+    #     degrees,
+    #     non_linear_term = non_linear_term,
+    #     covariates = covariates,
+    #     pi_formula = pi_formula,
+    #     fixed_side = fixed_side,
+    #     extra_row = extra_row,
+    #     ecoff = ecoff,
+    #     max_it = max_it,
+    #     ncomp = ncomp,
+    #     tol_ll = tol_ll,
+    #     pi_link = pi_link,
+    #     verbose = verbose,
+    #     model_coefficient_tolerance = model_coefficient_tolerance,
+    #     maxiter_survreg = maxiter_survreg,
+    #     initial_weighting = initial_weighting,
+    #     sd_initial = sd_initial,
+    #     scale = scale
+    #   )
+    # ))
+
+    placeholder = matrix(data = NaN, nrow = nfolds, ncol = 1)
+
+    for(j in 1:nfolds){
+     fold_likelihood_j = get_fold_likelihood_all_safe(#_safe_single_output(
         model = model,
         approach = approach,
-        .x,
+        i = j,
         visible_data = assign_folds(visible_data, nfolds),
         degrees,
         non_linear_term = non_linear_term,
@@ -63,6 +95,7 @@ single_cv_all = function(model = "surv",
         pi_formula = pi_formula,
         fixed_side = fixed_side,
         extra_row = extra_row,
+        ecoff = ecoff,
         max_it = max_it,
         ncomp = ncomp,
         tol_ll = tol_ll,
@@ -72,13 +105,26 @@ single_cv_all = function(model = "surv",
         maxiter_survreg = maxiter_survreg,
         initial_weighting = initial_weighting,
         sd_initial = sd_initial,
-        scale = scale
+        scale = scale,
+        max_out_break = max_out_break
       )
-    ))
+
+     if(is.nan(fold_likelihood_j) | is.na(fold_likelihood_j)){
+       if(verbose > 0){
+         message("likelihood not found, moving to next repeat if available")
+       }
+       break
+     }else{
+       placeholder[j,] = fold_likelihood_j
+     }
+
+    }
+
+    fold_output = tibble(fold_likelihood = as.vector(placeholder))
 
     rep = i - 1
 
-    if((fold_output %>% filter(is.nan(fold_likelihood)) %>% nrow()) == 0){
+    if((fold_output %>% filter(is.nan(fold_likelihood) | is.na(fold_likelihood)) %>% nrow()) == 0){
       break
     }
 
