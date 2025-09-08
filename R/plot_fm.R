@@ -331,29 +331,34 @@ mean <- df %>%
         )
 
       #fitted_comp$scale %>% print()
+      mean <-
+        df %>%
+        offset_time_as_date_in_df(., start_date) %>%
+        ggplot(aes(x = t)) +
+        geom_function(fun = function(t){predict(fitted_comp, newdata = data.frame(t = as_offset_time(x = t, start_date)))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
+#        geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
+#        geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
 
-      mean <- df %>% ggplot() +
-        #geom_bar(aes(x = mid, fill = cens)) +
-        geom_function(fun = function(t){predict(fitted_comp, newdata = data.frame(t = t))}, aes(color = "Component Mu", linetype = "Fitted Model")) +
-        geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = t, fill = "Component Mu"), data = ci_data, alpha = 0.2) +
-        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000), alpha = 0.15) +
+        geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = offset_time_as_date(t, start_date), fill = "Component 1 Mu"), data = ci_data, alpha = 0.2) +
+        geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15) +
+        scale_color_manual(breaks = c("Component 1 Mu"), values = c("#e4190b"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)')), name = "Component Mean") +
+        scale_fill_manual(breaks = c("Component 1 Mu"), values = c("#e4190b"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)')), name = "Component Mean") +
         ggnewscale::new_scale_color() +
         #geom_point(aes(x = t, y = mid, color = `P(C=c|y,t)`), data = df %>% filter(c == "2"), alpha = 0) +
-        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = "Observations"), data = (df %>% filter(cens == "int")), alpha = 0.3) +
-        geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = "Observations"), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
-        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = "Observations"), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
-        geom_point(aes(x = t, y = left_bound,  color = "Observations"), data = df %>% filter(left_bound != -Inf), alpha = 0.3) +
-        geom_point(aes(x = t, y = right_bound,  color = "Observations"), data = df %>% filter(right_bound != Inf), alpha = 0.3) +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = "Observations"), data = (df %>% filter(cens == "int") %>% offset_time_as_date_in_df(., start_date)), alpha = 0.3) +
+        geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = "Observations"), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = plot_min) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+        geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = "Observations"), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = plot_max) %>% offset_time_as_date_in_df(., start_date)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+        geom_point(aes(x = t, y = left_bound,  color = "Observations"), data = df %>% filter(left_bound != -Inf) %>% offset_time_as_date_in_df(., start_date), alpha = 0.3) +
+        geom_point(aes(x = t, y = right_bound,  color = "Observations"), data = df %>% filter(right_bound != Inf) %>% offset_time_as_date_in_df(., start_date), alpha = 0.3) +
         scale_colour_manual(values = c("Observations" = "#F8766D"), guide = "none") +
+        scale_linetype_manual(values = c("Fitted Model" = 1), guide = "none") +
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
         xlab("Time") +
         ylab(bquote(log[2]~ MIC)) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
-        scale_x_continuous(breaks = scales::breaks_extended(6)) +
+        #scale_x_continuous(breaks = scales::breaks_extended(6)) +
         theme_minimal()
 
 if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
