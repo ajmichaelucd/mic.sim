@@ -14,7 +14,8 @@ plot_fm(
   use_prior_step = FALSE,
   range_zoom = FALSE,
   plot_range = NULL,
-  start_date = 0
+  start_date = 0,
+  x_axis_t_breaks = NULL
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ plot_fm(
 \item{plot_range}{Vector of length 2, minimum and maximum values of y axis of plot}
 
 \item{start_date}{Integer, value at which x axis should start (year).}
+
+\item{x_axis_t_breaks}{Numerical vector, vector of values on the scale of t, the time variable in years from the start of the study. Helpful to use seq(0,t_max, by = spacing) where t_max is the length of study period and spacing is how many years to separate major ticks by}
 }
 \description{
 Takes output of a fit_EM() run and plots it.
