@@ -50,6 +50,17 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
       errorCondition("split_by set to r_breakpoint and no r_breakpoint provided")
 
     }
+  }else if(split_by == "visual_split"){
+
+    if(!is.null(visual_split)){
+      divider = case_when(#grepl(pattern = "(≥)|(>=)|(=>)", x = visual_split) ~ parse_number(as.character(visual_split)),
+        grepl(pattern = "(<)", x =visual_split) & !grepl(pattern = "(≤)|(<=)|(=<)", x = visual_split) ~ parse_number(as.character(visual_split)) - 0.00001,
+        TRUE ~ parse_number(as.character(visual_split))
+      )
+    }else{
+      errorCondition("split_by set to visual_split and no visual_split provided, either change split_by to s_breakpoint or r_breakpoint or ecoff or else provide a value for visual_split")
+
+    }
   }else{
 
     if(!is.null(ecoff)){
@@ -58,7 +69,7 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
         TRUE ~ parse_number(as.character(ecoff))
       )
     }else{
-      errorCondition("split_by set to ecoff and no ecoff provided, either change split_by to s_breakpoint or r_breakpoint or else provide a value for ecoff")
+      errorCondition("split_by set to ecoff and no ecoff provided, either change split_by to s_breakpoint or r_breakpoint or visual_split or else provide a value for ecoff")
 
     }
 
@@ -88,7 +99,7 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
       )
 
   } else if(data_type == "possible_data"){
-    log_divider = log2(divider)
+    log_divider = ceiling(log2(divider))
     df = df_temp %>% filter(c == 1) %>%
       mutate(
         cens = case_when(
@@ -149,6 +160,7 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
         mgcv::gam(formula = dichot_res ~ s(t), k = k, method = "REML", family = binomial(link = "logit")) %>% return()
     }
   }else{
+    #currently handling visual_split and ecoff the same
     split_df = df %>%
       mutate(
         wtnwt = case_when(

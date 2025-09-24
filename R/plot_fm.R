@@ -9,6 +9,7 @@
 #' @param ecoff Numeric or String, represents an ECOFF on the MIC Scale to define the upper limit of the WT component, A number is interpreted as WT being <= ECOFF.
 #' @param s_breakpoint String, represents S breakpoint (e.g. <= 2) on MIC scale (not log2 scale)
 #' @param r_breakpoint String, represents R breakpoint (e.g. >= 32) on MIC scale (not log2 scale)
+#' @param visual_split Numeric or String, represents a visual split point on the MIC scale to define the upper limit of the WT component. A number is interpreted as WT being <= visual_split
 #' @param use_prior_step Logical, if one mu model did not converge, can try plotting mu models from previous step by setting this to TRUE
 #' @param range_zoom Logical, zoom y axis to range of tested concentrations
 #' @param plot_range Vector of length 2, minimum and maximum values of y axis of plot
@@ -44,7 +45,7 @@
 #' plot_fm(output = output, title = "Example", add_log_reg = TRUE, s_breakpoint = "<=1", r_breakpoint = ">=4")
 #'
 #'
-plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0, x_axis_t_breaks = NULL){
+plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakpoint = NA, r_breakpoint = NA, visual_split = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0, x_axis_t_breaks = NULL){
 
 
 
@@ -168,12 +169,15 @@ mean <- df %>%
     #do we need to account for weighting or anything?
 
 
-    if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)))){
+    if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)) | !is.na(visual_split))){
       if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
       lr_output_bkpt = log_reg(output$possible_data, split_by = "r_breakpoint", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
       }
       if(!is.na(ecoff)){
         lr_output_ecoff = log_reg(output$possible_data, split_by = "ecoff", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, ecoff = ecoff)
+      }
+      if(!is.na(visual_split)){
+        lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split = visual_split)
       }
 
       pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
@@ -547,12 +551,15 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
       #   xlab("Time") + ylab("Proportion") + theme_minimal()
 
 
-        if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)))){
+        if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)) | !is.na(visual_split))){
           if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
             lr_output_bkpt = log_reg(output$possible_data, split_by = "r_breakpoint", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
           }
           if(!is.na(ecoff)){
             lr_output_ecoff = log_reg(output$possible_data, split_by = "ecoff", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, ecoff = ecoff)
+          }
+          if(!is.na(visual_split)){
+            lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split)
           }
 
           pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
