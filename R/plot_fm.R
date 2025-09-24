@@ -9,6 +9,7 @@
 #' @param ecoff Numeric or String, represents an ECOFF on the MIC Scale to define the upper limit of the WT component, A number is interpreted as WT being <= ECOFF.
 #' @param s_breakpoint String, represents S breakpoint (e.g. <= 2) on MIC scale (not log2 scale)
 #' @param r_breakpoint String, represents R breakpoint (e.g. >= 32) on MIC scale (not log2 scale)
+#' @param visual_split Numeric or String, represents a visual split point on the MIC scale to define the upper limit of the WT component. A number is interpreted as WT being <= visual_split
 #' @param use_prior_step Logical, if one mu model did not converge, can try plotting mu models from previous step by setting this to TRUE
 #' @param range_zoom Logical, zoom y axis to range of tested concentrations
 #' @param plot_range Vector of length 2, minimum and maximum values of y axis of plot
@@ -44,7 +45,7 @@
 #' plot_fm(output = output, title = "Example", add_log_reg = TRUE, s_breakpoint = "<=1", r_breakpoint = ">=4")
 #'
 #'
-plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakpoint = NA, r_breakpoint = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0, x_axis_t_breaks = NULL){
+plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakpoint = NA, r_breakpoint = NA, visual_split = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0, x_axis_t_breaks = NULL){
 
 
 
@@ -168,12 +169,15 @@ mean <- df %>%
     #do we need to account for weighting or anything?
 
 
-    if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)))){
+    if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)) | !is.na(visual_split))){
       if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
       lr_output_bkpt = log_reg(output$possible_data, split_by = "r_breakpoint", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
       }
       if(!is.na(ecoff)){
         lr_output_ecoff = log_reg(output$possible_data, split_by = "ecoff", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, ecoff = ecoff)
+      }
+      if(!is.na(visual_split)){
+        lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split = visual_split)
       }
 
       pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
@@ -199,42 +203,47 @@ mean <- df %>%
         #scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00BFC4"), name = "Component Prevalence") +
         ylim(0,1)  +
         xlab("Time") + ylab("Proportion") + theme_minimal()
-      if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
+      if(is.na(ecoff) & is.na(visual_split) &
+         (!is.na(s_breakpoint) & !is.na(r_breakpoint))
+      ){
         pi_bounds = pi_bounds %>%
           mutate(.by = t,
                  susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
                  resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
 
-      pi = pi +
-        scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-        ggnewscale::new_scale_color() +
-        geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
-        geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
-        #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-        #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-        scale_color_manual(breaks = c("Susceptible", "Resistant"), values = c("#7CAE00", "#C77CFF"), name = "Other Prevalence") + #+ guides(linetype = "none")
-        scale_linetype_discrete(name = "Estimate Source")
+        pi = pi +
+          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+          ggnewscale::new_scale_color() +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+          scale_color_manual(breaks = c("Susceptible", "Resistant"), values = c("#7CAE00", "#C77CFF"), name = "Other Prevalence") + #+ guides(linetype = "none")
+          scale_linetype_discrete(name = "Estimate Source")
 
-      s_line = case_when(
-        grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
-        grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
-        grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
-        TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
-      )
-      r_line = case_when(
-        grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
-        grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
-        grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
-        TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
-      )
+        s_line = case_when(
+          grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
+        )
+        r_line = case_when(
+          grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
+        )
 
-      mean = mean +
-        ggnewscale::new_scale_color() +
-        geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
-        geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
-        scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
-        scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5), guide = "none")  #+ guides(linetype = "none", color = "none")
-      }else if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
+        mean = mean +
+          ggnewscale::new_scale_color() +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
+          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5), guide = "none")  #+ guides(linetype = "none", color = "none")
+      }else if(
+        !is.na(ecoff) & is.na(visual_split) &
+        (is.na(s_breakpoint) & is.na(r_breakpoint))
+      ){
         pi_bounds = pi_bounds %>%
           mutate(.by = t,
                  wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
@@ -264,7 +273,100 @@ mean <- df %>%
           geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
           scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700"), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
           scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
-      }else{
+      }else if(
+        is.na(ecoff) & !is.na(visual_split) &
+        (is.na(s_breakpoint) & is.na(r_breakpoint))
+      ){
+        pi_bounds = pi_bounds %>%
+          mutate(.by = t,
+                 c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                 c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response") )
+
+
+        pi = pi +
+          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+          ggnewscale::new_scale_color() +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+
+          #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+          scale_color_manual(breaks = c("Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence")  + #guides(linetype = "none")
+          scale_linetype_discrete(name = "Estimate Source")
+
+        visual_split_line = case_when(
+          grepl("≤", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+        )
+
+        mean = mean +
+          ggnewscale::new_scale_color() +
+          geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+          scale_color_manual(breaks = c("Visual Split"), values = c("#DF4601"), labels = c(TeX(paste0("Visual Split: ", visual_split,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
+          scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+      }else if(
+        !is.na(ecoff) & !is.na(visual_split) &
+        (is.na(s_breakpoint) & is.na(r_breakpoint))
+      ){
+        pi_bounds = pi_bounds %>%
+          mutate(.by = t,
+                 wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                 nwt = predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                 c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                 c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response") )
+
+
+
+
+        pi = pi +
+          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+          ggnewscale::new_scale_color() +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+          scale_color_manual(breaks = c("Below Split", "Above Split",  "WT", "NWT"), values = c( "#DF4601", "#000000", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+          scale_linetype_discrete(name = "Estimate Source")
+
+        visual_split_line = case_when(
+          grepl("≤",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("=",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("<",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+        )
+
+        ecoff_line = case_when(
+          grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
+        )
+
+        if(visual_split_line == ecoff_line){
+          visual_split_line = visual_split_line + 0.05
+        }
+
+        mean = mean +
+          ggnewscale::new_scale_color() +
+          geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+
+          scale_color_manual(breaks = c("Visual Split", "ECOFF"),
+                             labels = c(TeX(paste0("Visual Split: ", visual_split,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
+                             values = c("#DF4601" , "#ffd700"), name = "Breakpoints and Cutoffs") +
+          scale_linetype_manual(breaks=c("Fitted Model", "Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+      }else if(
+        !is.na(ecoff) & is.na(visual_split) &
+        !(is.na(s_breakpoint) & is.na(r_breakpoint))
+      ){
         pi_bounds = pi_bounds %>%
           mutate(.by = t,
                  wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
@@ -323,6 +425,148 @@ mean <- df %>%
                              labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
                              values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
           scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+      }else if(
+        is.na(ecoff) & !is.na(visual_split) &
+        !(is.na(s_breakpoint) & is.na(r_breakpoint))
+      ){
+        pi_bounds = pi_bounds %>%
+          mutate(.by = t,
+                 c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                 c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                 susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
+                 resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
+
+
+
+
+        pi = pi +
+          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+          ggnewscale::new_scale_color() +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
+          scale_color_manual(breaks = c("Susceptible", "Resistant",  "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+          scale_linetype_discrete(name = "Estimate Source")
+
+        s_line = case_when(
+          grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
+        )
+        r_line = case_when(
+          grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
+        )
+
+        visual_split_line = case_when(
+          grepl("≤", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+        )
+
+        if(s_line == visual_split_line){
+          s_line = s_line + 0.05
+        }
+
+        mean = mean +
+          ggnewscale::new_scale_color() +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "Visual Split"),
+                             labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Visual Split: ", visual_split,r'($\mu$)',"g/mL"))),
+                             values = c("#7CAE00", "#C77CFF", "#DF4601"), name = "Breakpoints and Cutoffs") +
+          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+      }else{
+        pi_bounds = pi_bounds %>%
+          mutate(.by = t,
+                 wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                 nwt = predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                 c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                 c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                 susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
+                 resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
+
+
+
+
+        pi = pi +
+          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+          ggnewscale::new_scale_color() +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+          geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+          #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+          scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT", "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+          scale_linetype_discrete(name = "Estimate Source")
+
+        s_line = case_when(
+          grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
+        )
+        r_line = case_when(
+          grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+          grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
+          TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
+        )
+
+        ecoff_line = case_when(
+          grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
+        )
+
+        visual_split_line = case_when(
+          grepl("≤", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("=", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+          grepl("<", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+          TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+        )
+
+        if(visual_split_line == ecoff_line){
+          visual_split_line = visual_split_line + 0.05
+        }
+
+        if(s_line == ecoff_line){
+          s_line = s_line + 0.05
+        }
+        if(s_line == visual_split_line){
+          s_line = s_line + 0.05
+        }
+
+        mean = mean +
+          ggnewscale::new_scale_color() +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+          geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+
+          scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF", "Visual Split"),
+                             labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", visual_split,r'($\mu$)',"g/mL"))),
+                             values = c("#7CAE00", "#C77CFF", "#ffd700", "#DF4601"), name = "Breakpoints and Cutoffs") +
+          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Cutoff"), values=c(1,5,2,2), guide = "none")  #+ guides(linetype = "none", color = "none")
 
       }
 
@@ -547,12 +791,15 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
       #   xlab("Time") + ylab("Proportion") + theme_minimal()
 
 
-        if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)))){
+        if(add_log_reg && (!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)) | !is.na(visual_split))){
           if(!is.na(s_breakpoint) & !is.na(r_breakpoint)){
             lr_output_bkpt = log_reg(output$possible_data, split_by = "r_breakpoint", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint)
           }
           if(!is.na(ecoff)){
             lr_output_ecoff = log_reg(output$possible_data, split_by = "ecoff", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, ecoff = ecoff)
+          }
+          if(!is.na(visual_split)){
+            lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split)
           }
 
           pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
@@ -577,19 +824,23 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
             #scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00BFC4"), name = "Component Prevalence") +
             ylim(0,1)  +
             xlab("Time") + ylab("Proportion") + theme_minimal()
-          if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
+
+          if(is.na(ecoff) & is.na(visual_split) &
+             (!is.na(s_breakpoint) & !is.na(r_breakpoint))
+          ){
             pi_bounds = pi_bounds %>%
               mutate(.by = t,
                      susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
                      resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
+
             pi = pi +
-              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalences")  + guides(linetype = "none") +
+              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
               ggnewscale::new_scale_color() +
               geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
               geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
               #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
               #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Susceptible", "Resistant"), values = c( "#7CAE00", "#C77CFF"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+              scale_color_manual(breaks = c("Susceptible", "Resistant"), values = c("#7CAE00", "#C77CFF"), name = "Other Prevalence") + #+ guides(linetype = "none")
               scale_linetype_discrete(name = "Estimate Source")
 
             s_line = case_when(
@@ -609,21 +860,27 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               ggnewscale::new_scale_color() +
               geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
               geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
-              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"),name = "Breakpoints and Cutoffs") +
-              scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  + guides(linetype = "none")
-          }else if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
+              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
+              scale_linetype_manual(breaks=c("Fitted Model","Breakpoint"), values=c(1,5), guide = "none")  #+ guides(linetype = "none", color = "none")
+          }else if(
+            !is.na(ecoff) & is.na(visual_split) &
+            (is.na(s_breakpoint) & is.na(r_breakpoint))
+          ){
             pi_bounds = pi_bounds %>%
               mutate(.by = t,
                      wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
                      nwt = predict(lr_output_ecoff, newdata = tibble(t = t), type = "response") )
+
+
             pi = pi +
-              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalences")  + guides(linetype = "none") +
+              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
               ggnewscale::new_scale_color() +
               geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
               geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+
               #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
               #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c( "WT", "NWT"), values = c( "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+              scale_color_manual(breaks = c("WT", "NWT"), values = c( "#fcbf07", "#0211a3"), name = "Other Prevalence")  + #guides(linetype = "none")
               scale_linetype_discrete(name = "Estimate Source")
 
             ecoff_line = case_when(
@@ -637,18 +894,113 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               ggnewscale::new_scale_color() +
               geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
               scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700"), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
-              scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2))  + guides(linetype = "none")
-          }else{
+              scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+          }else if(
+            is.na(ecoff) & !is.na(visual_split) &
+            (is.na(s_breakpoint) & is.na(r_breakpoint))
+          ){
             pi_bounds = pi_bounds %>%
               mutate(.by = t,
-                     susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
-                     resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") ,
-                     wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
-                     nwt = predict(lr_output_ecoff, newdata = tibble(t = t), type = "response")
-                     )
+                     c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                     c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response") )
+
 
             pi = pi +
-              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalences")  + guides(linetype = "none") +
+              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+              ggnewscale::new_scale_color() +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+
+              #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+              scale_color_manual(breaks = c("Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence")  + #guides(linetype = "none")
+              scale_linetype_discrete(name = "Estimate Source")
+
+            visual_split_line = case_when(
+              grepl("≤", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("=", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("<", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+            )
+
+            mean = mean +
+              ggnewscale::new_scale_color() +
+              geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+              scale_color_manual(breaks = c("Visual Split"), values = c("#DF4601"), labels = c(TeX(paste0("Visual Split: ", visual_split,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
+              scale_linetype_manual(breaks=c("Fitted Model","Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+          }else if(
+            !is.na(ecoff) & !is.na(visual_split) &
+            (is.na(s_breakpoint) & is.na(r_breakpoint))
+          ){
+            pi_bounds = pi_bounds %>%
+              mutate(.by = t,
+                     wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                     nwt = predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                     c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                     c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response") )
+
+
+
+
+            pi = pi +
+              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+              ggnewscale::new_scale_color() +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+              #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+              scale_color_manual(breaks = c("Below Split", "Above Split",  "WT", "NWT"), values = c( "#DF4601", "#000000", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+              scale_linetype_discrete(name = "Estimate Source")
+
+            visual_split_line = case_when(
+              grepl("≤",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("=",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("<",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+            )
+
+            ecoff_line = case_when(
+              grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
+            )
+
+            if(visual_split_line == ecoff_line){
+              visual_split_line = visual_split_line + 0.05
+            }
+
+            mean = mean +
+              ggnewscale::new_scale_color() +
+              geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+
+              scale_color_manual(breaks = c("Visual Split", "ECOFF"),
+                                 labels = c(TeX(paste0("Visual Split: ", visual_split,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
+                                 values = c("#DF4601" , "#ffd700"), name = "Breakpoints and Cutoffs") +
+              scale_linetype_manual(breaks=c("Fitted Model", "Cutoff"), values=c(1,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+          }else if(
+            !is.na(ecoff) & is.na(visual_split) &
+            !(is.na(s_breakpoint) & is.na(r_breakpoint))
+          ){
+            pi_bounds = pi_bounds %>%
+              mutate(.by = t,
+                     wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                     nwt = predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                     susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
+                     resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
+
+
+
+
+            pi = pi +
+              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
               ggnewscale::new_scale_color() +
               geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
               geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
@@ -658,7 +1010,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
               #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
               #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c( "Susceptible", "Resistant",  "WT", "NWT"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"), name = "Other Prevalence") + # + guides(linetype = "none")
+              scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
               scale_linetype_discrete(name = "Estimate Source")
 
             s_line = case_when(
@@ -680,7 +1032,6 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
               TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
             )
-
 
             if(s_line == ecoff_line){
               s_line = s_line + 0.05
@@ -695,7 +1046,149 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
               scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
                                  labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
                                  values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
-              scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2))  + guides(linetype = "none")
+              scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+          }else if(
+            is.na(ecoff) & !is.na(visual_split) &
+            !(is.na(s_breakpoint) & is.na(r_breakpoint))
+          ){
+            pi_bounds = pi_bounds %>%
+              mutate(.by = t,
+                     c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                     c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                     susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
+                     resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
+
+
+
+
+            pi = pi +
+              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+              ggnewscale::new_scale_color() +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+              #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
+              scale_color_manual(breaks = c("Susceptible", "Resistant",  "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+              scale_linetype_discrete(name = "Estimate Source")
+
+            s_line = case_when(
+              grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
+            )
+            r_line = case_when(
+              grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
+            )
+
+            visual_split_line = case_when(
+              grepl("≤", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("=", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("<", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+            )
+
+            if(s_line == visual_split_line){
+              s_line = s_line + 0.05
+            }
+
+            mean = mean +
+              ggnewscale::new_scale_color() +
+              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+
+              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "Visual Split"),
+                                 labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Visual Split: ", visual_split,r'($\mu$)',"g/mL"))),
+                                 values = c("#7CAE00", "#C77CFF", "#DF4601"), name = "Breakpoints and Cutoffs") +
+              scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff"), values=c(1,5,2), guide = "none")  #+ guides(linetype = "none", color = "none")
+
+          }else{
+            pi_bounds = pi_bounds %>%
+              mutate(.by = t,
+                     wt = 1 - predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                     nwt = predict(lr_output_ecoff, newdata = tibble(t = t), type = "response"),
+                     c1vs = 1 - predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                     c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response"),
+                     susceptible = 1 - predict(lr_output_bkpt, newdata = tibble(t = t), type = "response"),
+                     resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
+
+
+
+
+            pi = pi +
+              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+              ggnewscale::new_scale_color() +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+              geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+              #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+              #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+              scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT", "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+              scale_linetype_discrete(name = "Estimate Source")
+
+            s_line = case_when(
+              grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("=",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              grepl("<",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2
+            )
+            r_line = case_when(
+              grepl("≥",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl("=",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1,
+              grepl(">",r_breakpoint) ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2,
+              TRUE ~ r_breakpoint %>% as.character() %>% parse_number() %>% log2 - 1
+            )
+
+            ecoff_line = case_when(
+              grepl("≤", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("=", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2,
+              grepl("<", ecoff) ~ ecoff %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ ecoff %>% as.character() %>% parse_number() %>% log2
+            )
+
+            visual_split_line = case_when(
+              grepl("≤", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("=", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
+              grepl("<", visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2 - 1,
+              TRUE ~ visual_split %>% as.character() %>% parse_number() %>% log2
+            )
+
+            if(visual_split_line == ecoff_line){
+              visual_split_line = visual_split_line + 0.05
+            }
+
+            if(s_line == ecoff_line){
+              s_line = s_line + 0.05
+            }
+            if(s_line == visual_split_line){
+              s_line = s_line + 0.05
+            }
+
+            mean = mean +
+              ggnewscale::new_scale_color() +
+              geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+              geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+              geom_hline(aes(yintercept = visual_split_line, color = "Visual Split", linetype =  "Cutoff")) +
+
+              scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF", "Visual Split"),
+                                 labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", visual_split,r'($\mu$)',"g/mL"))),
+                                 values = c("#7CAE00", "#C77CFF", "#ffd700", "#DF4601"), name = "Breakpoints and Cutoffs") +
+              scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Cutoff"), values=c(1,5,2,2), guide = "none")  #+ guides(linetype = "none", color = "none")
 
           }
 

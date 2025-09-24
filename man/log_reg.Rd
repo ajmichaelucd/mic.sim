@@ -15,6 +15,7 @@ log_reg(
   s_breakpoint,
   r_breakpoint,
   ecoff,
+  visual_split,
   k = NULL
 )
 }
@@ -36,6 +37,8 @@ log_reg(
 \item{r_breakpoint}{string, the breakpoint on the MIC scale for what constitutes a resistant isolate, e.g. ≥128 (µg/mL, do not incude units)}
 
 \item{ecoff}{string or numeric, see plot_fm()}
+
+\item{visual_split}{string or numeric, see plot_fm()}
 
 \item{k}{variable passed into logistic regression GAM}
 }
