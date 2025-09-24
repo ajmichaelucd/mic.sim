@@ -93,7 +93,7 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
         ),
         mic = case_when(
           cens == "int" ~ parse_number(as.character(mic_column)),
-          cens == "LC" ~ parse_number(as.character(mic_column)) * 0.5,
+          cens == "LC" ~ parse_number(as.character(mic_column)),
           cens == "RC" ~ parse_number(as.character(mic_column)) * 2,
           TRUE ~ NaN
         )
@@ -110,8 +110,8 @@ log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_ty
         ),
         mic = case_when(
           cens == "int" ~ right_bound,
-          cens == "LC" ~ right_bound - 0.01,
-          cens == "RC" ~ left_bound + 0.01,
+          cens == "LC" ~ right_bound, #previous - 0.01
+          cens == "RC" ~ left_bound + 1, #previous + 0.01
           TRUE ~ NaN
         )
       )
