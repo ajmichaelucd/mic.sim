@@ -9,12 +9,13 @@
 #' @param s_breakpoint string, the breakpoint on the MIC scale for what constitutes a susceptible isolate, e.g. ≤8 (µg/mL, do not incude units)
 #' @param r_breakpoint string, the breakpoint on the MIC scale for what constitutes a resistant isolate, e.g. ≥128 (µg/mL, do not incude units)
 #' @param ecoff string or numeric, see plot_fm()
+#' @param visual_split string or numeric, see plot_fm()
 #' @param k variable passed into logistic regression GAM
 #' @return
 #' @export
 #'
 #' @examples
-log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_type, first_year, s_breakpoint, r_breakpoint, ecoff, k = NULL){
+log_reg <- function(data, split_by = "ecoff", data_type, drug, date_col, date_type, first_year, s_breakpoint, r_breakpoint, ecoff, visual_split, k = NULL){
   #assume ecoff is by default "an MIC that is less than or equal to ecoff is WT"
   if(date_type == "decimal"){
     df_temp = data %>% rename(t = date_col)

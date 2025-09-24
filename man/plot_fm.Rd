@@ -11,6 +11,7 @@ plot_fm(
   ecoff = NA,
   s_breakpoint = NA,
   r_breakpoint = NA,
+  visual_split = NA,
   use_prior_step = FALSE,
   range_zoom = FALSE,
   plot_range = NULL,
@@ -30,6 +31,8 @@ plot_fm(
 \item{s_breakpoint}{String, represents S breakpoint (e.g. <= 2) on MIC scale (not log2 scale)}
 
 \item{r_breakpoint}{String, represents R breakpoint (e.g. >= 32) on MIC scale (not log2 scale)}
+
+\item{visual_split}{Numeric or String, represents a visual split point on the MIC scale to define the upper limit of the WT component. A number is interpreted as WT being <= visual_split}
 
 \item{use_prior_step}{Logical, if one mu model did not converge, can try plotting mu models from previous step by setting this to TRUE}
 
