@@ -114,8 +114,8 @@ plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, 
 }
 
 
-lc = output$possible_data$low_cons %>% min()
-hc = output$possible_data$high_cons %>% min()
+#lc = output$possible_data$low_cons %>% min()
+#hc = output$possible_data$high_cons %>% min()
 
   #ciTools::add_pi(df, output$mu_model[[1]], alpha = 0.05, names = c("lwr", "upr"))
   #doesn't work with gaussian dist
