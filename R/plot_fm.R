@@ -897,7 +897,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
             lr_output_ecoff = log_reg(output$possible_data, split_by = "ecoff", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, ecoff = ecoff)
           }
           if(!is.na(visual_split)){
-            lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split)
+            lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split = visual_split)
           }
 
           pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
