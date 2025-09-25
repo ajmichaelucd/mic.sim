@@ -705,8 +705,8 @@ mean <- df %>%
 
 if(!is.null(x_axis_t_breaks)){
 
-  mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
-  pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
+  mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
+  pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
 
 }
 
@@ -828,7 +828,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
       if(!is.null(x_axis_t_breaks)){
 
-        mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
+        mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
 
       }
 
@@ -1420,8 +1420,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
         if(!is.null(x_axis_t_breaks)){
 
-          mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
-          pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
+          mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
+          pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
 
         }
 
