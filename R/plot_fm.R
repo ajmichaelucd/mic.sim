@@ -738,19 +738,20 @@ if(!is.null(x_axis_t_breaks)){
 #        geom_function(fun = function(t){predict(fitted_comp, newdata = data.frame(t = as_offset_time(x = t, start_date)))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
 #        geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
 #        geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        geom_line(aes(x = offset_time_as_date(t, start_date), y = c1pred, color = "Component 1 Mu", linetype = "Fitted Model"), data = ci_data) +
+        geom_line(aes(x = offset_time_as_date(t, start_date), y = c1pred, color = "Component 1 Mu"), data = ci_data) +
         geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = offset_time_as_date(t, start_date), fill = "Component 1 Mu"), data = ci_data, alpha = 0.2) +
         geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15) +
         scale_color_manual(breaks = c("Component 1 Mu"), values = c("#e4190b"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)')), name = "Component Mean") +
         scale_fill_manual(breaks = c("Component 1 Mu"), values = c("#e4190b"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)')), name = "Component Mean") +
-        scale_linetype_manual(values = c("Fitted Model" = 1), guide = "none") +
+        #scale_linetype_manual(values = c("Fitted Model" = 1), guide = "none") +
         ggtitle(title) +
         xlab("Time") +
         ylab(bquote(log[2]~ MIC)) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
         #scale_x_continuous(breaks = scales::breaks_extended(6)) +
-        theme_minimal()
+        theme_minimal() +
+        theme(legend.position = "bottom")
 
 if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
       if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
@@ -762,9 +763,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "ECOFF")) +
           scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700"), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
-          scale_linetype_manual(breaks=c("Fitted Model","Cutoff", "Fitted Model SE"), values=c(1,2,3))  #+ guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("ECOFF"), values=c(2), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs")  #+ guides(linetype = "none", color = "none")
 
       }else if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         s_line = case_when(
@@ -781,10 +782,10 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
-          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Susceptible Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Resistant Breakpoint")) +
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
-          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  #+ guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values=c(5,5), name = "Breakpoints and Cutoffs")  #+ guides(linetype = "none", color = "none")
       }else{
         s_line = case_when(
           grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -820,7 +821,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
                              labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
                              values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
-          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Fitted Model SE"), values=c(1,5,2,3))  #+ guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
+                                labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
+                                values=c(5,5,2), name = "Breakpoints and Cutoffs")  #+ guides(linetype = "none", color = "none")
 
       }
 
