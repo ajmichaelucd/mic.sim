@@ -710,6 +710,8 @@ if(!is.null(x_axis_t_breaks)){
 
 }
 
+    mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1))
+
 
     return(patchwork::wrap_plots(mean,pi, ncol = 1))
 
@@ -834,6 +836,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
 
       }
+
+      mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1))
+
 
       return(mean)
 
@@ -1428,6 +1433,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
         }
 
+        mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1))
+
       return(patchwork::wrap_plots(mean,pi, ncol = 1))
     }
     else{
@@ -1535,3 +1542,12 @@ offset_time_as_date_in_df = function(df, start_date){
 inverse_logit = function(x){1 / (1 + (exp(-x)))}
 
 logit = function(p){log(p / (1 - p))}
+
+
+
+set_y_labels = function(value){
+  case_when(2^value >= 0.12 ~ 2^value,
+    0.03 > 2^value  & 2^value >= 0.015 ~ signif(2^value, 2),
+    TRUE ~ signif(2^value, 1)
+    )
+}

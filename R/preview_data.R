@@ -87,5 +87,8 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
       ylim(y_min - 2, y_max + 2) %>% suppressWarnings()
   }
 
+  plot = plot + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1))
+
+
   plot %>% return()
 }
