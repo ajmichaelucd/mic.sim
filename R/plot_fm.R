@@ -160,7 +160,7 @@ mean <- df %>%
       mean = mean + scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)'), TeX(r'(Component 2 Mean: $\hat{\mu}_{2,t}$)')),name = "Component Means") +
       ggtitle(title) +
       xlab("Time") +
-      ylab(bquote(log[2]~ MIC)) +
+      ylab(TeX(r'(MIC ($\mu$g/mL))')) +
       ylim(plot_min - 1, plot_max + 1) +
       scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
       theme_minimal()
@@ -710,7 +710,7 @@ if(!is.null(x_axis_t_breaks)){
 
 }
 
-    mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1))
+    mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1), minor_breaks = NULL)
 
 
     return(patchwork::wrap_plots(mean,pi, ncol = 1))
@@ -748,7 +748,7 @@ if(!is.null(x_axis_t_breaks)){
         #scale_linetype_manual(values = c("Fitted Model" = 1), guide = "none") +
         ggtitle(title) +
         xlab("Time") +
-        ylab(bquote(log[2]~ MIC)) +
+        ylab(TeX(r'(MIC ($\mu$g/mL))')) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
         #scale_x_continuous(breaks = scales::breaks_extended(6)) +
@@ -837,7 +837,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
       }
 
-      mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1))
+      mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1), minor_breaks = NULL)
 
 
       return(mean)
@@ -881,7 +881,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
         xlab("Time") +
-        ylab(bquote(log[2]~ MIC)) +
+        ylab(TeX(r'(MIC ($\mu$g/mL))')) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
         #scale_x_continuous(breaks = scales::breaks_extended(6)) +
@@ -1433,7 +1433,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
         }
 
-        mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1))
+        mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1), minor_breaks = NULL)
 
       return(patchwork::wrap_plots(mean,pi, ncol = 1))
     }
