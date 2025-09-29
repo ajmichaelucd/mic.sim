@@ -15,6 +15,7 @@
 #' @param plot_range Vector of length 2, minimum and maximum values of y axis of plot
 #' @param start_date Integer, value at which x axis should start (year).
 #' @param  x_axis_t_breaks Numerical vector, vector of values on the scale of t, the time variable in years from the start of the study. Helpful to use seq(0,t_max, by = spacing) where t_max is the length of study period and spacing is how many years to separate major ticks by
+#' @param skip Vector, vector of either "ecoff", "bkpts", or c("ecoff", "bkpts"), to describe any splits for which logistic regression should not be plotted if another logistic regression is being plotted. If only one divider is used, just turn off add_log_reg
 #'
 #' @import ggplot2
 #' @import ggnewscale
@@ -45,7 +46,7 @@
 #' plot_fm(output = output, title = "Example", add_log_reg = TRUE, s_breakpoint = "<=1", r_breakpoint = ">=4")
 #'
 #'
-plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakpoint = NA, r_breakpoint = NA, visual_split = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0, x_axis_t_breaks = NULL){
+plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakpoint = NA, r_breakpoint = NA, visual_split = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0, x_axis_t_breaks = NULL, skip = NULL){
 
 
 
@@ -113,6 +114,8 @@ plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, 
 }
 
 
+#lc = output$possible_data$low_cons %>% min()
+#hc = output$possible_data$high_cons %>% min()
 
   #ciTools::add_pi(df, output$mu_model[[1]], alpha = 0.05, names = c("lwr", "upr"))
   #doesn't work with gaussian dist
@@ -157,7 +160,7 @@ mean <- df %>%
       mean = mean + scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)'), TeX(r'(Component 2 Mean: $\hat{\mu}_{2,t}$)')),name = "Component Means") +
       ggtitle(title) +
       xlab("Time") +
-      ylab(bquote(log[2]~ MIC)) +
+      ylab(TeX(r'(MIC ($\mu$g/mL))')) +
       ylim(plot_min - 1, plot_max + 1) +
       scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
       theme_minimal()
@@ -320,21 +323,33 @@ mean <- df %>%
 
 
 
-
-        pi = pi +
-          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-          ggnewscale::new_scale_color() +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-          scale_color_manual(breaks = c("Below Split", "Above Split",  "WT", "NWT"), values = c( "#DF4601", "#000000", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-          scale_linetype_discrete(name = "Estimate Source")
-
+        if(!is.null(skip) && "ecoff" %in% skip){
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }else{
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Below Split", "Above Split",  "WT", "NWT"), values = c( "#DF4601", "#000000", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }
         visual_split_line = case_when(
           grepl("≤",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
           grepl("=",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
@@ -375,21 +390,47 @@ mean <- df %>%
                  resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
 
 
+        if(!is.null(skip) && "ecoff" %in% skip){
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Susceptible", "Resistant"), values = c( "#7CAE00", "#C77CFF"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }else if(!is.null(skip) && "bkpts" %in% skip){
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c( "WT", "NWT"), values = c("#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }else{
 
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }
 
-        pi = pi +
-          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-          ggnewscale::new_scale_color() +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-          scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-          scale_linetype_discrete(name = "Estimate Source")
 
         s_line = case_when(
           grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -438,21 +479,35 @@ mean <- df %>%
                  resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
 
 
+        if(!is.null(skip) && "bkpts" %in% skip){
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c(  "Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }else{
 
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Susceptible", "Resistant",  "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }
 
-        pi = pi +
-          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-          ggnewscale::new_scale_color() +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
-          scale_color_manual(breaks = c("Susceptible", "Resistant",  "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-          scale_linetype_discrete(name = "Estimate Source")
 
         s_line = case_when(
           grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -500,23 +555,66 @@ mean <- df %>%
                  resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
 
 
+        if(!is.null(skip) && "bkpts" %in% skip & "ecoff" %in% skip){
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }else if(!is.null(skip) && "bkpts" %in% skip){
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("WT", "NWT", "Below Split", "Above Split"), values = c(  "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }else if(!is.null(skip) && "ecoff" %in% skip){
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Susceptible", "Resistant","Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
+        }else{
 
+          pi = pi +
+            scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+            ggnewscale::new_scale_color() +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+            #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+            scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT", "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+            scale_linetype_discrete(name = "Estimate Source")
 
-        pi = pi +
-          scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-          ggnewscale::new_scale_color() +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
-          geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
-          #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-          scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT", "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-          scale_linetype_discrete(name = "Estimate Source")
+        }
+
 
         s_line = case_when(
           grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -607,10 +705,12 @@ mean <- df %>%
 
 if(!is.null(x_axis_t_breaks)){
 
-  mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
-  pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
+  mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
+  pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
 
 }
+
+    mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1), minor_breaks = NULL)
 
 
     return(patchwork::wrap_plots(mean,pi, ncol = 1))
@@ -640,19 +740,20 @@ if(!is.null(x_axis_t_breaks)){
 #        geom_function(fun = function(t){predict(fitted_comp, newdata = data.frame(t = as_offset_time(x = t, start_date)))}, aes(color = "Component 1 Mu", linetype = "Fitted Model")) +
 #        geom_function(fun = function(t){mu.se.brd.fms(t, z = 1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
 #        geom_function(fun = function(t){mu.se.brd.fms(t, z = -1.96)}, aes(color = "Component Mu", linetype = "Fitted Model SE"), size = 0.6, alpha = 0.6) +
-        geom_line(aes(x = offset_time_as_date(t, start_date), y = c1pred, color = "Component 1 Mu", linetype = "Fitted Model"), data = ci_data) +
+        geom_line(aes(x = offset_time_as_date(t, start_date), y = c1pred, color = "Component 1 Mu"), data = ci_data) +
         geom_ribbon(aes(ymin = c1pred_lb, ymax = c1pred_ub, x = offset_time_as_date(t, start_date), fill = "Component 1 Mu"), data = ci_data, alpha = 0.2) +
         geom_ribbon(aes(ymin = lwr, ymax = upr, x = t, fill = "Component 1 Mu"), data = sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% offset_time_as_date_in_df(., start_date), alpha = 0.15) +
         scale_color_manual(breaks = c("Component 1 Mu"), values = c("#e4190b"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)')), name = "Component Mean") +
         scale_fill_manual(breaks = c("Component 1 Mu"), values = c("#e4190b"), labels = c(TeX(r'(Component 1 Mean: $\hat{\mu}_{1,t}$)')), name = "Component Mean") +
-        scale_linetype_manual(values = c("Fitted Model" = 1), guide = "none") +
+        #scale_linetype_manual(values = c("Fitted Model" = 1), guide = "none") +
         ggtitle(title) +
         xlab("Time") +
-        ylab(bquote(log[2]~ MIC)) +
+        ylab(TeX(r'(MIC ($\mu$g/mL))')) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
         #scale_x_continuous(breaks = scales::breaks_extended(6)) +
-        theme_minimal()
+        theme_minimal() +
+        theme(legend.position = "bottom")
 
 if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
       if(!is.na(ecoff) & (is.na(s_breakpoint) & is.na(r_breakpoint))){
@@ -664,9 +765,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "Cutoff")) +
+          geom_hline(aes(yintercept = ecoff_line, color = "ECOFF", linetype =  "ECOFF")) +
           scale_color_manual(breaks = c("ECOFF"), values = c("#ffd700"), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs") +
-          scale_linetype_manual(breaks=c("Fitted Model","Cutoff", "Fitted Model SE"), values=c(1,2,3))  #+ guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("ECOFF"), values=c(2), labels = c(TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))), name = "Breakpoints and Cutoffs")  #+ guides(linetype = "none", color = "none")
 
       }else if(is.na(ecoff) & (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         s_line = case_when(
@@ -683,10 +784,10 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         )
         mean = mean +
           ggnewscale::new_scale_color() +
-          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Breakpoint")) +
-          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Breakpoint")) +
+          geom_hline(aes(yintercept = s_line, color = "Susceptible Breakpoint", linetype =  "Susceptible Breakpoint")) +
+          geom_hline(aes(yintercept = r_line, color = "Resistant Breakpoint", linetype =  "Resistant Breakpoint")) +
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values = c("#7CAE00", "#C77CFF"), name = "Breakpoints and Cutoffs") +
-          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Fitted Model SE"), values=c(1,5,3))  #+ guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Susceptible Breakpoint", "Resistant Breakpoint"), labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL"))), values=c(5,5), name = "Breakpoints and Cutoffs")  #+ guides(linetype = "none", color = "none")
       }else{
         s_line = case_when(
           grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -722,7 +823,9 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
           scale_color_manual(breaks = c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
                              labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
                              values = c("#7CAE00", "#C77CFF", "#ffd700"), name = "Breakpoints and Cutoffs") +
-          scale_linetype_manual(breaks=c("Fitted Model","Breakpoint", "Cutoff", "Fitted Model SE"), values=c(1,5,2,3))  #+ guides(linetype = "none", color = "none")
+          scale_linetype_manual(breaks=c("Susceptible Breakpoint", "Resistant Breakpoint", "ECOFF"),
+                                labels = c(TeX(paste0("Susceptible Breakpoint: ", s_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("Resistant Breakpoint: ", r_breakpoint,r'($\mu$)',"g/mL")), TeX(paste0("ECOFF: ", ecoff,r'($\mu$)',"g/mL"))),
+                                values=c(5,5,2), name = "Breakpoints and Cutoffs")  #+ guides(linetype = "none", color = "none")
 
       }
 
@@ -730,9 +833,12 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
       if(!is.null(x_axis_t_breaks)){
 
-        mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
+        mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
 
       }
+
+      mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1), minor_breaks = NULL)
+
 
       return(mean)
 
@@ -775,7 +881,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
         #ylim(plot_min - 0.5, plot_max + 0.5) +
         ggtitle(title) +
         xlab("Time") +
-        ylab(bquote(log[2]~ MIC)) +
+        ylab(TeX(r'(MIC ($\mu$g/mL))')) +
         ylim(plot_min - 1, plot_max + 1) +
         scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
         #scale_x_continuous(breaks = scales::breaks_extended(6)) +
@@ -799,7 +905,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
             lr_output_ecoff = log_reg(output$possible_data, split_by = "ecoff", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, ecoff = ecoff)
           }
           if(!is.na(visual_split)){
-            lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split)
+            lr_output_visual_split = log_reg(output$possible_data, split_by = "visual_split", data_type = "possible_data", drug = NULL, date_col = "t", date_type = "decimal", first_year = NULL, visual_split = visual_split)
           }
 
           pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
@@ -942,21 +1048,33 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
 
 
-
-            pi = pi +
-              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-              ggnewscale::new_scale_color() +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Below Split", "Above Split",  "WT", "NWT"), values = c( "#DF4601", "#000000", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-              scale_linetype_discrete(name = "Estimate Source")
-
+            if(!is.null(skip) && "ecoff" %in% skip){
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }else{
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Below Split", "Above Split",  "WT", "NWT"), values = c( "#DF4601", "#000000", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }
             visual_split_line = case_when(
               grepl("≤",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
               grepl("=",visual_split) ~ visual_split %>% as.character() %>% parse_number() %>% log2,
@@ -997,21 +1115,47 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
                      resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
 
 
+            if(!is.null(skip) && "ecoff" %in% skip){
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Susceptible", "Resistant"), values = c( "#7CAE00", "#C77CFF"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }else if(!is.null(skip) && "bkpts" %in% skip){
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c( "WT", "NWT"), values = c("#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }else{
 
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }
 
-            pi = pi +
-              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-              ggnewscale::new_scale_color() +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-              scale_linetype_discrete(name = "Estimate Source")
 
             s_line = case_when(
               grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -1060,21 +1204,35 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
                      resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
 
 
+            if(!is.null(skip) && "bkpts" %in% skip){
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c(  "Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }else{
 
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Susceptible", "Resistant",  "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }
 
-            pi = pi +
-              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-              ggnewscale::new_scale_color() +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Below Split", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_visual_split, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Above Split", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Susceptible", "Resistant",  "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-              scale_linetype_discrete(name = "Estimate Source")
 
             s_line = case_when(
               grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -1122,23 +1280,66 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
                      resistant = predict(lr_output_bkpt, newdata = tibble(t = t), type = "response") )
 
 
+            if(!is.null(skip) && "bkpts" %in% skip & "ecoff" %in% skip){
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Below Split", "Above Split"), values = c( "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }else if(!is.null(skip) && "bkpts" %in% skip){
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("WT", "NWT", "Below Split", "Above Split"), values = c(  "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }else if(!is.null(skip) && "ecoff" %in% skip){
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Susceptible", "Resistant","Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
+            }else{
 
+              pi = pi +
+                scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
+                ggnewscale::new_scale_color() +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
+                #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
+                scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT", "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
+                scale_linetype_discrete(name = "Estimate Source")
 
-            pi = pi +
-              scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
-              ggnewscale::new_scale_color() +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = susceptible, color = "Susceptible", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = resistant, color = "Resistant", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "WT", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Logistic Regression"), data = pi_bounds) +
-              geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Logistic Regression"), data = pi_bounds) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "Susceptible", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_bkpt, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "Resistant", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){(1 - predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response"))}, aes(color = "WT", linetype = "Logistic Regression")) +
-              #geom_function(fun = function(t){predict(lr_output_ecoff, newdata = data.frame(t = as_offset_time(x = t, start_date)), type = "response")}, aes(color = "NWT", linetype = "Logistic Regression")) +
-              scale_color_manual(breaks = c("Susceptible", "Resistant",  "WT", "NWT", "Below Split", "Above Split"), values = c( "#7CAE00", "#C77CFF", "#fcbf07", "#0211a3", "#DF4601", "#000000"), name = "Other Prevalence") +  #+ guides(linetype = "none")
-              scale_linetype_discrete(name = "Estimate Source")
+            }
+
 
             s_line = case_when(
               grepl("≤",s_breakpoint) ~ s_breakpoint %>% as.character() %>% parse_number() %>% log2,
@@ -1227,10 +1428,12 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
         if(!is.null(x_axis_t_breaks)){
 
-          mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
-          pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = 2014) %>% year())
+          mean = mean + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
+          pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
 
         }
+
+        mean = mean + scale_y_continuous(labels = set_y_labels, breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1), minor_breaks = NULL)
 
       return(patchwork::wrap_plots(mean,pi, ncol = 1))
     }
@@ -1339,3 +1542,12 @@ offset_time_as_date_in_df = function(df, start_date){
 inverse_logit = function(x){1 / (1 + (exp(-x)))}
 
 logit = function(p){log(p / (1 - p))}
+
+
+
+set_y_labels = function(value){
+  case_when(2^value >= 0.12 ~ 2^value,
+    0.03 > 2^value  & 2^value >= 0.015 ~ signif(2^value, 2),
+    TRUE ~ signif(2^value, 1)
+    )
+}
