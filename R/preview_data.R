@@ -65,7 +65,7 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
       geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = group), data = (. %>% filter(right_bound == Inf) %>% mutate(right_bound = high_con + 2)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.2) +
       geom_point(aes(x = t, y = left_bound, color = group), data = . %>% filter(left_bound != -Inf), alpha = 0.2) +
       geom_point(aes(x = t, y = right_bound, color = group), data = . %>% filter(right_bound != Inf), alpha = 0.2) +
-      ggtitle(title) + ylab(bquote(log[2]~ MIC)) +
+      ggtitle(title)  + xlab("Time") +
       scale_color_discrete(name = covariate_title, type = hex_colors)
   }else{
     errorCondition("covariate should be a string and the name of a column in data")
@@ -95,7 +95,8 @@ preview_data = function(data, title = "", y_min = NULL, y_max = NULL, ECOFF = NU
                           name = TeX(r'(MIC (Logarithmic Spacing) [$\mu$g/mL])'),
                           breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1)
                         )) +
-    theme_bw()
+    theme_bw() +
+    theme(legend.position = "bottom")
 
   plot %>% return()
 }
