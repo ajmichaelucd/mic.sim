@@ -1,219 +1,61 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/404.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/articles/polynomial_vs_pspline.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/articles/test_safety_versions.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/articles/two_comp_mgcv_demo.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/index.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_mgcv.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_safety_mgcv.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_safety_surv.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_surv.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_fm_surv_batch_run.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_fm_surv_single_run.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_fms_surv_batch_run.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/add_covariate.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/analysis_one_setup.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_log_likelihood.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_mu_area.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_pi_area.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/capture_error_measures_one_batch.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/capture_error_measures_one_run.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/censor_values.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/censoring_post_info.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/check_array_complete.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/check_directionality.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/check_for_excessive_censoring.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/check_survreg_iteration_maxout.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/check_weigh_prop_cens.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/component_mean.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/covariate_effect_total.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/draw_covariates.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/draw_epsilon.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/find_censoring_levels.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_all_mu_models.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_model_pi.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_model_safety_pi.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_mu_model.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_pi_model.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_single_component_model_surv.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/fm_checks.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/full_polynomial_cv.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/full_sim_in_1_function.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/gen_path_sim.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/hello.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/import_mics.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_fixed_regression_at_boundaries.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_safety.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_staggered_weighting_by_distance_from_median_and_boundary.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/loadRData.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/local_full_run_function.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/log_reg.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/mic.sim-package.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_fm.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_fm_step.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_fms.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_initial_weighting_regression.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_iteration.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_likelihood.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/prep_df.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/prep_sim_data_for_em.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/random_lines.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/random_start.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/random_start_safety.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/rerun_incomplete_sets.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/scale_select.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/sim_pi_survreg_boot.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/sim_pi_survreg_boot_mgcv.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/simulate_mics.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/simulation_1_set.html</loc>
-  </url>
-  <url>
-    <loc>https://ajmichaelucd.github.io/mic.sim/reference/summary_statistics_one_run.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/404.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/articles/Fit-EM-Options.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/articles/Import-and-Fit-Model.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/articles/Reduced-Model.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/articles/index.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/authors.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/index.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_mgcv.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_reduced.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/E_step_reduced.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/add_covariate.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/add_obs_id.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/as_offset_time.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_fold_likelihood_all.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/calculate_log_likelihood.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/censor_values.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/check_scale_and_var.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/check_survreg_iteration_maxout.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/component_mean.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/covariate_effect_total.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/create_degree_combinations_all.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/draw_covariates.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/draw_epsilon.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/find_censoring_levels.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/first_E_step.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/first_E_step_reduced.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_EM.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_all_mu_models.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_mu_model.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_polynomial_EM.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_single_component_model_surv.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/fit_surv_EM.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/full_cv.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/get_fold_likelihood_all.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/hello.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/import_mics.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/import_mics_with_metadata.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/index.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_fit_linear_model.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_fixed_regression_at_boundaries.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/initial_weighting_staggered_weighting_by_distance_from_median_and_boundary.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/log_reg.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/mic.sim-package.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/offset_time_as_date.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_fm.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_fm_step.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_initial_weighting_regression.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/plot_likelihood.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/prep_sim_data_for_em.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/preview_data.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/random_start.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/sim_pi_survreg_boot.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/sim_pi_survreg_boot_mgcv.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/simulate_mics.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/simulation_run.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/single_cv_all.html</loc></url>
+<url><loc>https://ajmichaelucd.github.io/mic.sim/reference/write_all_formulas.html</loc></url>
 </urlset>
+

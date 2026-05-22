@@ -1,0 +1,30 @@
+# EM_algorithm_mgcv
+
+EM_algorithm_mgcv
+
+## Usage
+
+``` r
+EM_algorithm_mgcv(
+  visible_data,
+  mu_formula = yi ~ s(t),
+  pi_formula = c == "2" ~ s(t),
+  max_it = 3000,
+  ncomp = 2,
+  tol_ll = 1e-06,
+  browse_at_end = FALSE,
+  browse_each_step = FALSE,
+  plot_visuals = FALSE,
+  prior_step_plot = FALSE,
+  pause_on_likelihood_drop = TRUE,
+  pi_link = "logit",
+  verbose = 3,
+  model_coefficient_tolerance = 1e-05,
+  initial_weighting = 8,
+  sd_initial = 0.25
+)
+```
+
+## Arguments
+
+- initial_weighting:

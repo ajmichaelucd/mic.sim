@@ -1,0 +1,74 @@
+# mic.sim
+
+An R package for modeling MIC data
+
+## How to install
+
+``` r
+
+library(devtools)
+install_github('ajmichaelucd/mic.sim', build_vignettes = FALSE)
+```
+
+Data can be simulated with
+[`simulate_mics()`](https://ajmichaelucd.github.io/mic.sim/reference/simulate_mics.md)
+or imported with
+[`import_mics_with_metadata()`](https://ajmichaelucd.github.io/mic.sim/reference/import_mics_with_metadata.md).
+Model fitting is done with
+[`fit_EM()`](https://ajmichaelucd.github.io/mic.sim/reference/fit_EM.md).
+Plotting of model fitting results uses
+[`plot_fm()`](https://ajmichaelucd.github.io/mic.sim/reference/plot_fm.md)
+and
+[`plot_likelihood()`](https://ajmichaelucd.github.io/mic.sim/reference/plot_likelihood.md).
+
+``` r
+
+simulate_mics() |> 
+  fit_EM(visible_data = _, preset_degrees = c(4,2)) |>
+    plot_fm(output = _)
+```
+
+# Package index
+
+## All functions
+
+- [`EM_algorithm()`](https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm.md)
+  : Title
+- [`EM_algorithm_reduced()`](https://ajmichaelucd.github.io/mic.sim/reference/EM_algorithm_reduced.md)
+  : Title
+- [`check_scale_and_var()`](https://ajmichaelucd.github.io/mic.sim/reference/check_scale_and_var.md)
+  : Title
+- [`fit_EM()`](https://ajmichaelucd.github.io/mic.sim/reference/fit_EM.md)
+  : Fit Model Using EM Algorithm
+- [`hello()`](https://ajmichaelucd.github.io/mic.sim/reference/hello.md)
+  : Hello, World!
+- [`import_mics_with_metadata()`](https://ajmichaelucd.github.io/mic.sim/reference/import_mics_with_metadata.md)
+  : Import MICs and Covariates
+- [`log_reg()`](https://ajmichaelucd.github.io/mic.sim/reference/log_reg.md)
+  : Title
+- [`plot_fm()`](https://ajmichaelucd.github.io/mic.sim/reference/plot_fm.md)
+  : Plot Output of Model Fitting
+- [`plot_likelihood()`](https://ajmichaelucd.github.io/mic.sim/reference/plot_likelihood.md)
+  : Plot Likelihood Curve
+- [`prep_sim_data_for_em()`](https://ajmichaelucd.github.io/mic.sim/reference/prep_sim_data_for_em.md)
+  : Intermediate function to prepare simulated data for use in EM
+  algorithm
+- [`preview_data()`](https://ajmichaelucd.github.io/mic.sim/reference/preview_data.md)
+  : Plot Data
+- [`simulate_mics()`](https://ajmichaelucd.github.io/mic.sim/reference/simulate_mics.md)
+  : simulate_mics
+- [`simulation_run()`](https://ajmichaelucd.github.io/mic.sim/reference/simulation_run.md)
+  : Title
+- [`write_all_formulas()`](https://ajmichaelucd.github.io/mic.sim/reference/write_all_formulas.md)
+  : Write Formulas for Mu Models
+
+# Articles
+
+### All vignettes
+
+- [Fit EM
+  Options](https://ajmichaelucd.github.io/mic.sim/articles/Fit-EM-Options.md):
+- [Import and Fit
+  Model](https://ajmichaelucd.github.io/mic.sim/articles/Import-and-Fit-Model.md):
+- [Reduced
+  Model](https://ajmichaelucd.github.io/mic.sim/articles/Reduced-Model.md):
