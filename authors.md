@@ -2,19 +2,19 @@
 
 ## Authors
 
-- **The package maintainer**. Maintainer.
+- **Alec Michael**. Maintainer.
 
 ## Citation
 
 Source:
 [`DESCRIPTION`](https://github.com/ajmichaelucd/mic.sim/blob/main/DESCRIPTION)
 
-it Ww (2026). *mic.sim: What the Package Does (Title Case)*. R package
-version 0.2.1, <https://github.com/ajmichaelucd/mic.sim>.
+Michael A (2026). *mic.sim: Simulating and Fitting Models to MIC Data*.
+R package version 0.2.1, <https://github.com/ajmichaelucd/mic.sim>.
 
     @Manual{,
-      title = {mic.sim: What the Package Does (Title Case)},
-      author = {Who wrote it},
+      title = {mic.sim: Simulating and Fitting Models to MIC Data},
+      author = {Alec Michael},
       year = {2026},
       note = {R package version 0.2.1},
       url = {https://github.com/ajmichaelucd/mic.sim},
