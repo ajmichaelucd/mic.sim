@@ -104,7 +104,7 @@ plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakp
 
 
 
-
+# Set the range of the plot. If not specified, use the plot_bounds function, otherwise just use the specified values
 if(is.null(plot_range)){
 plot_min <- plot_bounds(output$possible_data, "min", ncomp, range_zoom, output, fitted_comp)
 plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, fitted_comp)
