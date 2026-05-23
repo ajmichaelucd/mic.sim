@@ -48,7 +48,8 @@
 #'
 plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakpoint = NA, r_breakpoint = NA, visual_split = NA, use_prior_step = FALSE, range_zoom = FALSE, plot_range = NULL, start_date = 0, x_axis_t_breaks = NULL, skip = NULL){
 
-
+#assumed_components is how many components were intended to be in the distribution, even if not estimated (e.g. for a reduced model where the NWT component is unestimated, assumed_components would still be 2)
+assumed_components = output$ncomp
 
   if(!is.null(output$prior_step_models) & use_prior_step){
     output$mu_model = output$prior_step_models$mu_models
@@ -58,13 +59,13 @@ plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakp
     if(output$fixed_side == "LC"){
       check = check_comp_conv(output$mu_model[[1]])
       dnc = c(TRUE, check)
-      ncomp = 1 - check
+      n_fitted_components = 1 - check
       results = tibble(c = 1:2, dnc)
       fitted_comp = output$mu_model[[1]]
     }else if(output$fixed_side == "RC"){
       check = check_comp_conv(output$mu_model[[1]])
       dnc = c(check, TRUE)
-      ncomp = 1 - check
+      n_fitted_components = 1 - check
       results = tibble(c = 1:2, dnc)
       fitted_comp = output$mu_model[[1]]
     }else{
@@ -72,18 +73,18 @@ plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakp
     }
   }else{
 
-    if(output$ncomp == "2"){
+    if(assumed_components == "2"){
       results <- tibble(c = 1:2, dnc = purrr::map_lgl(output$mu_model, ~check_comp_conv(.x)))
       if(nrow(results %>% filter(dnc)) > 0){
         fitted_comp = output$mu_model[[results %>% filter(!dnc) %>% pull(c)]]
-        ncomp = 1
+        n_fitted_components = 1
       } else{
-        ncomp = 2
+        n_fitted_components = 2
         fitted_comp = NULL
       }
     }else{
       fitted_comp = output$mu_model
-      ncomp = 1
+      n_fitted_components = 1
     }
 }
 
@@ -106,8 +107,8 @@ plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakp
 
 # Set the range of the plot. If not specified, use the plot_bounds function, otherwise just use the specified values
 if(is.null(plot_range)){
-plot_min <- plot_bounds(output$possible_data, "min", ncomp, range_zoom, output, fitted_comp)
-plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, fitted_comp)
+plot_min <- plot_bounds(output$possible_data, "min", n_fitted_components, range_zoom, output, fitted_comp)
+plot_max <- plot_bounds(output$possible_data, "max", n_fitted_components, range_zoom, output, fitted_comp)
 }else{
   plot_min = plot_range[1]
   plot_max = plot_range[2]
@@ -121,10 +122,8 @@ plot_max <- plot_bounds(output$possible_data, "max", ncomp, range_zoom, output, 
   #doesn't work with gaussian dist
 
 
-  mu.se.brd <- function(t, c, z){predict(output$mu_model[[c]], data.frame(t = t)) + (z * predict(output$mu_model[[c]], data.frame(t = t), se = TRUE)$se.fit)}
-  mu.se.brd.fms <- function(t, z){predict(fitted_comp, data.frame(t = t)) + (z * predict(fitted_comp, data.frame(t = t), se = TRUE)$se.fit)}
 
-  if(ncomp == 2){
+  if(n_fitted_components == 2){
 
     #output$mu_model[[1]]$scale %>% print
     #output$mu_model[[2]]$scale %>% print
@@ -730,8 +729,9 @@ if(!is.null(x_axis_t_breaks)){
 
     return(patchwork::wrap_plots(mean,pi, ncol = 1))
 
-  }else{
-    if(output$ncomp == 1){
+  }
+  else{
+    if(assumed_components == 1){
       ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
         mutate(
           c1pred = predict(fitted_comp, tibble(t), se = T)$fit,
@@ -863,7 +863,8 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
       return(mean)
 
-    }else if (output$ncomp == 2 & ncomp == 1){
+    }
+    else if (assumed_components == 2 & n_fitted_components == 1){
       ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
         mutate(
           c1pred = predict(fitted_comp, tibble(t), se = T)$fit,
@@ -1493,7 +1494,7 @@ if(!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint))){
 
 }
 
-plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp = NULL){
+plot_bounds = function(df, side, n_fitted_components, range_zoom = FALSE, output, fitted_comp = NULL){
   if(side == "min"){
     if(nrow(df %>% filter(left_bound == -Inf)) > 0){
       plot_min_1 <- (df %>% filter(left_bound == -Inf) %>% pull(right_bound) %>% min(., na.rm = TRUE)) - 2.5
@@ -1502,10 +1503,10 @@ plot_bounds = function(df, side, ncomp, range_zoom = FALSE, output, fitted_comp 
     }
 
 if(attr(df, "model") != "mgcv"){
-    if(ncomp == 2){
+    if(n_fitted_components == 2){
       plot_min_2 <- min(sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2,
                         sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2)
-    } else if(ncomp == 1){
+    } else if(n_fitted_components == 1){
       plot_min_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(lwr) %>% min(., na.rm = TRUE) - 0.2
     }else{
       plot_min_2 = plot_min_1
@@ -1529,9 +1530,9 @@ if(attr(df, "model") != "mgcv"){
 
     if(attr(df, "model") != "mgcv"){
 
-    if(ncomp == 1){
+    if(n_fitted_components == 1){
       plot_max_2 <- sim_pi_survreg_boot(df, fit = fitted_comp, alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2
-    } else if(ncomp == 2){
+    } else if(n_fitted_components == 2){
       plot_max_2 <- max(sim_pi_survreg_boot(df, fit = output$mu_model[[1]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2,
                         sim_pi_survreg_boot(df, fit = output$mu_model[[2]], alpha = 0.05, nSims = 10000) %>% pull(upr) %>% max(., na.rm = TRUE) + 0.2)
     }else{
@@ -1589,3 +1590,6 @@ set_y_labels = function(value){
     TRUE ~ signif(2^value, 1)
     )
 }
+
+mu.se.brd <- function(t, c, z){predict(output$mu_model[[c]], data.frame(t = t)) + (z * predict(output$mu_model[[c]], data.frame(t = t), se = TRUE)$se.fit)}
+mu.se.brd.fms <- function(t, z){predict(fitted_comp, data.frame(t = t)) + (z * predict(fitted_comp, data.frame(t = t), se = TRUE)$se.fit)}
