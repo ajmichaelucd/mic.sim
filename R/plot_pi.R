@@ -45,6 +45,10 @@ plot_pi = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_b
     scale_color_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence") +
     scale_linetype_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c(1, 1), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence")
 
+  pi = pi +
+    geom_ribbon(aes(ymin = pi_1_lb, ymax = pi_1_ub, x = offset_time_as_date(t, start_date), fill = "Component 1 Proportion"), data = pi_bounds, alpha = 0.2) +
+    geom_ribbon(aes(ymin = pi_2_lb, ymax = pi_2_ub, x = offset_time_as_date(t, start_date), fill = "Component 2 Proportion"), data = pi_bounds, alpha = 0.2) +
+    scale_fill_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence")
 
   ## now add for the extra LRs
   ##maybe an if here? tbd
@@ -97,7 +101,7 @@ plot_pi = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_b
         geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "NWT (ECOFF)", linetype = "NWT (ECOFF)"), data = pi_bounds)
 
       breaks_list = breaks_list %>% append(c("WT (ECOFF)", "NWT (ECOFF)"))
-      color_values_list = color_values_list %>% append(c("#fcbf07", "#0211a3"))
+      color_values_list = color_values_list %>% append(c("darkred", "#0211a3"))
       linetypes_list = linetypes_list %>% append(c(2,2))
     }
 
@@ -129,11 +133,6 @@ plot_pi = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_b
 
 
   }
-
-  pi = pi +
-    geom_ribbon(aes(ymin = pi_1_lb, ymax = pi_1_ub, x = offset_time_as_date(t, start_date), fill = "Component 1 Proportion"), data = pi_bounds, alpha = 0.2) +
-    geom_ribbon(aes(ymin = pi_2_lb, ymax = pi_2_ub, x = offset_time_as_date(t, start_date), fill = "Component 2 Proportion"), data = pi_bounds, alpha = 0.2) +
-    scale_fill_manual(breaks = c("Component 1 Proportion", "Component 2 Proportion"), values = c("#e4190b", "#00999d"), labels = c(TeX(r'(Component 1 Prevalence: $\hat{\pi}_{1,t}$)'), TeX(r'(Component 2 Prevalence: $\hat{\pi}_{2,t}$)')), name = "Component Prevalence")
 
   if(!is.null(x_axis_t_breaks)){
     pi = pi + scale_x_continuous(breaks = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date), labels = x_axis_t_breaks %>% offset_time_as_date(., start_date = start_date) %>% year())
