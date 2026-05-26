@@ -13,11 +13,12 @@ plot_pi(
   s_breakpoint,
   r_breakpoint,
   visual_split,
-  skip
+  skip,
+  x_axis_t_breaks
 )
 }
 \arguments{
-\item{skip}{}
+\item{x_axis_t_breaks}{}
 }
 \description{
 Title

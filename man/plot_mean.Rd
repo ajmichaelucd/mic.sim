@@ -17,11 +17,13 @@ plot_mean(
   s_breakpoint,
   r_breakpoint,
   visual_split,
-  x_axis_t_breaks
+  x_axis_t_breaks,
+  assumed_components,
+  n_fitted_components
 )
 }
 \arguments{
-\item{x_axis_t_breaks}{}
+\item{n_fitted_components}{}
 }
 \description{
 Title

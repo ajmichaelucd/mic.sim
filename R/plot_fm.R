@@ -125,9 +125,6 @@ plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakp
 }
 
 
-
-
-
 plot_bounds = function(df, side, n_fitted_components, range_zoom = FALSE, output, fitted_comp = NULL){
   if(side == "min"){
     if(nrow(df %>% filter(left_bound == -Inf)) > 0){
