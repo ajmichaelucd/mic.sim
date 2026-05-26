@@ -1,4 +1,4 @@
-set_up_2C_mean_plot = function(){
+set_up_2C_mean_plot = function(output, df, start_date, title, plot_min, plot_max){
 ci_data = get_two_comp_ci(output)
 
 mean <- df %>%
@@ -34,9 +34,11 @@ mean = mean + scale_color_manual(breaks = c("Component 1 Mu", "Component 2 Mu"),
   scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
   theme_minimal()
 
+return(mean)
+
 }
 
-set_up_1C_mean_plot = function(){
+set_up_1C_mean_plot = function(output, df, start_date, fitted_comp, title, plot_min, plot_max){
   ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
     mutate(
       c1pred = predict(fitted_comp, tibble(t), se = T)$fit,
@@ -74,9 +76,10 @@ set_up_1C_mean_plot = function(){
     #scale_x_continuous(breaks = scales::breaks_extended(6)) +
     theme_minimal() +
     theme(legend.position = "bottom")
+  return(mean)
 }
 
-set_up_reduced_mean_plot = function(){
+set_up_reduced_mean_plot = function(output, results, df, start_date, fitted_comp, title, plot_min, plot_max){
 ci_data <- tibble(t = rep(seq(0, max(output$possible_data$t), len = 300), 2)) %>%
   mutate(
     c1pred = predict(fitted_comp, tibble(t), se = T)$fit,
@@ -119,9 +122,11 @@ mean <- df %>%
   ylim(plot_min - 1, plot_max + 1) +
   scale_y_continuous(breaks = scales::breaks_extended((plot_max - plot_min)/1.5)) +
   #scale_x_continuous(breaks = scales::breaks_extended(6)) +
-  theme_minimal()}
+  theme_minimal()
+return(mean)
+}
 
-add_splits_to_mean_plot = function(){
+add_splits_to_mean_plot = function(mean, ecoff, s_breakpoint, r_breakpoint, visual_split){
 if((!is.na(ecoff) | (!is.na(s_breakpoint) & !is.na(r_breakpoint)) | !is.na(visual_split))){
 
   mean = mean +
@@ -217,10 +222,10 @@ mean = mean + scale_color_manual(
 }else{
   mean = mean + guides(linetype = "none")
 }
-
+return(mean)
 }
 
-adjust_scales_mean_plot = function(){
+adjust_scales_mean_plot = function(mean, x_axis_t_breaks, start_date){
 
 if(!is.null(x_axis_t_breaks)){
 
@@ -235,4 +240,32 @@ mean = mean + scale_y_continuous( breaks = function(limits) seq(floor(limits[1])
                                     name = TeX(r'(MIC (Logarithmic Spacing) [$\mu$g/mL])'),
                                     breaks = function(limits) seq(floor(limits[1]), ceiling(limits[2]), by = 1)
                                   ))
+return(mean)
 }
+
+plot_mean = function(output, df, results, start_date, fitted_comp, title, plot_min, plot_max, ecoff, s_breakpoint, r_breakpoint, visual_split, x_axis_t_breaks){
+  if(n_fitted_components == 2){
+    mean = set_up_2C_mean_plot(output = output, df = df, start_date = start_date, title = title, plot_min = plot_min, plot_max = plot_max)
+    mean = add_splits_to_mean_plot(mean = mean, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split)
+    mean = adjust_scales_mean_plot(mean = mean, x_axis_t_breaks = x_axis_t_breaks, start_date = start_date)
+  }else if(assumed_components == 2 & n_fitted_components == 1){
+    mean = set_up_reduced_mean_plot(output = output, results = results, df = df, start_date = start_date, fitted_comp = fitted_comp, title = title, plot_min = plot_min, plot_max = plot_max)
+    mean = add_splits_to_mean_plot(mean = mean, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split)
+    mean = adjust_scales_mean_plot(mean = mean, x_axis_t_breaks = x_axis_t_breaks, start_date = start_date)
+  }else if(assumed_components == 1){
+    mean = set_up_1C_mean_plot(output = output, df = df, start_date = start_date, fitted_comp = fitted_comp, title = title, plot_min = plot_min, plot_max = plot_max)
+    mean = add_splits_to_mean_plot(mean = mean, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split)
+    mean = adjust_scales_mean_plot(mean = mean, x_axis_t_breaks = x_axis_t_breaks, start_date = start_date)
+  }else{
+    warningCondition("No components converged")
+   mean = df %>% ggplot() +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "int")), alpha = 0.3) +
+      geom_segment(aes(x = t, xend = t, y = right_bound, yend = left_bound, color = cens), data = (df %>% filter(cens == "lc") %>% mutate(left_bound = plot_min)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+      geom_segment(aes(x = t, xend = t, y = left_bound, yend = right_bound, color = cens), data = (df %>% filter(cens == "rc") %>% mutate(right_bound = plot_max)), arrow = arrow(length = unit(0.03, "npc")), alpha = 0.3) +
+      geom_point(aes(x = t, y = left_bound,  color = cens), data = df %>% filter(left_bound != -Inf), alpha = 0.3) +
+      geom_point(aes(x = t, y = right_bound,  color = cens), data = df %>% filter(right_bound != Inf), alpha = 0.3) +
+      theme_minimal()
+  }
+  return(mean)
+}
+
