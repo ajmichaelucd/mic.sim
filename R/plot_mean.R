@@ -13,6 +13,8 @@
 #' @param r_breakpoint
 #' @param visual_split
 #' @param x_axis_t_breaks
+#' @param assumed_components
+#' @param n_fitted_components
 #'
 #' @keywords internal
 #'
@@ -20,7 +22,7 @@
 #' @export
 #'
 #' @examples
-plot_mean = function(output, df, results, start_date, fitted_comp, title, plot_min, plot_max, ecoff, s_breakpoint, r_breakpoint, visual_split, x_axis_t_breaks){
+plot_mean = function(output, df, results, start_date, fitted_comp, title, plot_min, plot_max, ecoff, s_breakpoint, r_breakpoint, visual_split, x_axis_t_breaks, assumed_components, n_fitted_components){
   if(n_fitted_components == 2){
     mean = set_up_2C_mean_plot(output = output, df = df, start_date = start_date, title = title, plot_min = plot_min, plot_max = plot_max)
     mean = add_splits_to_mean_plot(mean = mean, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split)

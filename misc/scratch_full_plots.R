@@ -75,4 +75,3 @@ mean = plot_mean(output = output, df = df, results = results, start_date = start
  }
 
 }
-plot_out(output, ecoff = 1, add_log_reg = TRUE, s_breakpoint = "<=4", r_breakpoint = ">8", start_date = 2007)

@@ -9,6 +9,7 @@
 #' @param r_breakpoint
 #' @param visual_split
 #' @param skip
+#' @param x_axis_t_breaks
 #'
 #' @keywords internal
 #'
@@ -16,7 +17,7 @@
 #' @export
 #'
 #' @examples
-plot_pi = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_breakpoint, visual_split, skip){
+plot_pi = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_breakpoint, visual_split, skip, x_axis_t_breaks){
 
   pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
                      pi2 = predict(output$pi_model, newdata = data.frame(t = t), type = "response"),

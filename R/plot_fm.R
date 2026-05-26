@@ -113,10 +113,10 @@ plot_fm <- function(output, title ="", add_log_reg = FALSE, ecoff = NA, s_breakp
     plot_max = plot_range[2]
   }
 
-  mean = plot_mean(output = output, df = df, results = results, start_date = start_date, fitted_comp = fitted_comp, title = title, plot_min = plot_min, plot_max = plot_max, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split, x_axis_t_breaks = x_axis_t_breaks)
+  mean = plot_mean(output = output, df = df, results = results, start_date = start_date, fitted_comp = fitted_comp, title = title, plot_min = plot_min, plot_max = plot_max, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split, x_axis_t_breaks = x_axis_t_breaks, assumed_components = assumed_components, n_fitted_components = n_fitted_components)
 
   if(assumed_components > 1){
-    pi = plot_pi(output = output, df = df, start_date = start_date, add_log_reg = add_log_reg, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split, skip = skip)
+    pi = plot_pi(output = output, df = df, start_date = start_date, add_log_reg = add_log_reg, ecoff = ecoff, s_breakpoint = s_breakpoint, r_breakpoint = r_breakpoint, visual_split = visual_split, skip = skip, x_axis_t_breaks = x_axis_t_breaks)
     return(patchwork::wrap_plots(mean,pi, ncol = 1))
   }else{
     return(patchwork::wrap_plots(mean, ncol = 1))
