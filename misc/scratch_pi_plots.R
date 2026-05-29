@@ -1,5 +1,5 @@
 
-plot_pi = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_breakpoint, visual_split, skip){
+plot_pi_old = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_breakpoint, visual_split, skip){
 
   pi_bounds = tibble(t = seq(0, max(output$possible_data$t), len = 300),
                      pi2 = predict(output$pi_model, newdata = data.frame(t = t), type = "response"),
@@ -90,8 +90,8 @@ plot_pi = function(output, df, start_date, add_log_reg, ecoff, s_breakpoint, r_b
              c2vs = predict(lr_output_visual_split, newdata = tibble(t = t), type = "response") )
 
     pi = pi +
-      geom_line(aes(x = offset_time_as_date(t, start_date), y = wt, color = "Below Split", linetype = "Below Split"), data = pi_bounds) +
-      geom_line(aes(x = offset_time_as_date(t, start_date), y = nwt, color = "Above Split", linetype = "Above Split"), data = pi_bounds)
+      geom_line(aes(x = offset_time_as_date(t, start_date), y = c1vs, color = "Below Split", linetype = "Below Split"), data = pi_bounds) +
+      geom_line(aes(x = offset_time_as_date(t, start_date), y = c2vs, color = "Above Split", linetype = "Above Split"), data = pi_bounds)
 
     breaks_list = breaks_list %>% append(c("Below Split", "Above Split"))
     color_values_list = color_values_list %>% append(c("#DF4601", "#000000"))
